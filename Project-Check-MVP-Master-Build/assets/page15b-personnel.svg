@@ -1,0 +1,8 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="56" height="106" viewBox="0 0 56 106" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Personnel door">
+<rect x="1" y="1" width="54" height="104" rx="1" fill="white"/>
+<rect x="1" y="1" width="54" height="104" rx="1" stroke="#078632" stroke-width="2"/>
+<rect id="Door line" x="8.5" y="12.5" width="39" height="81" fill="#E8F6EC" stroke="#078632"/>
+<circle id="Door handle" cx="41.5" cy="56.5" r="2.5" fill="#078632"/>
+</g>
+</svg>

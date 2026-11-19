@@ -1,0 +1,14 @@
+node_modules/
+.env
+.env.*
+!.env.example
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+dist/
+build/
+*.tmp
+tests/playwright/test-results/
+tests/playwright/playwright-report/
+tests/playwright/blob-report/

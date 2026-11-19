@@ -1,0 +1,2531 @@
+/*
+ * Direction C — Complete Stage 1 / Stage 2 working model (trial)
+ * Presentation only. Scoped entirely by classes direction-c-trial.js adds
+ * to <body> after reading the DOM app.js already rendered — nothing here
+ * changes markup app.js relies on, question wording/order, validation,
+ * fact keys, map/upload/drawing/door/report/risk logic, colours, branding
+ * or the approved logo.
+ *
+ * Figma source (read-only, locked): BYsnm3HI7VBBZQyVnRbiTI
+ *   Stage 1 canvas 111:16 · Stage 2 canvas 115:16 · see TRIAL-DIRECTION-C.md
+ *   for the full locked-frame map this file implements.
+ *
+ * Loaded after styles.css (see index.html) so equal-specificity rules here
+ * win without needing !important — used sparingly, only where a page also
+ * carries an inline style="" attribute from app.js (e.g. margin-top on
+ * report cards) that would otherwise beat a plain class selector.
+ *
+ * Breakpoints verified: 390 / 430 / 768 / 858 (locked Figma width) / 1280 /
+ * 1440. Unlike the original mobile-only trial, this version applies at
+ * every width — the container caps at the locked 858px and centres with
+ * margin:auto above that, which is what naturally reproduces the locked
+ * frame exactly at 858 and scales both down (390–768) and up (1280–1440)
+ * without inventing new desktop-only layout.
+ */
+
+:root {
+  --dc-navy: #051226; /* Primary navy heading (§3) — headings/body text/button borders */
+  --dc-nav-navy: #061226; /* Navigation navy (§3) — genuinely distinct token, nav items + sign-in/out label only */
+  --dc-green: #0f6f2a;
+  --dc-nav-green: #0a6b1a;
+  --dc-badge-bg: #ebf5e8;
+  --dc-soft-green: #f6f9f7;
+  --dc-line: #e3e5e5;
+  --dc-header-border: #e0e3e3; /* Header/button border (§3) — distinct from --dc-line, sign-in/out button border only */
+  --dc-muted: #59616b;
+  --dc-radius-card: 27px;
+  --dc-radius-field: 14px;
+  --dc-font: Inter, "Segoe UI", Arial, sans-serif;
+}
+
+/* ======================================================================
+   Global header (all Direction C pages). Not scoped to a max-width, so it
+   also fixes the pre-existing oversized .brand-logo (204px, only ever
+   corrected for data-page="stage1") on every other Direction C screen —
+   the locked header logo box is 70px tall on every locked frame.
+   ====================================================================== */
+body.dc-active .topbar {
+  position: relative;
+  padding: 18px 28px;
+  background: #fff;
+  border-bottom: 0;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .035); /* exact Figma value (98:384) — was .04, an approximation */
+}
+/* §18/§1: every Direction C page must show Home/Pricing (+ My Projects/
+   Sign out when signed in) together — styles.css hides Home and Pricing
+   below 650px on every page except a short, pre-existing allow-list
+   (home, pricing, terms, privacy) that never included the Stage 1/2/
+   map/report/etc. pages this trial governs. Overridden here for
+   dc-active pages, at every width. Deliberately does NOT touch
+   #projectsBtn (My Projects) — that button's visibility is already
+   correctly driven by app.js's syncAuth() inline style (shown only once
+   signed in; §1 explicitly lists "Home / Pricing / Sign in" — not My
+   Projects — for signed-out pages), so forcing it here with !important
+   would override real auth state, not just presentation. */
+body.dc-active .nav button:not(.nav-strong):not(#projectsBtn) { display: inline-block !important; }
+/* Figma's "Project Check Header Logo — Complete" box is 250x70 on every
+   locked frame pulled (question, map, roller-doors, client-details, both
+   reports, doors & drawing review) — used exactly at the >=858 reference
+   width (see the media-query block below). SUPERSEDED 2026-09-04 (Final
+   Approved Figma Implementation, explicit feedback): below 858px this
+   used to switch the logo to an unrelated fixed 44px mobile size — one of
+   the named "failed c4a1237" behaviours to not repeat. It is now scaled
+   proportionally instead (calc(N/858*100vw), the same technique the
+   homepage's own locked header already uses — see styles.css's
+   body[data-page="home"] .topbar rules) so the header is one coherent
+   design at every width, never a second mobile-only layout. */
+body.dc-active .brand-logo { width: 250px; height: 70px; object-fit: contain; } /* Logo Replacement (2026-09-05): the new asset's own native ratio is already exactly 250:70, so contain changes nothing visually — kept only as a safety net against distortion, per instruction. */
+/* Gateway/Workspace Design Correction: styles.css hides .topbar .brand
+   (the header logo) on Pricing/My Projects/Project Workspace, showing a
+   second, detached logo inside the page body instead (.workspace-logo,
+   overridden to display:none below). The locked Direction C header has
+   exactly one logo, inside the header, on every page — restoring the
+   header logo here and hiding the body one is what makes these three
+   pages share the same header every other Direction C page already uses,
+   per Stuart's explicit decision. Padding/margin reset to 0 — the browser's
+   default <button> padding was the reason the logo rendered ~6px off the
+   Figma x:28 position even with the correct container padding. */
+body.dc-active .topbar .brand { display: flex; padding: 0; margin: 0; }
+/* SUPERSEDED 2026-09-04 (Final Approved Figma Implementation, explicit
+   feedback): flex-wrap here used to let individual nav buttons/"Sign out"
+   drop onto their own second row below 858px — exactly the named "failed
+   c4a1237" behaviour ("the header independently flex-wraps", "Sign out
+   falls onto a second row"). Replaced with calc(N/858*100vw) proportional
+   scaling in the @media(max-width:858px) block below (mirroring the
+   homepage's own already-approved technique), so the header stays one
+   single non-wrapping row — same DOM order, same items, just scaled —
+   at every width down to 390px. */
+body.dc-active .nav { gap: 26px; flex-wrap: nowrap; }
+body.dc-active .nav button {
+  padding: 6px 0;
+  border-radius: 0;
+  font: 400 18px/1.3 var(--dc-font);
+  color: var(--dc-nav-navy);
+}
+body.dc-active .nav button:hover { background: transparent; opacity: .8; }
+/* SUPERSEDED 2026-09-04 (Final Approved Figma Implementation): the earlier
+   "Home is always active" rule is replaced — confirmed directly from 8
+   newly re-pulled locked frames (page 148:16's S1-Q01/S2-Q01/maps/roller
+   doors/client details/both reports, plus Pricing 143:41 and Auth
+   150:16) that the approved design shows My Projects active on every
+   signed-in application/stage page, Pricing active only on Pricing, and
+   Home active only on the true homepage (which this trial never
+   classifies). direction-c-trial.js's setNavActive() puts the one shared
+   "active" class below on whichever real button applies. */
+body.dc-active .nav button[data-route="home"] { position: relative; }
+body.dc-active .nav .dc-nav-active-item {
+  position: relative;
+  font-weight: 600;
+  color: var(--dc-nav-green);
+}
+body.dc-active .nav .dc-nav-active-item::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -8px;
+  height: 2px;
+  background: var(--dc-nav-green);
+}
+body.dc-active .nav .nav-strong {
+  border: 1px solid var(--dc-header-border); /* exact Figma #E0E3E3 (98:390) — was --dc-line (#E3E5E5), a near-identical but distinct token */
+  border-radius: 12px;
+  padding: 12px 20px;
+  font: 400 18px/1.3 var(--dc-font);
+  color: var(--dc-nav-navy);
+  box-shadow: 0 7px 14px rgba(0, 0, 0, .1);
+}
+
+/* ======================================================================
+   Header below the 858 reference width — proportional calc(N/858*100vw)
+   scaling of the SAME exact geometry the block below applies at >=858,
+   not a second/alternate layout (Final Approved Figma Implementation,
+   explicit feedback: do not recreate independent flex-wrap reflow or a
+   fixed unrelated mobile logo size — this is the homepage's own
+   already-approved scaling technique, reused here for the shared
+   header). Single non-wrapping row throughout; every item keeps its
+   858-width proportions and relative order all the way down to 390px.
+   ====================================================================== */
+@media (max-width: 858px) {
+  body.dc-active .topbar {
+    height: calc(135 / 858 * 100vw);
+    padding: 0 calc(28 / 858 * 100vw);
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    align-items: center;
+    box-sizing: border-box;
+  }
+  body.dc-active .topbar .brand {
+    flex: none;
+    width: calc(250 / 858 * 100vw);
+    height: calc(70 / 858 * 100vw);
+  }
+  body.dc-active .brand-logo { width: 100%; height: 100%; object-fit: contain; }
+  body.dc-active .nav {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: calc(26 / 858 * 100vw);
+  }
+  body.dc-active .nav button {
+    font-size: calc(22 / 858 * 100vw);
+    padding: calc(6 / 858 * 100vw) 0;
+    white-space: nowrap;
+  }
+  body.dc-active .nav .dc-nav-active-item::after { bottom: calc(-8 / 858 * 100vw); }
+  body.dc-active .nav .nav-strong {
+    flex: none;
+    padding: calc(12 / 858 * 100vw) calc(20 / 858 * 100vw);
+    border-radius: calc(12 / 858 * 100vw);
+    font-size: calc(18 / 858 * 100vw);
+    white-space: nowrap;
+  }
+}
+
+/* ======================================================================
+   EXACT Figma header geometry (98:384 / 111:20 / 115:20) at the 858
+   reference width and above — absolute pixel positions, not flexbox
+   approximation, so every measurable value matches the spec exactly.
+   Below 858 the calc()-scaled rules above still apply — the same design,
+   proportionally scaled, not a second layout (per instruction §1/§20:
+   exact matching is required AT 858; smaller widths only need to reflow
+   coherently with no overflow).
+   ====================================================================== */
+@media (min-width: 858px) {
+  body.dc-active .topbar {
+    width: 858px;
+    height: 135px;
+    margin: 0 auto;
+    padding: 0;
+    box-sizing: border-box;
+    display: block;
+  }
+  body.dc-active .topbar .brand {
+    position: absolute;
+    left: 28px;
+    top: 21px;
+    width: 250px;
+    height: 70px;
+  }
+  body.dc-active .brand-logo { width: 250px; height: 70px; object-fit: contain; }
+  body.dc-active .nav {
+    display: contents; /* each button is positioned individually below, not as a flex group */
+  }
+  body.dc-active .nav button[data-route="home"] {
+    position: absolute;
+    left: 319px;
+    top: 49px;
+    width: 70px;
+    height: 32px;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    font: 400 22px/32px var(--dc-font);
+  }
+  body.dc-active .nav button[data-route="pricing"] {
+    position: absolute;
+    left: 423px;
+    top: 49px;
+    width: 80px;
+    height: 32px;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    font: 400 22px/32px var(--dc-font);
+  }
+  body.dc-active #projectsBtn {
+    position: absolute;
+    left: 532px;
+    top: 49px;
+    width: 145px;
+    height: 32px;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    font: 400 22px/32px var(--dc-font);
+  }
+  /* The three rules above's `font:` shorthand resets font-weight to 400
+     for every nav button unconditionally (including the active one) —
+     this wins back the active item's bold weight regardless of source
+     order (matching specificity, but declared last in this block).
+     ::after's left:0/right:0 (base rule above) already sizes the
+     underline to whichever button this class lands on, so no per-item
+     width/position override is needed here unlike the earlier
+     Home-only implementation. */
+  body.dc-active .nav button.dc-nav-active-item {
+    font-weight: 600;
+  }
+  /* #authBtn (Sign in / Sign out) sits at the same Figma slot regardless of
+     signed-in state — the instruction's spec is for "Sign out" (signed-in);
+     "Sign in" (signed-out, shorter label, #projectsBtn absent) reuses the
+     identical box per §1 ("Signed-out pages: Home / Pricing / Sign in"). */
+  body.dc-active #authBtn {
+    position: absolute;
+    left: 697px;
+    top: 34px;
+    width: 134px;
+    height: 60px;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font: 400 22px/1 var(--dc-font);
+  }
+}
+
+/* ======================================================================
+   Shared page shell
+   ====================================================================== */
+body.dc-active {
+  background: #fff;
+  color: var(--dc-navy);
+  font-family: var(--dc-font);
+}
+body.dc-active #app { width: 100%; }
+body.dc-active #app > .container {
+  width: 100%;
+  max-width: 858px;
+  margin: 0 auto;
+  padding: 24px 22px 28px;
+  box-sizing: border-box;
+}
+
+/* SUPERSEDED 2026-09-04 (Final Approved Figma Implementation): .pagehead
+   is now its own rounded, pale, bordered, drop-shadowed card — confirmed
+   on every locked Stage 1/2 frame re-pulled from page 148:16 ("Page
+   Heading" / "Report Heading", bg #F3F9F2, border 1px #E3E5E5, radius
+   27px, drop-shadow 0/7/8 rgba(0,0,0,.05)) — not the plain-white,
+   borderless block the earlier CSS-overlay implementation used. Padding
+   was not present in the extracted node data for this component
+   specifically (unlike every other card in this file, which all state
+   explicit padding) — 24px/32px is a considered, documented value
+   matching this design system's established card-padding rhythm
+   elsewhere, not a literal Figma number; flagged for visual
+   confirmation. */
+body.dc-active .pagehead {
+  min-height: 0;
+  margin: 0 0 18px;
+  padding: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  border: 0;
+  background: #fff;
+}
+/* Confirmed on Stage 1/2 questions, both maps, roller doors, client
+   details, both reports and doors & drawing review (all re-pulled from
+   page 148:16) — NOT yet extended to dc-page-workspace (My
+   Projects/Project Workspace/Pricing), which still use the pre-existing
+   plain pagehead pending their own frames (150:80/150:114/150:139) being
+   pulled and implemented. */
+body.dc-page-question .pagehead,
+body.dc-page-map .pagehead,
+body.dc-page-client .pagehead,
+body.dc-page-report .pagehead,
+body.dc-page-doorsreview .pagehead {
+  padding: 24px 32px;
+  align-items: center;
+  border: 1px solid var(--dc-line);
+  border-radius: var(--dc-radius-card);
+  background: #f3f9f2;
+  box-shadow: 0 7px 8px rgba(0, 0, 0, .05);
+  box-sizing: border-box;
+}
+body.dc-active .pagehead > div:first-child,
+body.dc-active .pagehead > .workspace-identity { min-width: 0; max-width: 560px; }
+body.dc-active .pagehead .workspace-identity { display: flex; align-items: center; gap: 18px; max-width: 100%; }
+body.dc-active .pagehead .workspace-identity .workspace-logo { height: 70px; width: auto; flex: 0 0 auto; }
+body.dc-active .pagehead .eyebrow {
+  margin: 0 0 5px;
+  color: var(--dc-green);
+  font: 700 15px/1.2 var(--dc-font);
+  letter-spacing: .2px;
+  text-transform: uppercase;
+}
+body.dc-active .pagehead h1 {
+  margin: 0;
+  color: var(--dc-navy);
+  font: 700 34px/1.1 var(--dc-font);
+}
+body.dc-active .pagehead .meta { margin: 5px 0 0; color: var(--dc-navy); font: 400 17px/1.35 var(--dc-font); opacity: .85; }
+body.dc-active .pagehead > .btn {
+  flex: 0 0 auto;
+  min-width: 150px;
+  min-height: 56px;
+  margin: 0;
+  padding: 15px 22px;
+  border: 1px solid var(--dc-nav-navy); /* SUPERSEDED 2026-09-04: was --dc-navy; every re-pulled "Save & exit"/"Project workspace" button border is #061226 */
+  border-radius: var(--dc-radius-field);
+  background: #fff;
+  color: var(--dc-navy);
+  box-shadow: none;
+  font: 600 18px/1.25 var(--dc-font);
+  white-space: nowrap;
+}
+
+/* Report pages show only the global header — the extra logo app.js places
+   beside/above the report heading (.workspace-identity's own logo on the
+   Stage 1 report, .report-logo above the Stage 2 report) has no equivalent
+   in the locked S1-REPORT/S2-REPORT frames, which use the plain identity
+   block (eyebrow/h1/meta) under the same global header as every other
+   page — hidden here rather than removed from app.js, so removing this
+   CSS file instantly restores the prior presentation exactly as documented
+   in TRIAL-DIRECTION-C.md. */
+body.dc-page-report .pagehead .workspace-identity .workspace-logo,
+body.dc-page-client .pagehead .workspace-identity .workspace-logo,
+body.dc-page-workspace .pagehead .workspace-identity .workspace-logo { display: none; }
+body.dc-page-report .report-logo { display: none; }
+
+/* ======================================================================
+   Progress
+   ====================================================================== */
+body.dc-page-question .dc-progress-label {
+  margin: 0 0 8px;
+  color: var(--dc-green);
+  font: 600 16px/1.2 var(--dc-font);
+}
+body.dc-page-question .progressbar {
+  width: 100%;
+  height: 8px;
+  margin: 0 0 18px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--dc-line);
+}
+body.dc-page-question .progressbar span { display: block; height: 8px; border-radius: 4px; background: var(--dc-green); }
+body.dc-page-question .stage-layout { display: block; width: 100%; }
+body.dc-page-question .stage-layout > .steps { display: none !important; }
+
+/* ======================================================================
+   Question / map / roller-doors / client-details card. SUPERSEDED
+   2026-09-04: was a 2px #0F6F2A border with no shadow — every re-pulled
+   locked frame (148:22/705/246/313/454/597) now shows a 1px #0A6B1A
+   (navigation green, not Direction C green) border plus a soft drop
+   shadow.
+   ====================================================================== */
+body.dc-page-question .stage-layout > .card,
+body.dc-page-map .container > .card,
+body.dc-page-client .container > .card {
+  width: 100%;
+  margin: 0;
+  padding: 28px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  overflow: hidden;
+  border: 1px solid var(--dc-nav-green);
+  border-radius: var(--dc-radius-card);
+  background: var(--dc-soft-green);
+  box-shadow: 0 7px 16px rgba(0, 0, 0, .05);
+  box-sizing: border-box;
+}
+
+/* SUPERSEDED 2026-09-04: the re-pulled locked frames give an explicit,
+   real (not auto-layout-artifact) height this time — h:34, radius 17,
+   padding 18px/8px — confirmed identically on every Stage 1 and Stage 2
+   frame re-pulled (148:43/727/267/334/etc). Width is auto (content-hugging
+   via padding), not a fixed value — the earlier w:226/w:286 numbers and
+   the literal h:100 both came from the previous pull of this component
+   and are superseded by this one. */
+body.dc-active .dc-stage-badge {
+  width: max-content;
+  max-width: 100%;
+  height: 34px;
+  margin: 0;
+  padding: 8px 18px;
+  border-radius: 17px;
+  background: var(--dc-badge-bg);
+  color: var(--dc-green);
+  font: 700 14px/1.2 var(--dc-font);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+}
+
+body.dc-page-question .stage-layout > .card h2,
+body.dc-page-question .stage-layout > .card .q-content h2,
+body.dc-page-map .container > .card h2,
+body.dc-page-client .container > .card > p:nth-of-type(1) {
+  width: 100%;
+  margin: 0;
+  color: var(--dc-navy);
+  font: 700 30px/1.2 var(--dc-font);
+}
+/* Client details has no <h2> — its instruction line ("A few final
+   details…") sits where the question heading sits everywhere else. It is
+   the first non-badge, non-field <p> app.js renders directly under the
+   badge, so it is matched positionally the same way app.js structures it
+   (badge, then this line, then each field) rather than by adding a class
+   app.js does not emit. */
+body.dc-page-client .container > .card > p { margin: 0; color: var(--dc-navy); font: 700 25px/1.3 var(--dc-font); }
+
+body.dc-page-question .stage-layout > .card .q-content { display: flex; flex-direction: column; gap: 18px; }
+
+/* Fields / inputs — shared by every card type above (descendant, not
+   direct-child, selectors so this also reaches Stage 2's flatter card,
+   which has no .q-content wrapper, without a second copy of every rule). */
+body.dc-active .card .field { width: 100%; margin: 0; }
+body.dc-page-client .container > .card .field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+body.dc-page-client .container > .card .field > label {
+  font: 600 16px/1.3 var(--dc-font);
+  color: var(--dc-navy);
+}
+body.dc-active .card input,
+body.dc-active .card select,
+body.dc-active .card textarea {
+  width: 100%;
+  min-height: 60px;
+  margin: 0;
+  padding: 16px 18px;
+  border: 1px solid var(--dc-line);
+  border-radius: var(--dc-radius-field); /* exact Figma 14px (111:43) — was 12px */
+  background: #fff;
+  color: var(--dc-navy); /* typed value: kept navy for readability — Figma's field spec (§10) describes the empty/placeholder state (#59616B), applied to ::placeholder below; product-truth usability, not a silent deviation */
+  box-shadow: none;
+  font: 400 20px/1.35 var(--dc-font); /* exact Figma 20px (111:44) — was 18px */
+  box-sizing: border-box;
+}
+body.dc-active .card input::placeholder,
+body.dc-active .card textarea::placeholder { color: #59616b; opacity: 1; } /* exact Figma placeholder colour (111:44) */
+body.dc-active .card textarea { min-height: 120px; resize: vertical; }
+/* Exact Figma field height (111:43/115:44) — 64px, scoped to >=858px only
+   (a taller fixed height risks squeezing a narrow viewport where the
+   existing 60px flexible sizing already works). Only the question-card
+   single-line controls; textarea keeps its own taller functional
+   min-height (§10: "preserving their actual functional requirements"). */
+@media (min-width: 858px) {
+  body.dc-page-question .card input,
+  body.dc-page-question .card select {
+    height: 64px;
+    min-height: 64px;
+  }
+}
+
+body.dc-page-question .stage-layout > .card .q-illustration {
+  width: 100%;
+  height: 230px;
+  margin: 0;
+  overflow: hidden;
+  border-radius: 20px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, .16);
+}
+body.dc-page-question .stage-layout > .card .q-illustration img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+/* Evidence panel (Stage 2) / any other banner */
+body.dc-active .card > .banner,
+body.dc-active .card .q-content > .banner {
+  width: 100%;
+  margin: 0;
+  padding: 18px 20px;
+  border: 1px solid var(--dc-line);
+  border-radius: 18px;
+  background: #fff;
+  color: var(--dc-navy);
+  box-sizing: border-box;
+}
+body.dc-active .card > .banner b,
+body.dc-active .card .q-content > .banner b { font-size: 18px; }
+body.dc-active .card > .banner.green,
+body.dc-active .card .q-content > .banner.green { background: var(--dc-badge-bg); border-color: var(--dc-green); }
+body.dc-active .card > .banner.warn,
+body.dc-active .card .q-content > .banner.warn { background: #fff8ec; border-color: #e8c46b; }
+body.dc-active .card .meta { color: var(--dc-muted); }
+body.dc-stage2-screen .card > .banner .actions { min-height: auto; justify-content: flex-start; }
+
+/* Actions row (shared by every card type) */
+body.dc-active .card .actions {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  background: transparent;
+}
+body.dc-active .card .actions .btn,
+body.dc-active .card .actions label.btn {
+  min-width: 150px;
+  min-height: 56px;
+  margin: 0;
+  padding: 15px 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--dc-radius-field);
+  box-shadow: none;
+  font: 600 18px/1.25 var(--dc-font);
+  text-align: center;
+  box-sizing: border-box;
+}
+/* SUPERSEDED 2026-09-04: secondary-button border was --dc-navy (#051226);
+   every re-pulled locked frame's Back/"Continue without…"/Search/Upload/
+   Reset-boundary button now shows #061226 (nav-navy) instead. Primary
+   green buttons ("Save & continue" etc.) were #0F6F2A; every re-pulled
+   frame now shows #0A6B1A (nav-green) instead. */
+body.dc-active .card .actions .btn.secondary,
+body.dc-active .card .actions label.btn.secondary {
+  border: 1px solid var(--dc-nav-navy);
+  background: #fff;
+  color: var(--dc-navy);
+}
+body.dc-active .card .actions .btn.green { border: 1px solid var(--dc-nav-green); background: var(--dc-nav-green); color: #fff; }
+body.dc-active .card .actions .btn:disabled { border-color: var(--dc-line); color: #8b949d; opacity: .45; }
+
+/* Exact per-role button geometry — scoped to >=858px only (§20: exact
+   numeric matching is required AT 858; narrower widths keep the existing,
+   already-verified flexible/content-hugging sizing below, which is what
+   actually keeps these long-label buttons ("Continue without pinpointing
+   on the map" etc.) from overflowing a 390-768px viewport). "Save & exit"
+   (111:33, 112:126, 113:30, 114:95 — every locked frame pulled) is
+   190x58/20px everywhere at 858. The Stage 1/2 question frames' own
+   Back/Save & continue (111:19/115:19) are also 190x58/20px; the
+   map/roller-doors/client-details frames' bottom-row buttons
+   (112:112/113:16/114:81) are a wider 230x56/18px — two genuinely
+   different locked sizes for the bottom row, not one rule loosely
+   applied everywhere. */
+@media (min-width: 858px) {
+  body.dc-active .pagehead > .btn {
+    width: 190px;
+    min-width: 190px;
+    height: 58px;
+    min-height: 58px;
+    font-size: 20px;
+  }
+  /* SUPERSEDED 2026-09-04: Stage 2's own locked frames (Stage 2 question,
+     Stage 2 report, Doors & drawing review) show a wider 200x58 "Save &
+     exit" than Stage 1's 190x58 — two genuinely different locked widths
+     by family, not one rule loosely applied. Scoped to dc-stage2-screen
+     so Stage 1 keeps its own 190px value from the rule above. */
+  body.dc-active.dc-stage2-screen .pagehead > .btn {
+    width: 200px;
+    min-width: 200px;
+  }
+  body.dc-page-question .card .actions .btn,
+  body.dc-page-question .card .actions label.btn {
+    width: 190px;
+    min-width: 190px;
+    height: 58px;
+    min-height: 58px;
+    font-size: 20px;
+  }
+  body.dc-page-map .card .actions .btn,
+  body.dc-page-client .card .actions .btn {
+    width: 230px;
+    min-width: 230px;
+    height: 56px;
+    min-height: 56px;
+    font-size: 18px;
+  }
+}
+
+/* 2026-11-18 (PR #89 tweak, approved by Stuart): the Stage 1 Free Report
+   "Project workspace" label is wider than the fixed 190px desktop button
+   above (20px text + 22px side padding, nowrap), so it ran out of the
+   button's right edge. Let this one button grow to fit its label while
+   keeping the 190px minimum and 58px height. Mobile is unaffected (the
+   button is already full width below 768px). */
+@media (min-width: 858px) {
+  body.dc-page-report.dc-stage1-screen .pagehead > .btn { width: auto; }
+}
+
+/* ======================================================================
+   Building-position / site-boundary maps (S1-MAP01 / S1-MAP02)
+   ====================================================================== */
+body.dc-page-map .container > .card { gap: 14px; }
+body.dc-page-map .map-help { margin: 0; color: var(--dc-navy); font: 400 17px/1.4 var(--dc-font); }
+body.dc-page-map .map-search {
+  width: 100%;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+body.dc-page-map .map-search input {
+  flex: 1 1 320px;
+  min-height: 56px;
+  padding: 16px 18px;
+  border: 1px solid var(--dc-line);
+  border-radius: var(--dc-radius-field);
+  font: 400 18px/1.3 var(--dc-font);
+  box-sizing: border-box;
+}
+body.dc-page-map .map-search .btn.secondary,
+body.dc-page-map .map-toolbar .btn.secondary {
+  min-height: 56px;
+  padding: 14px 20px;
+  border: 1px solid var(--dc-navy);
+  border-radius: var(--dc-radius-field);
+  background: #fff;
+  color: var(--dc-navy);
+  font: 600 18px/1.25 var(--dc-font);
+  box-shadow: none;
+}
+body.dc-page-map .map-toolbar.compact-toolbar .btn.compact {
+  min-height: 44px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 15px;
+}
+body.dc-page-map .layer-toggle-row { display: flex; gap: 22px; color: var(--dc-navy); font: 400 17px/1.3 var(--dc-font); }
+body.dc-page-map .layer-toggle { display: flex; align-items: center; gap: 8px; }
+body.dc-page-map .map-toolbar {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--dc-line);
+  border-radius: var(--dc-radius-field);
+  background: #fff;
+  box-sizing: border-box;
+}
+body.dc-page-map .map-toolbar strong { font: 600 16px/1.3 var(--dc-font); color: var(--dc-navy); }
+body.dc-page-map .map-toolbar .actions { gap: 10px; }
+body.dc-page-map .bearing-readout { color: var(--dc-muted); font-weight: 400; }
+body.dc-page-map .mapbox {
+  width: 100%;
+  height: 330px;
+  border: 1px solid var(--dc-line);
+  border-radius: 20px;
+  overflow: hidden;
+}
+body.dc-page-map .map-status { margin: 0; color: var(--dc-navy); font: 400 16px/1.4 var(--dc-font); }
+
+/* Build 3 gap fix: the site-boundary screen (only) carries a second card
+   below the Map Card — "Site evidence (optional)" (app.js's
+   siteBoundaryMap(), pre-existing, not new here). The locked S1-MAP02
+   frame (113:168) styles this as a plain white card, not the green Map
+   Card treatment above — :not(:first-of-type) scopes this to that second
+   card only, so buildingPositionMap()'s single-card screen (S1-MAP01,
+   112:112) is unaffected. */
+body.dc-page-map .container > .card:not(:first-of-type) {
+  border: 1px solid var(--dc-line);
+  background: #fff;
+  padding: 24px 28px;
+}
+body.dc-page-map .container > .card:not(:first-of-type) h3 {
+  margin: 0;
+  color: var(--dc-navy);
+  font: 700 24px/1.25 var(--dc-font);
+}
+body.dc-page-map .container > .card:not(:first-of-type) .meta {
+  color: var(--dc-navy);
+  opacity: .8;
+}
+body.dc-page-map .container > .card:not(:first-of-type) #s1evidenceStatus {
+  color: var(--dc-green);
+  font-weight: 600;
+  opacity: 1;
+}
+body.dc-page-map .container > .card:not(:first-of-type) .actions {
+  justify-content: flex-start;
+}
+
+/* ======================================================================
+   Reports (S1-REPORT / S2-REPORT) — card colour tone from
+   direction-c-trial.js's title-keyed classification
+   ====================================================================== */
+body.dc-page-report .container { display: flex; flex-direction: column; gap: 18px; }
+body.dc-page-report .card {
+  width: 100%;
+  margin: 0 !important; /* app.js sets inline style="margin-top:18px" per card; the .container gap above replaces it */
+  padding: 24px 28px;
+  border-radius: var(--dc-radius-card);
+  box-sizing: border-box;
+}
+/* SUPERSEDED 2026-09-04: 2 tones -> 3 (white / green-soft / green-strong)
+   and green-strong's border went 2px #0F6F2A -> 1px #0A6B1A + shadow,
+   matching every re-pulled report/doors-review frame exactly. */
+body.dc-page-report .card.dc-tone-white,
+body.dc-page-report .card:not([class*="dc-tone-"]) { background: #fff; border: 1px solid var(--dc-line); box-shadow: 0 7px 16px rgba(0, 0, 0, .05); }
+body.dc-page-report .card.dc-tone-green-soft { background: var(--dc-soft-green); border: 1px solid var(--dc-line); box-shadow: 0 7px 16px rgba(0, 0, 0, .05); }
+body.dc-page-report .card.dc-tone-green-strong { background: var(--dc-soft-green); border: 1px solid var(--dc-nav-green); box-shadow: 0 7px 16px rgba(0, 0, 0, .05); }
+body.dc-page-report .card h3 { margin: 0 0 4px; color: var(--dc-navy); font: 700 24px/1.25 var(--dc-font); }
+body.dc-page-report .card > p.meta:first-of-type,
+body.dc-page-report .card .meta { color: var(--dc-navy); opacity: .8; font: 400 17px/1.4 var(--dc-font); }
+body.dc-page-report .report-building {
+  width: 100%;
+  height: 300px;
+  object-fit: cover;
+  border-radius: 20px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, .16);
+}
+body.dc-page-report .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+body.dc-page-report .grid2 .card { margin: 0 !important; }
+body.dc-page-report .risk-list, body.dc-page-report .action-list { display: flex; flex-direction: column; gap: 8px; }
+body.dc-page-report .risk, body.dc-page-report .action-item {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid var(--dc-line);
+  color: var(--dc-navy);
+  font: 400 16px/1.4 var(--dc-font);
+}
+body.dc-page-report .card .pill {
+  display: inline-block;
+  margin: 0 0 4px;
+  padding: 0;
+  background: transparent;
+  color: var(--dc-green);
+  font: 700 14px/1.2 var(--dc-font);
+  letter-spacing: .3px;
+  text-transform: uppercase;
+}
+body.dc-page-report .card .actions { justify-content: flex-start; }
+body.dc-page-report .svg-wrap svg { max-width: 100%; height: auto; }
+
+/* ======================================================================
+   STAGE 1 REPORT — Professional Visual Concept (Report Workflow /
+   Visual Governance Update, 2026-09-05). Figma page 198:16, frames
+   198:19 "Project Overview" / 198:20 "Findings by Discipline" / 198:21
+   "Actions & Drawing". VISUAL / PRESENTATION ONLY — no question
+   wording, fact keys, risk/evidence/report logic, calculations or
+   report meaning changed anywhere below; every rule only restyles or
+   decorates the exact cards/headings/paragraphs stage1Summary() already
+   renders (direction-c-trial.js's tagReportCards()/
+   enhanceStage1Disciplines()/enhanceStage1DrawingBadge() say which
+   class/element goes where — see those functions' own comments).
+   Scoped to dc-stage1-screen throughout: Stage 2's own report and
+   Doors & drawing review keep the shared tone rules above completely
+   untouched — this section recolours dc-tone-* for Stage 1 only and
+   adds Stage-1-only elements/classes that don't exist on any other
+   page. "Information supplied" (198:47, a new checklist section) is
+   deliberately NOT implemented here — the current Stage 1 question
+   set/branches aren't yet mapped, and inventing what counts as
+   "supplied" would be report-intelligence, not presentation; the
+   Figma concept's shell for the other 11 target-structure sections is
+   otherwise implemented in full. */
+body.dc-page-report.dc-stage1-screen .card.dc-tone-white,
+body.dc-page-report.dc-stage1-screen .card:not([class*="dc-tone-"]) {
+  background: #fff;
+  border: 1px solid var(--dc-line);
+  box-shadow: 0 7px 16px rgba(0, 0, 0, .05);
+}
+body.dc-page-report.dc-stage1-screen .card.dc-tone-green-soft {
+  background: #f3f9f2;
+  border: 1px solid var(--dc-line);
+  box-shadow: 0 7px 16px rgba(0, 0, 0, .05);
+}
+body.dc-page-report.dc-stage1-screen .card.dc-tone-green-strong {
+  background: #f3f9f2;
+  border: 1px solid var(--dc-nav-green);
+  box-shadow: 0 7px 16px rgba(0, 0, 0, .05);
+}
+/* New 4th tone (198:99 "Information not established") — Assumptions /
+   information not yet established only. Amber, not red/error — flagged
+   as an open item for Stage 2, never as a failure (per the Figma
+   concept's own framing). */
+body.dc-page-report.dc-stage1-screen .card.dc-tone-amber {
+  background: #fef8e0;
+  border: 1px solid #d1a621;
+  box-shadow: 0 7px 16px rgba(0, 0, 0, .05);
+}
+body.dc-page-report.dc-stage1-screen .card.dc-tone-amber h3 { color: #755708; }
+body.dc-page-report.dc-stage1-screen .card.dc-tone-amber .meta { color: #594f2e; opacity: 1; }
+body.dc-page-report.dc-stage1-screen .card.dc-tone-amber .risk {
+  background: #fffdf6;
+  border-color: #ecd48a;
+  color: #594f2e;
+}
+
+/* Info-grid rows (198:28 "Project summary") — the label renders as its
+   own line above the value (CUSTOMER / Bobby McConville), not inline on
+   one line, by making the existing <b>Label:</b> element display:block
+   — a plain-CSS reflow of the exact same markup/text app.js already
+   renders (the trailing colon is existing punctuation, not new
+   wording). Applies to every info-grid card (Project summary, Building
+   specification, Site & footprint), all three built from the same
+   .small-list pattern. */
+body.dc-page-report.dc-stage1-screen .small-list div { padding: 10px 0; border-bottom: 0; }
+body.dc-page-report.dc-stage1-screen .small-list b {
+  display: block;
+  margin: 0 0 4px;
+  color: var(--dc-nav-green);
+  font: 700 11px/1.2 var(--dc-font);
+  letter-spacing: .4px;
+  text-transform: uppercase;
+}
+
+/* Project visual (198:43) — a taller, more deliberate reference image,
+   matching the concept's larger drawing/photo treatment. */
+body.dc-page-report.dc-stage1-screen .card .report-building { height: 320px; }
+
+/* Discipline sections (198:72/198:81/198:90 "Section N / DISCIPLINE" —
+   Planning position / Civils & site observations / Engineering &
+   Compliance): green left accent bar the full height of the card, a
+   numbered pill + all-caps discipline label above the heading, and a
+   "Preliminary" status pill after the paragraph — element structure
+   added by enhanceStage1Disciplines() above. */
+body.dc-page-report.dc-stage1-screen .card.dc-tone-discipline {
+  position: relative;
+  padding-left: 36px;
+  overflow: hidden;
+}
+body.dc-page-report.dc-stage1-screen .card.dc-tone-discipline::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  background: var(--dc-nav-green);
+}
+body.dc-page-report.dc-stage1-screen .dc-discipline-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 14px;
+}
+body.dc-page-report.dc-stage1-screen .dc-discipline-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 34px;
+  padding: 0 16px;
+  border-radius: 17px;
+  background: #f3f9f2;
+  color: var(--dc-nav-green);
+  font: 700 13px/1 var(--dc-font);
+}
+body.dc-page-report.dc-stage1-screen .dc-discipline-label {
+  color: var(--dc-nav-green);
+  font: 700 13px/1.2 var(--dc-font);
+  letter-spacing: .4px;
+  text-transform: uppercase;
+}
+body.dc-page-report.dc-stage1-screen .dc-discipline-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  height: 34px;
+  padding: 0 18px;
+  margin: 14px 0 0 auto; /* right-aligned, matching the concept's bottom-right placement */
+  border-radius: 17px;
+  background: var(--dc-soft-green);
+  color: var(--dc-nav-green);
+  font: 700 13px/1 var(--dc-font);
+  letter-spacing: .3px;
+  text-transform: uppercase;
+}
+
+/* Recommended next actions (198:111 "Priority actions") — numbered
+   green squares via CSS counters only, no DOM change beyond the
+   ::before content. .action-item is unique to this one card within
+   the Stage 1 report (the Assumptions card above uses .risk, not
+   .action-item, for its list) so no other list is affected; resetting
+   the counter on every .action-list is harmless where there is no
+   .action-item to increment. */
+body.dc-page-report.dc-stage1-screen .card .action-list { counter-reset: dc-action; }
+body.dc-page-report.dc-stage1-screen .action-item {
+  counter-increment: dc-action;
+  position: relative;
+  padding: 14px 16px 14px 60px;
+  background: #fff;
+}
+body.dc-page-report.dc-stage1-screen .action-item::before {
+  content: counter(dc-action, decimal-leading-zero);
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  background: var(--dc-nav-green);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: 700 12px/1 var(--dc-font);
+}
+
+/* Preliminary building illustration (198:124/198:125) — a "Preliminary
+   · not for construction" badge (enhanceStage1DrawingBadge() above)
+   ahead of the heading, and a more deliberate, framed drawing area
+   matching the concept's "given its own document section" treatment. */
+body.dc-page-report.dc-stage1-screen .dc-drawing-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 34px;
+  padding: 0 18px;
+  margin: 0 0 16px;
+  border-radius: 17px;
+  background: #f3f9f2;
+  color: var(--dc-nav-green);
+  font: 700 13px/1 var(--dc-font);
+  letter-spacing: .3px;
+  text-transform: uppercase;
+}
+body.dc-page-report.dc-stage1-screen .svg-wrap {
+  padding: 20px;
+  border: 1px solid var(--dc-line);
+  border-radius: 16px;
+  background: #fbfcfc;
+}
+
+/* ======================================================================
+   Doors & drawing review (S2-DRAWING)
+   ====================================================================== */
+body.dc-page-doorsreview .container { display: flex; flex-direction: column; gap: 18px; }
+body.dc-page-doorsreview .container > .card {
+  width: 100%;
+  margin: 0 !important;
+  padding: 24px 28px;
+  border-radius: var(--dc-radius-card);
+  box-sizing: border-box;
+}
+body.dc-page-doorsreview .container > .card.dc-tone-white { background: #fff; border: 1px solid var(--dc-line); box-shadow: 0 7px 16px rgba(0, 0, 0, .05); }
+body.dc-page-doorsreview .container > .card.dc-tone-green-soft { background: var(--dc-soft-green); border: 1px solid var(--dc-line); box-shadow: 0 7px 16px rgba(0, 0, 0, .05); }
+body.dc-page-doorsreview .container > .card.dc-tone-green-strong { background: var(--dc-soft-green); border: 1px solid var(--dc-nav-green); box-shadow: 0 7px 16px rgba(0, 0, 0, .05); }
+body.dc-page-doorsreview .container > .card h3 { margin: 0; color: var(--dc-navy); font: 700 24px/1.25 var(--dc-font); }
+body.dc-page-doorsreview .container > .card .meta { color: var(--dc-navy); opacity: .8; }
+body.dc-page-doorsreview .svg-wrap {
+  width: 100%;
+  min-height: 300px;
+  padding: 16px;
+  border: 1px solid var(--dc-line);
+  border-radius: 18px;
+  background: #fff;
+  box-sizing: border-box;
+}
+body.dc-page-doorsreview .svg-wrap svg { max-width: 100%; height: auto; display: block; margin: 0 auto; }
+body.dc-page-doorsreview .door-list-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px 18px;
+  border-radius: 16px;
+  background: var(--dc-soft-green);
+  margin-bottom: 10px;
+  cursor: pointer;
+}
+body.dc-page-doorsreview .door-list-row.selected { outline: 2px solid var(--dc-green); }
+body.dc-page-doorsreview .door-list-row .btn.small {
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid var(--dc-navy);
+  border-radius: 12px;
+  background: #fff;
+  font: 600 15px/1.25 var(--dc-font);
+}
+body.dc-page-doorsreview .container > .card .actions { gap: 16px; justify-content: flex-start; margin-top: 4px; }
+body.dc-page-doorsreview input[type="range"] { width: 100%; }
+
+/* ======================================================================
+   Gateway / workspace pages (Pricing, My Projects/dashboard, Project
+   workspace) — no locked Figma frame exists for the exact composition of
+   any of these three (not in the locked-frame list in TRIAL-DIRECTION-C.md),
+   but Stuart has explicitly authorised replacing their old presentation
+   with the established Direction C tokens/components (colour, radius,
+   type, card/badge/button language) shared with every other page — see
+   the Gateway/Workspace Design Correction task. Not a new design system,
+   and not an invented pixel-accurate layout beyond what that shared
+   language already implies.
+
+   COHESION PASS (2026-09-04, visual only): these three pages already had
+   the right header/card language in isolation, but sat on the shared
+   dc-active flat-white page background (body.dc-active{background:#fff}
+   above), so cards read as standalone boxes on a plain sheet rather than
+   part of the same designed environment as the homepage. The homepage
+   itself is never flat white — its global body background is the soft
+   off-white #FBFCFB (styles.css `body{background:#fbfcfb}`), warmed by a
+   pale-green wash near the top of the page (its own hero panel uses
+   #F0F7ED/#FCFFFC/#F2FAF0). Reproduced here as a top-anchored gradient
+   from the existing #F3F9F2 Direction C pale-green token (already used
+   for the report/pagehead treatment elsewhere in this file) down to that
+   same #FBFCFB — full-page atmosphere, not a new component. Scoped only
+   to dc-page-workspace: Stage 1/2/map/doors/client/report/doorsreview
+   keep their own already-approved flat-white background untouched, and
+   the header itself is unaffected (the opaque white .topbar sits on top
+   of this and is never overridden here). Cards/pricing-journey/banners
+   already carry the homepage's own --shadow token (0 10px 30px
+   rgba(16,24,40,.08), inherited from styles.css's generic .card rule) —
+   .pagehead and the two banner/journey-strip elements did not, so they
+   read as flat panels on the new tinted background; the same token is
+   added to them below so every section on the page floats consistently,
+   not just the cards that happened to already have it. */
+/* background-color (solid, always fills the full viewport/canvas with no
+   repeat) + a separate, explicitly non-repeating, fixed-height gradient
+   IMAGE pinned to the top for the pale-green wash. A single
+   `background: linear-gradient(...480px...100%)` shorthand was tried
+   first, but on a short page (e.g. My Projects with one project — content
+   well under viewport height) the propagated body background repeats to
+   fill the remaining canvas, re-starting the green-to-white cycle and
+   printing a second stray green band below the footer. Layering a solid
+   colour under a capped, no-repeat gradient image avoids that entirely —
+   verified on both a short (My Projects, one project) and a tall
+   (Pricing) page at 858px with no repeat/banding either way. */
+body.dc-page-workspace {
+  background-color: #fbfcfb;
+  background-image: linear-gradient(180deg, #f3f9f2 0%, rgba(251, 252, 251, 0) 100%);
+  background-repeat: no-repeat;
+  background-size: 100% 480px;
+  background-position: top;
+}
+body.dc-page-workspace .pagehead,
+body.dc-page-workspace .pricing-journey {
+  box-shadow: 0 10px 30px rgba(16, 24, 40, .06);
+}
+body.dc-page-workspace .container { display: flex; flex-direction: column; gap: 22px; }
+body.dc-page-workspace .card,
+body.dc-page-workspace .projects .card {
+  border: 1px solid var(--dc-line);
+  border-radius: var(--dc-radius-card);
+  padding: 24px 28px;
+  box-sizing: border-box;
+}
+body.dc-page-workspace .card h3 { margin: 8px 0 6px; color: var(--dc-navy); font: 700 22px/1.25 var(--dc-font); }
+body.dc-page-workspace .card .pill {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 14px;
+  background: var(--dc-badge-bg);
+  color: var(--dc-green);
+  font: 700 13px/1.2 var(--dc-font);
+  text-transform: uppercase;
+  letter-spacing: .3px;
+}
+/* Base button treatment for every workspace/pricing action button
+   (plain `.btn`, e.g. dashboard's "Open project") — the colour-specific
+   rules below layer on top for .green/.secondary/.outline-green variants. */
+body.dc-page-workspace .card .actions .btn,
+body.dc-page-workspace .card .actions label.btn,
+body.dc-page-workspace .pagehead .btn {
+  border-radius: var(--dc-radius-field);
+  padding: 14px 22px;
+  font: 600 18px/1.25 var(--dc-font);
+  border: 1px solid var(--dc-navy);
+  background: #fff;
+  color: var(--dc-navy);
+  box-shadow: none;
+}
+body.dc-page-workspace .card .actions .btn.green,
+body.dc-page-workspace .pagehead .btn.green {
+  border: 1px solid var(--dc-green);
+  background: var(--dc-green);
+  color: #fff;
+}
+body.dc-page-workspace .card .actions .btn.outline-green {
+  border: 1px solid var(--dc-green);
+  background: #fff;
+  color: var(--dc-green);
+}
+body.dc-page-workspace .card .actions .btn:disabled {
+  border-color: var(--dc-line);
+  color: #8b949d;
+  opacity: .5;
+}
+body.dc-page-workspace .progress { height: 8px; border-radius: 4px; background: var(--dc-line); overflow: hidden; }
+body.dc-page-workspace .progress span { display: block; height: 8px; background: var(--dc-green); border-radius: 4px; }
+
+/* --- Pricing page specifics (CHECK/UNDERSTAND/DECIDE/MOVE FORWARD strip,
+   the four price cards, and the two banners below them) --- */
+body.dc-page-workspace .pagehead h1.pricing-headline { font-size: 34px; }
+body.dc-page-workspace .pagehead .hl-green { color: var(--dc-green); }
+body.dc-page-workspace .pricing-journey {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 20px 24px;
+  border: 1px solid var(--dc-line);
+  border-radius: var(--dc-radius-card);
+  background: var(--dc-soft-green);
+  box-sizing: border-box;
+}
+body.dc-page-workspace .pricing-journey-step { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; min-width: 110px; }
+body.dc-page-workspace .pricing-journey-step .journey-icon { width: 48px; height: 48px; }
+body.dc-page-workspace .pricing-journey-step .eyebrow {
+  margin: 0;
+  color: var(--dc-green);
+  font: 700 13px/1.2 var(--dc-font);
+  letter-spacing: .3px;
+  text-transform: uppercase;
+}
+body.dc-page-workspace .pricing-journey-caption { color: var(--dc-navy); opacity: .8; font: 400 13px/1.3 var(--dc-font); }
+body.dc-page-workspace .pricing-journey-line { flex: 1 1 24px; height: 1px; background: var(--dc-line); min-width: 16px; }
+body.dc-page-workspace .price-card { display: flex; flex-direction: column; gap: 10px; position: relative; }
+body.dc-page-workspace .price-card.featured { background: var(--dc-soft-green); border: 2px solid var(--dc-green); }
+body.dc-page-workspace .price-card .journey-icon { width: 44px; height: 44px; }
+body.dc-page-workspace .price-card .price { color: var(--dc-navy); font: 700 32px/1.1 var(--dc-font); }
+body.dc-page-workspace .price-card .price-sub { color: var(--dc-muted); font: 400 14px/1.2 var(--dc-font); margin-top: -6px; }
+body.dc-page-workspace .price-card .check-list { list-style: none; margin: 4px 0; padding: 0; display: flex; flex-direction: column; gap: 8px; color: var(--dc-navy); font: 400 15px/1.4 var(--dc-font); }
+body.dc-page-workspace .price-card .check-list li { padding-left: 22px; position: relative; }
+body.dc-page-workspace .price-card .check-list li::before { content: "✓"; position: absolute; left: 0; color: var(--dc-green); font-weight: 700; }
+body.dc-page-workspace .price-card .popular-badge {
+  position: absolute; top: -12px; right: 20px;
+  background: var(--dc-green); color: #fff;
+  padding: 4px 12px; border-radius: 12px;
+  font: 700 11px/1.2 var(--dc-font); letter-spacing: .4px;
+}
+body.dc-page-workspace .price-card > .btn { margin-top: auto; width: 100%; text-align: center; }
+
+/* ======================================================================
+   PRICING — structural rebuild (Figma frame 143:41 "PRICING — APPROVED /
+   LOCKED — SIGNED OUT", Build B, Final Approved Figma Implementation,
+   2026-09-05). Scoped to body.dc-page-pricing throughout — an ADDITIVE
+   class Pricing alone carries alongside the shared dc-page-workspace
+   (still applied, still governs every rule above unchanged, so My
+   Projects/Project Workspace are unaffected by anything below — Shared
+   Component Warning). PRICING_CARDS/PRICING_ICONS content in app.js
+   (every price, feature, badge, CTA label and route) is byte-for-byte
+   unchanged; only the surrounding markup/CSS structure differs, matching
+   the locked frame's journey-strip-as-4-rows and cards-as-a-single-
+   column-with-2-col-checklist layout instead of the earlier icon-strip/
+   4-column-grid approximation. body.dc-active is included in every
+   selector purely to out-specificity the equal-weight shared rules above
+   (both are 1 type + 2 classes without it) without relying on source
+   order. */
+body.dc-active.dc-page-pricing .pagehead {
+  background: #f3f9f2;
+  border: 1px solid var(--dc-line);
+  border-radius: var(--dc-radius-card);
+  padding: 37px 35px;
+  align-items: flex-start;
+}
+body.dc-active.dc-page-pricing .pagehead .eyebrow { font-size: 18px; }
+body.dc-active.dc-page-pricing .pagehead h1.pricing-headline { font-size: 44px; line-height: 1.05; margin: 14px 0 0; }
+body.dc-active.dc-page-pricing .pagehead .meta { font-size: 21px; line-height: 1.5; margin-top: 18px; opacity: 1; color: var(--dc-navy); }
+/* Green divider under the intro paragraph (143:79) — a decorative
+   element direction-c-trial.js/app.js don't need to touch further; the
+   div is added once in app.js's pricing() markup and styled purely here. */
+body.dc-active.dc-page-pricing .pricing-intro-divider { width: 94px; height: 2px; background: var(--dc-nav-green); margin-top: 24px; }
+
+/* "How pricing develops with your project" card (143:80) wrapping the
+   4-row journey strip. */
+body.dc-active.dc-page-pricing .pricing-journey-card { padding: 27px 31px; }
+body.dc-active.dc-page-pricing .pricing-journey-title { margin: 0; font: 700 29px/1.1 var(--dc-font); color: var(--dc-navy); }
+body.dc-active.dc-page-pricing .pricing-journey-card > .meta { margin: 8px 0 20px; color: var(--dc-muted); opacity: 1; font: 400 18px/1.35 var(--dc-font); }
+body.dc-active.dc-page-pricing .pricing-journey { display: flex; flex-direction: column; gap: 16px; flex-wrap: nowrap; padding: 0; border: 0; background: none; }
+body.dc-active.dc-page-pricing .pricing-journey-step {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  text-align: left;
+  min-width: 0;
+  width: 100%;
+  padding: 17px 24px;
+  border-radius: 18px;
+  border: 1px solid var(--dc-line);
+  background: #fff;
+  box-sizing: border-box;
+}
+/* First two rows (CHECK/UNDERSTAND, the two free stages) carry the
+   highlighted pale-green/green-border row treatment; DECIDE/MOVE FORWARD
+   stay plain white — matches 143:83/89 vs 143:95/101 exactly.
+   PRICING_CARDS' order is fixed, protected content (see app.js's own
+   governance comment on that constant), so selecting by position here
+   adds no new data and can't drift from which stages are actually free. */
+body.dc-active.dc-page-pricing .pricing-journey-step:nth-child(-n+2) {
+  background: var(--dc-soft-green);
+  border-color: var(--dc-nav-green);
+}
+body.dc-active.dc-page-pricing .pricing-journey-step .journey-icon { width: 56px; height: 56px; flex: 0 0 auto; }
+body.dc-active.dc-page-pricing .pricing-journey-headline { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; flex: 0 0 auto; width: 180px; }
+body.dc-active.dc-page-pricing .pricing-journey-step .eyebrow { margin: 0; }
+body.dc-active.dc-page-pricing .pricing-journey-caption { flex: 1 1 auto; color: var(--dc-navy); opacity: 1; font: 400 17px/1.35 var(--dc-font); text-align: left; }
+
+/* Price cards (143:107/135/163/193): single full-width column (was a
+   4-col grid), each card a CSS grid — icon/title/badge left, price top-
+   right, a divider (the check-list's own border-top, no extra element),
+   then a 2-column feature checklist, then the CTA. Grid areas let the
+   visual order differ from the existing, unchanged DOM order (icon, h3,
+   badge, price, price-sub, ul, button) with zero markup change. */
+body.dc-active.dc-page-pricing .grid4 { display: flex; flex-direction: column; gap: 22px; }
+body.dc-active.dc-page-pricing .price-card {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas: "icon title price" "icon badge pricesub" "checklist checklist checklist" "cta cta cta";
+  column-gap: 24px;
+  row-gap: 12px;
+  align-items: start;
+}
+body.dc-active.dc-page-pricing .price-card .journey-icon { grid-area: icon; width: 70px; height: 70px; }
+body.dc-active.dc-page-pricing .price-card h3 { grid-area: title; margin: 0; align-self: end; font-size: 20px; }
+body.dc-active.dc-page-pricing .price-card .pill { grid-area: badge; justify-self: start; align-self: start; }
+body.dc-active.dc-page-pricing .price-card .price { grid-area: price; justify-self: end; align-self: end; font-size: 48px; }
+body.dc-active.dc-page-pricing .price-card .price-sub { grid-area: pricesub; justify-self: end; align-self: start; margin-top: 0; }
+body.dc-active.dc-page-pricing .price-card .check-list {
+  grid-area: checklist;
+  display: block;
+  columns: 2;
+  column-gap: 40px;
+  border-top: 1px solid var(--dc-line);
+  padding-top: 20px;
+  margin: 4px 0 0;
+}
+body.dc-active.dc-page-pricing .price-card .check-list li { break-inside: avoid-column; margin-bottom: 8px; }
+body.dc-active.dc-page-pricing .price-card > .btn { grid-area: cta; margin-top: 4px; width: 360px; max-width: 100%; }
+
+body.dc-page-workspace .banner.confidence-strip,
+body.dc-page-workspace .supplier-banner {
+  display: flex;
+  flex-direction: row; /* styles.css sets column below 900px (.confidence-strip/.supplier-banner, unscoped by page) — overridden so this stays one coherent Direction C row at every required width; flex-wrap below still lets it drop to its own line where genuinely too narrow. */
+  align-items: flex-start;
+  gap: 20px;
+  border-radius: var(--dc-radius-card);
+  padding: 24px 28px;
+  box-sizing: border-box;
+  box-shadow: 0 10px 30px rgba(16, 24, 40, .06);
+}
+body.dc-page-workspace .banner.confidence-strip { background: var(--dc-soft-green); border: 2px solid var(--dc-green); }
+body.dc-page-workspace .supplier-banner { border: 1px solid var(--dc-line); align-items: center; flex-wrap: wrap; row-gap: 18px; background: #fff; }
+body.dc-page-workspace .banner.confidence-strip .journey-icon,
+body.dc-page-workspace .supplier-banner .journey-icon { width: 40px; height: 40px; flex: 0 0 auto; }
+/* flex-basis only, no flex-grow — a growing body would claim all
+   remaining space on its flex line and force the button onto its own
+   line with a large gap above it even where there is plainly room for
+   both on one row. */
+body.dc-page-workspace .supplier-banner-body { flex: 0 1 420px; }
+/* styles.css has a pre-existing `.supplier-banner .btn{width:100%}` rule
+   below 900px, which — as a flex child with no room left on the icon+body
+   row — was forcing this button onto its own line with a large gap above
+   it. width:auto here restores it to natural button sizing on the same
+   row as the icon/text at every Direction C width; flex-wrap above still
+   drops it to its own (full-width) line if a given width genuinely can't
+   fit all three. */
+body.dc-page-workspace .supplier-banner .btn { margin-left: auto; flex: 0 0 auto; width: auto; }
+
+/* ======================================================================
+   Narrow-phone refinements (390 / 430) — the 858px-capped container above
+   already scales fluidly down to these widths; this only tightens padding
+   and type size so nothing clips or forces horizontal scroll.
+   ====================================================================== */
+@media (max-width: 600px) {
+  body.dc-active #app > .container { padding: 18px 16px 24px; }
+  body.dc-active .pagehead { flex-wrap: wrap; }
+  body.dc-active .pagehead h1 { font-size: 26px; }
+  body.dc-active .pagehead > .btn { min-width: 0; min-height: 48px; padding: 11px 16px; font-size: 15px; }
+  body.dc-page-question .stage-layout > .card,
+  body.dc-page-map .container > .card,
+  body.dc-page-client .container > .card { padding: 20px 18px; border-radius: 22px; }
+  body.dc-page-question .stage-layout > .card h2,
+  body.dc-page-question .stage-layout > .card .q-content h2,
+  body.dc-page-map .container > .card h2,
+  body.dc-page-client .container > .card > p { font-size: 23px; }
+  body.dc-active .card .actions .btn,
+  body.dc-active .card .actions label.btn { min-width: 0; flex: 1 1 45%; min-height: 50px; padding: 12px 14px; font-size: 15px; }
+  body.dc-page-question .stage-layout > .card .q-illustration { height: 180px; }
+  body.dc-page-report .card, body.dc-page-doorsreview .container > .card, body.dc-page-workspace .card { padding: 20px 18px; }
+  body.dc-page-report .grid2 { grid-template-columns: 1fr; }
+
+  /* Pricing structural rebuild — narrow-phone fallback: the 858-capped
+     container above already scales the rest of the page fluidly, but the
+     price-card CSS grid and journey-step row are wide-format layouts by
+     design (a top-right price column, a 2-column checklist, a fixed-
+     width journey-strip headline) that need a genuinely different,
+     simpler single-column arrangement below ~600px rather than shrinking
+     in place — same principle as every other Direction C narrow-phone
+     rule in this block. */
+  body.dc-active.dc-page-pricing .pagehead { padding: 24px 22px; }
+  body.dc-active.dc-page-pricing .pagehead h1.pricing-headline { font-size: 28px; }
+  body.dc-active.dc-page-pricing .pagehead .meta { font-size: 16px; margin-top: 12px; }
+  body.dc-active.dc-page-pricing .pricing-journey-card { padding: 20px 18px; }
+  body.dc-active.dc-page-pricing .pricing-journey-title { font-size: 22px; }
+  body.dc-active.dc-page-pricing .pricing-journey-step { flex-wrap: wrap; padding: 16px 18px; }
+  body.dc-active.dc-page-pricing .pricing-journey-headline { width: auto; }
+  body.dc-active.dc-page-pricing .price-card {
+    grid-template-columns: auto 1fr;
+    grid-template-areas: "icon title" "icon badge" "price price" "pricesub pricesub" "checklist checklist" "cta cta";
+    row-gap: 8px;
+  }
+  body.dc-active.dc-page-pricing .price-card .price,
+  body.dc-active.dc-page-pricing .price-card .price-sub { justify-self: start; text-align: left; }
+  body.dc-active.dc-page-pricing .price-card .price { font-size: 36px; margin-top: 8px; }
+  body.dc-active.dc-page-pricing .price-card .check-list { columns: 1; }
+  body.dc-active.dc-page-pricing .price-card > .btn { width: 100%; }
+}
+
+/* ======================================================================
+   MY PROJECTS — structural rebuild (Figma frames 150:80 "populated" /
+   150:114 "empty", Build B, 2026-09-05). Scoped to body.dc-page-
+   myprojects throughout — an ADDITIVE class My Projects alone carries
+   alongside the shared dc-page-workspace (still applied, still governs
+   Project Workspace unaffected — Shared Component Warning). Every
+   project's own data (name, stage, address, progress, report/evidence
+   counts, routes) is completely unchanged; only the surrounding markup/
+   CSS and one added descriptive line (Figma's own copy, not invented)
+   differ.
+   ====================================================================== */
+body.dc-active.dc-page-myprojects .pagehead { background: #f3f9f2; border: 1px solid var(--dc-line); border-radius: var(--dc-radius-card); padding: 35px; align-items: flex-start; }
+body.dc-active.dc-page-myprojects .pagehead .workspace-identity > div { display: flex; flex-direction: column; align-items: flex-start; gap: 18px; }
+body.dc-active.dc-page-myprojects .pagehead .eyebrow { font-size: 18px; }
+body.dc-active.dc-page-myprojects .pagehead h1 { font-size: 40px; margin: 4px 0 0; }
+body.dc-active.dc-page-myprojects .pagehead .meta { font-size: 20px; opacity: 1; color: var(--dc-muted); margin: 0; }
+body.dc-active.dc-page-myprojects .pagehead .btn.green { height: 62px; padding: 0 28px; border-radius: 14px; background: var(--dc-nav-green); border-color: var(--dc-nav-green); font-size: 19px; }
+
+body.dc-active.dc-page-myprojects .projects { display: flex; flex-direction: column; gap: 22px; }
+body.dc-active.dc-page-myprojects .card.project,
+body.dc-active.dc-page-myprojects .projects > .card {
+  background: var(--dc-soft-green);
+  border: 1px solid var(--dc-nav-green);
+  box-shadow: 0 7px 8px rgba(0, 0, 0, .05);
+  position: relative;
+  padding: 27px 31px;
+}
+body.dc-active.dc-page-myprojects .project-card-head { display: flex; align-items: center; gap: 20px; margin-bottom: 18px; }
+body.dc-active.dc-page-myprojects .project-card-head .journey-icon { width: 70px; height: 70px; flex: 0 0 auto; }
+body.dc-active.dc-page-myprojects .card.project h3 { margin: 0 0 8px; font-size: 28px; }
+body.dc-active.dc-page-myprojects .card.project .pill {
+  display: inline-block;
+  background: var(--dc-badge-bg);
+  color: var(--dc-nav-green);
+  font: 700 14px/1.2 var(--dc-font);
+  padding: 8px 18px;
+  border-radius: 17px;
+}
+body.dc-active.dc-page-myprojects .project-divider { height: 1px; background: var(--dc-line); margin: 18px 0; }
+body.dc-active.dc-page-myprojects .card.project .meta { opacity: 1; color: var(--dc-muted); font-size: 17px; margin: 8px 0 0; }
+body.dc-active.dc-page-myprojects .project-note { margin-top: 16px; }
+body.dc-active.dc-page-myprojects .card.project .actions { margin-top: 20px; gap: 16px; }
+body.dc-active.dc-page-myprojects .card.project .actions .btn { height: 62px; padding: 0 28px; border-radius: 14px; font-size: 19px; }
+body.dc-active.dc-page-myprojects .card.project .actions .btn:not(.secondary) { background: var(--dc-nav-green); border-color: var(--dc-nav-green); }
+body.dc-active.dc-page-myprojects .card.project .actions .btn.secondary { border-color: var(--dc-navy); color: var(--dc-navy); }
+
+/* Empty state (150:128) — same pale-green/green-border card language. */
+body.dc-active.dc-page-myprojects .container > .card:not(.project) {
+  background: var(--dc-soft-green);
+  border: 1px solid var(--dc-nav-green);
+  box-shadow: 0 7px 8px rgba(0, 0, 0, .05);
+  padding: 35px;
+}
+body.dc-active.dc-page-myprojects .container > .card:not(.project) h3 { font-size: 30px; margin: 0 0 12px; }
+body.dc-active.dc-page-myprojects .container > .card:not(.project) p:not(.pill) { font-size: 20px; color: var(--dc-muted); margin: 0 0 20px; }
+body.dc-active.dc-page-myprojects .container > .card:not(.project) .btn.green { height: 62px; padding: 0 28px; border-radius: 14px; background: var(--dc-nav-green); border-color: var(--dc-nav-green); font-size: 19px; }
+
+@media (max-width: 600px) {
+  body.dc-active.dc-page-myprojects .project-card-head { flex-wrap: wrap; gap: 14px; }
+  body.dc-active.dc-page-myprojects .card.project .actions { flex-wrap: wrap; }
+  body.dc-active.dc-page-myprojects .card.project .actions .btn { flex: 1 1 100%; }
+}
+
+/* ======================================================================
+   PROJECT WORKSPACE — structural rebuild (Figma frame 150:139 "PROJECT
+   WORKSPACE — Allied — Stage 1 open", Build B, 2026-09-05). Scoped to
+   body.dc-page-projectworkspace throughout — an ADDITIVE class Project
+   Workspace alone carries alongside the shared dc-page-workspace (still
+   applied, still governs My Projects unaffected — Shared Component
+   Warning). Every project's own data/state (stage badge text/colour
+   logic, quotation counts, evidence, downloads, plan, activity history)
+   and every route/onclick is completely unchanged — only card layout/
+   styling.
+   Deliberate deviation from a literal reading of the locked frame: it
+   shows Reports/Project evidence/Paid support consolidated into one
+   "Workspace utilities" card with a plain button row and no status text
+   — but the real page has real information there (upload counts, "no
+   files uploaded yet", selected-plan status, the dev-only evidence-
+   ledger link, the Project activity history table) that a customer
+   currently sees and that consolidating away would remove functioning
+   content, not just restyle it. Per this build's own hard-preservation
+   rule, that content is kept in full — this section instead gets the
+   same pale card treatment/spacing as the rest of the page, not a
+   content cut down to the mockup's illustrative button row. */
+body.dc-active.dc-page-projectworkspace .pagehead { background: #f3f9f2; border: 1px solid var(--dc-line); border-radius: var(--dc-radius-card); padding: 33px 35px; }
+body.dc-active.dc-page-projectworkspace .pagehead .eyebrow { font-size: 16px; }
+body.dc-active.dc-page-projectworkspace .pagehead h1 { font-size: 34px; }
+body.dc-active.dc-page-projectworkspace .pagehead .meta { font-size: 20px; opacity: 1; color: var(--dc-muted); }
+body.dc-active.dc-page-projectworkspace .pagehead > .btn { border-color: var(--dc-navy); color: var(--dc-navy); }
+
+body.dc-active.dc-page-projectworkspace .grid4,
+body.dc-active.dc-page-projectworkspace .grid3 { display: flex; flex-direction: column; gap: 22px; }
+body.dc-active.dc-page-projectworkspace .grid4 > .card {
+  border: 1px solid var(--dc-line);
+  box-shadow: 0 7px 8px rgba(0, 0, 0, .05);
+  padding: 27px 31px;
+}
+/* First two stage cards (Initial Project Check/Deeper assessment) carry
+   the highlighted pale-green/green-border treatment; Doors & drawing/
+   Quotations stay plain white — matches 150:153/160 vs 150:167/174
+   exactly. The grid always renders in this fixed order (see project()'s
+   own markup), so selecting by position adds no new data. */
+body.dc-active.dc-page-projectworkspace .grid4 > .card:nth-child(-n+2) { background: var(--dc-soft-green); border-color: var(--dc-nav-green); }
+body.dc-active.dc-page-projectworkspace .grid4 > .card .pill,
+body.dc-active.dc-page-projectworkspace .grid4 > .card .pill.blue,
+body.dc-active.dc-page-projectworkspace .grid4 > .card .pill.warn {
+  display: inline-block;
+  margin-bottom: 14px;
+  background: var(--dc-badge-bg);
+  color: var(--dc-nav-green);
+  font: 700 12px/1.2 var(--dc-font);
+  padding: 8px 18px;
+  border-radius: 17px;
+  text-transform: uppercase;
+  letter-spacing: .3px;
+}
+body.dc-active.dc-page-projectworkspace .grid4 > .card h3 { margin: 0 0 10px; font-size: 26px; }
+body.dc-active.dc-page-projectworkspace .grid4 > .card > p:not(.pill) { color: var(--dc-navy); opacity: .85; font-size: 18px; margin: 0 0 20px; }
+body.dc-active.dc-page-projectworkspace .grid4 > .card > .btn { height: 52px; padding: 0 24px; border-radius: 14px; font-size: 18px; }
+body.dc-active.dc-page-projectworkspace .grid4 > .card > .btn:not(.secondary):not(:disabled) { background: var(--dc-nav-green); border-color: var(--dc-nav-green); }
+body.dc-active.dc-page-projectworkspace .grid4 > .card > .btn.secondary,
+body.dc-active.dc-page-projectworkspace .grid4 > .card > .btn:not(.green) { border-color: var(--dc-navy); color: var(--dc-navy); }
+
+body.dc-active.dc-page-projectworkspace .grid3 > .card,
+body.dc-active.dc-page-projectworkspace .container > .card[style*="margin-top:20px"] {
+  background: var(--dc-soft-green);
+  border: 1px solid var(--dc-line);
+  box-shadow: 0 7px 8px rgba(0, 0, 0, .05);
+  padding: 27px 31px;
+}
+body.dc-active.dc-page-projectworkspace .grid3 > .card h3 { font-size: 22px; margin: 0 0 10px; }
+
+/* Never allow the page itself to scroll horizontally regardless of width. */
+body.dc-active { overflow-x: hidden; }
+body.dc-active #app > .container,
+body.dc-active .card,
+body.dc-active .mapbox { max-width: 100%; }
+
+/* ======================================================================
+   AUTH MODAL — single-column rebuild (Figma frame 150:16 "AUTH — Sign
+   in", Build B, 2026-09-05). This is a global component (authModal() is
+   called from Home/Pricing/anywhere), not gated by dc-active — every
+   selector below targets the modal's own existing classes/ids
+   (.auth-modal/.auth-panel/.auth-intro/#forgotPw etc.), none of which
+   exist anywhere else in the app, so nothing outside this modal is
+   affected. All fields, labels, ids, onclick handlers, account/salted-
+   hash logic, and legal content (the B2B notice, Privacy Policy link,
+   "prototype login only" disclosure) are completely unchanged — only
+   the modal's own layout/styling, and the journey sidebar's visibility
+   (already hidden below 760px; the locked frame has no sidebar at any
+   width, so it is now hidden always rather than shown above 760px). */
+.modal .card.auth-modal { width: min(648px, 100%); flex-wrap: nowrap; flex-direction: column; border-radius: 27px; border: 1px solid var(--dc-nav-green); box-shadow: 0 7px 8px rgba(0, 0, 0, .05); }
+.auth-sidebar { display: none !important; }
+.auth-main { flex-basis: auto; padding: 24px 24px 28px; }
+.auth-logo { height: 44px; }
+.auth-close { color: var(--dc-navy); font-size: 24px; }
+/* Pale-green intro panel (150:25's "Intro panel", 179:16) wrapping the
+   badge + heading + subtitle — the header row (logo/close) stays a
+   plain row above it, not inside, so the existing single #authClose
+   element can stay shared between both panels rather than being
+   duplicated per panel. */
+.auth-intro { background: var(--dc-soft-green); border: 1px solid var(--dc-line); border-radius: 22px; padding: 20px 24px 26px; margin: 14px 0 20px; text-align: center; }
+.auth-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 34px;
+  padding: 0 18px;
+  margin-bottom: 14px;
+  border-radius: 17px;
+  background: var(--dc-badge-bg);
+  color: var(--dc-nav-green);
+  font: 700 12px/1 var(--dc-font);
+  letter-spacing: .3px;
+  text-transform: uppercase;
+}
+.auth-intro h2 { margin: 0 0 8px; font: 700 26px/1.2 var(--dc-font); color: var(--dc-navy); }
+.auth-intro .auth-center { margin: 0; font-size: 17px; color: var(--dc-muted); }
+/* The locked frame has no separate circular icon — the badge above (or,
+   for Create account, the heading alone) takes that role instead. */
+.auth-icon { display: none; }
+.auth-panel .field label { font-size: 14px; font-weight: 600; color: var(--dc-navy); }
+.auth-panel .field input {
+  height: 58px;
+  padding: 0 16px;
+  border-radius: 14px;
+  border: 1px solid var(--dc-line);
+  font-size: 17px;
+  box-sizing: border-box;
+}
+/* Keep the two legal/marketing checkboxes out of the broad Direction C
+   text-input sizing rule above. Without this higher-specificity override,
+   each checkbox becomes a full-width 60px control and squeezes its label
+   into a one-character-wide column on mobile. */
+.modal .auth-panel .consent-row input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  min-height: 18px;
+  padding: 0;
+  margin: 3px 0 0;
+  flex: 0 0 18px;
+}
+.modal .auth-panel .consent-row label { flex: 1 1 0; min-width: 0; }
+.auth-panel .password-field input { padding-right: 44px; }
+.auth-panel #forgotPw { display: block; margin: -6px 0 4px auto; color: var(--dc-nav-green); font-weight: 600; }
+.auth-panel .btn.green.full { height: 58px; border-radius: 14px; background: var(--dc-nav-green); border-color: var(--dc-nav-green); font-size: 17px; }
+.auth-panel .btn.outline-green.full { height: 58px; border-radius: 14px; border-color: var(--dc-navy); color: var(--dc-navy); font-size: 17px; }
+/* Plain centred text, no divider line either side, matching the locked
+   frame's "New to Project Check?" treatment. */
+.auth-divider { justify-content: center; color: var(--dc-muted); }
+.auth-divider::before, .auth-divider::after { display: none; }
+
+/* ======================================================================
+   NEW PROJECT MODAL — restyle (Figma frame 151:16 "CUSTOMER WORKSPACE —
+   New project modal", Build B, 2026-09-05). Global component (opened
+   from My Projects via newProject()), scoped to its own .new-project-
+   modal/.new-project-intro classes, which exist nowhere else in the
+   app. No field, label, id, button, validation or create-project logic
+   changed — only the heading's presentation.
+   ====================================================================== */
+.modal .card.new-project-modal { width: min(598px, 100%); border-radius: 27px; border: 1px solid var(--dc-nav-green); box-shadow: 0 10px 24px rgba(0, 0, 0, .08); }
+.new-project-intro { background: #f3f9f2; border: 1px solid var(--dc-line); border-radius: 20px; padding: 18px 22px; margin: 0 0 20px; }
+.new-project-intro h2 { margin: 0; font: 700 30px/1.2 var(--dc-font); color: var(--dc-navy); }
+.new-project-modal .field label { font-size: 16px; font-weight: 600; color: var(--dc-navy); }
+.new-project-modal .field input { height: 64px; padding: 0 16px; border-radius: 14px; border: 1px solid var(--dc-line); font-size: 18px; box-sizing: border-box; }
+.new-project-modal .actions { gap: 20px; margin-top: 8px; }
+.new-project-modal .btn.green { height: 56px; padding: 0 24px; border-radius: 14px; background: var(--dc-nav-green); border-color: var(--dc-nav-green); font-size: 18px; }
+.new-project-modal .btn.secondary { height: 56px; padding: 0 24px; border-radius: 14px; border-color: var(--dc-navy); color: var(--dc-navy); font-size: 18px; }
+
+/* ======================================================================
+   QUOTATIONS — join the shared Direction C header/card treatment
+   (Figma frame 150:194 "SUPPLIER COMPARISON — Quotations", Build E,
+   2026-09-05) — same principle as the Gateway/Workspace Design
+   Correction that already did this for Pricing/My Projects/Project
+   Workspace. Scoped to a new, purely additive dc-page-quotations body
+   class — dc-page-workspace stays applied and keeps governing the other
+   three pages unaffected. No field, label, id, onclick handler,
+   quotation/history data or route changed anywhere — visual only.
+   ====================================================================== */
+/* styles.css collapses .grid2 to one column at <900px (a general
+   narrow-phone accommodation used across the whole app) — restored to
+   the locked frame's real 2-column layout at the 858 reference width
+   and above; narrower widths keep the existing, already-safe single-
+   column reflow. */
+/* Pagehead (150:203-207 "Application Intro") — same pale-green intro-
+   panel treatment already established for Project Workspace/My
+   Projects; this page's pagehead has the same plain (no
+   .workspace-identity wrapper) structure as Project Workspace's. */
+body.dc-active.dc-page-quotations .pagehead { background: #f3f9f2; border: 1px solid var(--dc-line); border-radius: var(--dc-radius-card); padding: 33px 35px; }
+body.dc-active.dc-page-quotations .pagehead .eyebrow { font-size: 16px; }
+body.dc-active.dc-page-quotations .pagehead h1 { font-size: 34px; }
+body.dc-active.dc-page-quotations .pagehead .meta { font-size: 20px; opacity: 1; color: var(--dc-muted); }
+body.dc-active.dc-page-quotations .pagehead > .btn { border-color: var(--dc-navy); color: var(--dc-navy); }
+@media (min-width: 858px) {
+  body.dc-active.dc-page-quotations .grid2 { grid-template-columns: repeat(2, 1fr); }
+}
+body.dc-active.dc-page-quotations .grid2 > .card:first-child h3 { margin-top: 0; }
+body.dc-active.dc-page-quotations .card .field input,
+body.dc-active.dc-page-quotations .card .field textarea { border-radius: var(--dc-radius-field); border-color: var(--dc-line); font-size: 17px; }
+body.dc-active.dc-page-quotations .card .field input { height: 58px; box-sizing: border-box; }
+/* "Need help resolving the differences?" (150:234) — the highlighted
+   pale-green/green-border card treatment, matching the same pattern
+   used for the always-free stages elsewhere in this build. */
+body.dc-active.dc-page-quotations .container > .card[style*="margin-top:18px"]:last-of-type {
+  background: var(--dc-soft-green);
+  border: 1px solid var(--dc-nav-green);
+}
+
+/* ======================================================================
+   STAGE 3 — join the shared Direction C header/card treatment (Figma
+   frame 150:243 "STAGE 3 — Project actions — data-dependent example",
+   Build E, 2026-09-05). stage3Actions() is genuinely data-dependent (a
+   real project's own open/resolved action list, sourced from Stage 2
+   evidence/findings) — this applies the approved visual language to
+   whatever that data actually is, never Figma's own illustrative
+   example text. Scoped to a new, purely additive dc-page-stage3 body
+   class (set whenever the page's own eyebrow matches "Stage 3 · ...",
+   since p.plan makes the exact eyebrow text vary per project — see
+   direction-c-trial.js) — dc-page-workspace stays applied and keeps
+   governing every other page unaffected. No action field, status enum,
+   priority flag, package/scope text, evidence-required list or route
+   changed anywhere — visual only.
+   ====================================================================== */
+/* Pagehead (150:252-256 "Application Intro") — same pale-green intro-
+   panel treatment as Project Workspace/Quotations. */
+body.dc-active.dc-page-stage3 .pagehead { background: #f3f9f2; border: 1px solid var(--dc-line); border-radius: var(--dc-radius-card); padding: 33px 35px; }
+body.dc-active.dc-page-stage3 .pagehead .eyebrow { font-size: 16px; }
+body.dc-active.dc-page-stage3 .pagehead h1 { font-size: 34px; }
+body.dc-active.dc-page-stage3 .pagehead .meta { font-size: 20px; opacity: 1; color: var(--dc-muted); }
+body.dc-active.dc-page-stage3 .pagehead > .btn { border-color: var(--dc-navy); color: var(--dc-navy); }
+/* Open action cards (150:257 "Action card / Open") — the highlighted
+   pale-green/green-border treatment. Excludes the "Resolved" wrapper
+   (its own distinct .resolved-actions class) and, via the child
+   combinator, the individual resolved action cards nested inside it. */
+body.dc-active.dc-page-stage3 .container > .card:not(.resolved-actions) {
+  background: var(--dc-soft-green);
+  border: 1px solid var(--dc-nav-green);
+}
+body.dc-active.dc-page-stage3 .container > .card .pill {
+  display: inline-block;
+  background: var(--dc-badge-bg);
+  color: var(--dc-nav-green);
+  font: 700 12px/1.2 var(--dc-font);
+  padding: 8px 18px;
+  border-radius: 17px;
+  text-transform: uppercase;
+  letter-spacing: .3px;
+  margin-bottom: 14px;
+}
+body.dc-active.dc-page-stage3 .container > .card h3 { margin: 0 0 12px; font-size: 26px; }
+body.dc-active.dc-page-stage3 .container > .card > p.meta { color: var(--dc-navy); opacity: .9; font-size: 18px; }
+/* The "Resolved" wrapper (a real card containing further real action
+   cards, not Figma's flat single-card example) — plain white, matching
+   150:264's own "RESOLVED" card tone; its nested action cards also drop
+   back to plain white/grey pill so a closed item doesn't read as if it
+   still needs attention. */
+body.dc-active.dc-page-stage3 .container > .card.resolved-actions {
+  background: #fff;
+  border: 1px solid var(--dc-line);
+}
+body.dc-active.dc-page-stage3 .container > .card.resolved-actions > h3 { font-size: 22px; }
+body.dc-active.dc-page-stage3 .container > .card.resolved-actions .card {
+  background: #fff;
+  border: 1px solid var(--dc-line);
+  margin-top: 14px;
+}
+
+/* ======================================================================
+   TERMS & PRIVACY — join the shared Direction C header/card treatment
+   (Figma frames 150:269 "LEGAL — Terms & Conditions — full text
+   preserved in product" / 150:308 "LEGAL — Privacy Policy — full text
+   preserved in product", Build E, 2026-09-05). Scoped to two new,
+   purely additive dc-page-terms/dc-page-privacy body classes —
+   dc-page-workspace stays applied and keeps governing every other page
+   unaffected. TERMS_SECTIONS/PRIVACY_SECTIONS in app.js (the complete
+   governed legal wording, clause numbers and headings) are completely
+   unchanged — the only app.js change is wrapping each section in its
+   own .card (was one shared wrapper card around all sections), giving
+   each clause the locked frame's individually-boxed presentation with
+   zero text change. This is presentation only, exactly as the brief
+   for these two pages requires ("preserve full existing legal text
+   exactly, presentation-only wrapper") — Figma's own single-line
+   placeholder body text per section ("Existing governed legal wording
+   continues here unchanged.") is a shell illustration, never rendered
+   here in place of the real clauses. */
+body.dc-active.dc-page-terms .pagehead,
+body.dc-active.dc-page-privacy .pagehead { background: #f3f9f2; border: 1px solid var(--dc-line); border-radius: var(--dc-radius-card); padding: 33px 35px; }
+body.dc-active.dc-page-terms .pagehead .eyebrow,
+body.dc-active.dc-page-privacy .pagehead .eyebrow { font-size: 16px; }
+body.dc-active.dc-page-terms .pagehead h1,
+body.dc-active.dc-page-privacy .pagehead h1 { font-size: 34px; }
+body.dc-active.dc-page-terms .pagehead .meta,
+body.dc-active.dc-page-privacy .pagehead .meta { font-size: 20px; opacity: 1; color: var(--dc-muted); }
+/* Draft-status banner (150:281 "Draft status") — the highlighted pale-
+   green/green-border treatment, matching the same pattern used for
+   emphasis elsewhere in this build. */
+body.dc-active.dc-page-terms .banner,
+body.dc-active.dc-page-privacy .banner {
+  background: var(--dc-soft-green);
+  border: 1px solid var(--dc-nav-green);
+  border-radius: var(--dc-radius-card);
+  padding: 24px 27px;
+  box-shadow: 0 7px 8px rgba(0, 0, 0, .05);
+}
+body.dc-active.dc-page-terms .banner b,
+body.dc-active.dc-page-privacy .banner b { color: var(--dc-nav-green); font-size: 16px; }
+body.dc-active.dc-page-terms .banner .meta,
+body.dc-active.dc-page-privacy .banner .meta { color: var(--dc-muted); opacity: 1; font-size: 15px; }
+/* Each clause (150:284 "Legal section / N") — its own bordered, shadowed
+   card, per app.js's new one-card-per-section wrapping.
+   width/max-width/margin reset: styles.css's pre-existing .legal-doc rule
+   (max-width:760px;margin:0 auto) was written for the OLD single-big-card
+   layout. Left unreset, it combines with the shared dc-page-workspace
+   .container{display:flex;flex-direction:column} rule inconsistently: a
+   section card whose content includes a <ul>/<ol> (a shorter max-content
+   width than a paragraph-only section) stretches to a visibly narrower,
+   off-center width than its sibling section cards. Forcing width:100% here
+   makes every section card the same full container width regardless of
+   its content shape. */
+body.dc-active.dc-page-terms .card.legal-doc,
+body.dc-active.dc-page-privacy .card.legal-doc {
+  background: #fff;
+  border: 1px solid var(--dc-line);
+  box-shadow: 0 7px 8px rgba(0, 0, 0, .05);
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+}
+body.dc-active.dc-page-terms .card.legal-doc h2,
+body.dc-active.dc-page-privacy .card.legal-doc h2 { margin: 0 0 12px; font-size: 21px; color: var(--dc-navy); }
+body.dc-active.dc-page-terms .card.legal-doc p,
+body.dc-active.dc-page-privacy .card.legal-doc p { color: var(--dc-muted); font-size: 16px; line-height: 1.55; }
+
+/* Customer pages: use the same single approved header as Home/Pricing. */
+body[data-page="dashboard"] .topbar,
+body[data-page="profile"] .topbar,
+body[data-page="profileEdit"] .topbar{height:86px;padding:8px max(18px,calc((100vw - 1180px)/2));background:#fff;border:0;box-shadow:0 2px 10px rgba(0,0,0,.04)}
+body[data-page="dashboard"] .brand,
+body[data-page="profile"] .brand,
+body[data-page="profileEdit"] .brand{display:block!important;padding:0;min-width:180px}
+body[data-page="dashboard"] .brand-logo,
+body[data-page="profile"] .brand-logo,
+body[data-page="profileEdit"] .brand-logo{display:block;width:250px;height:70px;max-width:none;object-fit:contain}
+body[data-page="dashboard"] .nav,
+body[data-page="profile"] .nav,
+body[data-page="profileEdit"] .nav{gap:28px;align-items:center}
+body[data-page="dashboard"] .nav button,
+body[data-page="profile"] .nav button,
+body[data-page="profileEdit"] .nav button{display:inline-block!important;position:relative;padding:10px 0;border:0;background:transparent;color:#061226;font-size:17px;font-weight:400;white-space:nowrap}
+body[data-page="dashboard"] #projectsBtn,
+body[data-page="profile"] #projectsBtn,
+body[data-page="profileEdit"] #projectsBtn{color:#0a6b1a;font-weight:600}
+body[data-page="dashboard"] #projectsBtn::after,
+body[data-page="profile"] #projectsBtn::after,
+body[data-page="profileEdit"] #projectsBtn::after{content:"";position:absolute;left:50%;bottom:2px;width:52px;height:2px;transform:translateX(-50%);background:#0a6b1a}
+body[data-page="dashboard"] .nav .nav-strong,
+body[data-page="profile"] .nav .nav-strong,
+body[data-page="profileEdit"] .nav .nav-strong{padding:11px 16px;border:1px solid #e0e3e3;border-radius:10px;background:#fff;box-shadow:0 4px 10px rgba(0,0,0,.07)}
+body[data-page="dashboard"] .customer-area,
+body[data-page="profile"] .customer-area,
+body[data-page="profileEdit"] .customer-area{width:min(1180px,calc(100% - 48px));padding:30px 0 54px}
+body[data-page="dashboard"] .customer-heading{display:flex;align-items:end;justify-content:space-between;margin-bottom:18px}
+body[data-page="dashboard"] .customer-heading h1{font-size:38px;line-height:1.15}
+body[data-page="dashboard"] .projects{grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+body[data-page="dashboard"] .project{padding:22px;border-radius:14px}
+body[data-page="dashboard"] .project .journey-icon{width:50px;height:50px;flex-basis:50px}
+body[data-page="dashboard"] .project h3{font-size:21px}
+body[data-page="dashboard"] .project .actions{display:flex;gap:10px;margin-top:18px}
+body[data-page="dashboard"] .project .btn{padding:12px 16px;font-size:14px}
+body[data-page="dashboard"] .project-brief{max-width:860px;margin:0 auto;padding:26px}
+body[data-page="profile"] .profile-card,
+body[data-page="profileEdit"] .profile-card{max-width:860px;padding:26px;border-radius:14px}
+body[data-page="profile"] .profile-card h1,
+body[data-page="profileEdit"] .profile-card h1{font-size:34px}
+body[data-page="profile"] .profile-details{gap:10px;margin:20px 0}
+body[data-page="profile"] .profile-details>div{padding:14px}
+body[data-page="profile"] .profile-avatar{width:58px;height:58px;flex-basis:58px;font-size:24px}
+@media(max-width:700px){
+body[data-page="dashboard"] .topbar,
+body[data-page="profile"] .topbar,
+body[data-page="profileEdit"] .topbar{height:62px;padding:7px 14px}
+body[data-page="dashboard"] .brand,
+body[data-page="profile"] .brand,
+body[data-page="profileEdit"] .brand{min-width:104px}
+body[data-page="dashboard"] .brand-logo,
+body[data-page="profile"] .brand-logo,
+body[data-page="profileEdit"] .brand-logo{width:132px;height:42px}
+body[data-page="dashboard"] .nav,
+body[data-page="profile"] .nav,
+body[data-page="profileEdit"] .nav{gap:12px}
+body[data-page="dashboard"] .nav button[data-route="home"],
+body[data-page="dashboard"] .nav button[data-route="pricing"],
+body[data-page="profile"] .nav button[data-route="home"],
+body[data-page="profile"] .nav button[data-route="pricing"],
+body[data-page="profileEdit"] .nav button[data-route="home"],
+body[data-page="profileEdit"] .nav button[data-route="pricing"]{display:none!important}
+body[data-page="dashboard"] .nav button,
+body[data-page="profile"] .nav button,
+body[data-page="profileEdit"] .nav button{font-size:13px}
+body[data-page="dashboard"] .nav .nav-strong,
+body[data-page="profile"] .nav .nav-strong,
+body[data-page="profileEdit"] .nav .nav-strong{padding:9px 10px}
+body[data-page="dashboard"] .customer-area,
+body[data-page="profile"] .customer-area,
+body[data-page="profileEdit"] .customer-area{width:calc(100% - 24px);padding:20px 0 36px}
+body[data-page="dashboard"] .customer-heading h1{font-size:30px}
+body[data-page="dashboard"] .projects{grid-template-columns:1fr;gap:14px}
+body[data-page="dashboard"] .project{padding:18px}
+body[data-page="dashboard"] .project .actions{flex-direction:row;flex-wrap:wrap}
+body[data-page="dashboard"] .project .btn{width:auto;padding:11px 14px}
+body[data-page="profile"] .profile-card,
+body[data-page="profileEdit"] .profile-card{padding:18px}
+body[data-page="profile"] .profile-card h1,
+body[data-page="profileEdit"] .profile-card h1{font-size:28px}
+body[data-page="profile"] .profile-details{grid-template-columns:1fr 1fr}
+body[data-page="profile"] .profile-details>div{padding:12px}
+body[data-page="profile"] .profile-details dd{font-size:14px}
+body[data-page="profile"] .profile-title .meta{font-size:14px}
+body[data-page="profile"] .profile-card .actions{display:flex;flex-direction:row;flex-wrap:wrap}
+body[data-page="profile"] .profile-card .actions .btn{width:auto}
+}
+@media(max-width:430px){
+body[data-page="profile"] .profile-details{grid-template-columns:1fr}
+body[data-page="dashboard"] .project .actions .btn{font-size:13px}
+}
+
+/* Approved customer workspace and profile screens — 15 September 2026 */
+#profileBtn[hidden]{display:none!important}
+body[data-page="dashboard"],body[data-page="profile"],body[data-page="profileEdit"]{background:#f6f8f6}
+.workspace-dashboard,.profile-page{max-width:920px;padding-top:36px;padding-bottom:64px}
+.workspace-progress{padding:34px 38px;margin-bottom:18px;border:1px solid #d8dfdb;border-radius:22px}
+.workspace-progress h1,.profile-page h1{margin:8px 0 5px;font-size:clamp(2rem,5vw,3rem)}
+.workspace-stage{font-size:1.08rem;font-weight:650;color:#68717a}.stage-progress{height:10px;border-radius:99px;background:#e5eae7;margin-top:30px;overflow:hidden}.stage-progress span{display:block;width:25%;height:100%;border-radius:99px;background:#168743}.stage-numbers{display:flex;justify-content:space-between;margin-top:15px;color:#69717a}.stage-numbers b{color:#168743}
+.next-step-panel{padding:36px;border-radius:22px;background:#eaf6ee;margin-bottom:42px}.next-step-panel h2{margin:10px 0;font-size:clamp(1.65rem,4vw,2.25rem)}.next-step-panel p{max-width:630px;color:#647078;font-size:1.08rem}.next-step-panel .btn{width:100%;margin-top:24px}
+.workspace-section>.eyebrow{margin:0 0 12px}.project-summary{display:flex;justify-content:space-between;gap:24px;padding:30px 34px;border-radius:20px}.project-summary h2{margin:0 0 10px}.project-summary p{margin:0;color:#67727c;line-height:1.5}.project-summary>strong{color:#168743;white-space:nowrap}
+.upload-summary{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:25px 34px;margin-top:24px;border-radius:18px}.upload-summary h3,.upload-summary p{margin:0}.upload-summary p{margin-top:8px;color:#6b747c}.upload-summary .btn{min-width:138px}.stage-guide{width:100%;border:1px solid #cfddd4;background:#edf7f0;border-radius:18px;padding:23px 30px;margin-top:24px;display:flex;justify-content:space-between;font:inherit;font-weight:700;color:#142034;cursor:pointer}.stage-guide strong{color:#168743}
+.profile-page>.customer-heading{margin-bottom:28px}.profile-identity{display:flex;align-items:center;gap:20px;padding:28px 32px;margin-bottom:22px;border-radius:20px}.profile-identity h2,.profile-identity p{margin:0}.profile-identity p{margin-top:5px;color:#68727a}.profile-avatar{width:62px;height:62px;border-radius:50%;display:grid;place-items:center;background:#e4f3e8;color:#168743;font-size:1.5rem;font-weight:800}
+.profile-page .profile-card{padding:32px;margin-bottom:22px;border-radius:20px}.profile-details{display:grid;grid-template-columns:1fr 1fr;gap:0;margin:18px 0 26px}.profile-details>div{padding:18px 0;border-bottom:1px solid #e1e6e3}.profile-details>div:nth-child(odd){padding-right:22px}.profile-details dt{color:#68727a;font-size:.86rem}.profile-details dd{margin:7px 0 0;font-weight:650}.verified{display:inline-block;margin-left:8px;padding:4px 9px;border-radius:99px;background:#e5f4e9;color:#147b3b;font-size:.75rem;font-weight:800}.security-row{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:22px 0;border-bottom:1px solid #e1e6e3}.security-row:last-child{border-bottom:0}.security-row h3,.security-row p{margin:0}.security-row p{margin-top:6px;color:#68727a}
+.sitefooter{background:#fff;border-top:1px solid #dfe5e1;padding:44px 24px;display:flex;flex-direction:column;align-items:center;gap:18px;color:#172131}.sitefooter-logo{width:132px;height:auto}.sitefooter-primary,.sitefooter-links{display:flex;gap:28px;flex-wrap:wrap;justify-content:center}.sitefooter button{background:none;border:0;font:inherit;font-weight:650;cursor:pointer;color:#172131}.sitefooter-primary button[data-route="dashboard"]{color:#168743}.sitefooter-rule{width:min(100%,640px);height:1px;background:#dfe5e1}.sitefooter-links button,.sitefooter-copy{font-size:.86rem;color:#68727a;font-weight:500}
+@media(max-width:640px){.workspace-dashboard,.profile-page{padding:22px 16px 44px}.workspace-progress,.next-step-panel,.profile-page .profile-card,.profile-identity{padding:24px}.project-summary,.upload-summary{padding:22px}.profile-details{grid-template-columns:1fr}.profile-details>div:nth-child(odd){padding-right:0}.upload-summary,.security-row{align-items:flex-start}.upload-summary{flex-direction:column}.upload-summary .btn{width:100%}.topbar .nav{gap:7px}.topbar .nav button{padding:9px 10px;font-size:.86rem}.stage-guide{padding:20px}}
+
+
+/* Customer workspace continuity tidy-up — Page Review only, 17 September 2026.
+   Scoped to the authenticated pages in Stuart's approved task. Public Home and
+   Pricing content and Stage 1 question screens are intentionally untouched. */
+body[data-page="dashboard"],
+body[data-page="project"],
+body[data-page="profile"],
+body[data-page="profileEdit"]{background:#f6f8f6}
+body[data-page="dashboard"] .topbar,
+body[data-page="project"] .topbar,
+body[data-page="profile"] .topbar,
+body[data-page="profileEdit"] .topbar{background:#fff;border-bottom:1px solid #dfe5e1;padding:10px 28px}
+body[data-page="dashboard"] .topbar .brand,
+body[data-page="project"] .topbar .brand,
+body[data-page="profile"] .topbar .brand,
+body[data-page="profileEdit"] .topbar .brand{display:flex}
+body[data-page="dashboard"] .brand-logo,
+body[data-page="project"] .brand-logo,
+body[data-page="profile"] .brand-logo,
+body[data-page="profileEdit"] .brand-logo{height:52px;max-width:220px;object-fit:contain}
+.workspace-title-row,.workspace-progress-label,.project-summary-actions,.project-page-actions,.customer-heading{display:flex;align-items:center;justify-content:space-between;gap:18px}
+.workspace-title-row h1{margin-bottom:4px}.workspace-progress-label{margin-top:12px;color:#68717a}.workspace-progress-label strong{color:#168743}
+.project-list{display:grid;gap:16px}.project-summary-actions{flex-direction:column;align-items:flex-end}
+.workspace-boundary{display:flex;align-items:center;justify-content:space-between;gap:24px;margin-top:24px;padding:26px 30px;border-radius:18px;border-color:#cfe0d5;background:#f1f8f3}.workspace-boundary h2,.workspace-boundary p{margin:0}.workspace-boundary p{margin-top:7px;color:#68727a}
+.project-page{max-width:1180px;padding-top:36px;padding-bottom:64px}.project-page .pagehead{align-items:center;margin-bottom:24px}.project-page .grid4>.card,.project-page .grid3>.card{border:1px solid #d8dfdb;border-radius:18px;box-shadow:0 8px 22px rgba(20,55,35,.05)}.project-page .grid4>.card{display:flex;flex-direction:column}.project-page .grid4>.card .btn{margin-top:auto}.stage1-entry-card{border-color:#add4ba!important;background:#f3faf5}.stage1-entry-card .field-note{margin:10px 0 0;color:#4c6755}
+.profile-page .customer-heading{align-items:flex-end}.profile-page .customer-heading>.actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}.profile-project-detail{grid-column:1/-1}.profile-project-field{grid-column:1/-1}.profile-form input[readonly]{background:#f2f5f3;color:#59645e}.profile-form input:disabled{background:#f2f5f3;color:#8a948e}
+@media(max-width:760px){
+ body[data-page="dashboard"] .topbar,
+ body[data-page="project"] .topbar,
+ body[data-page="profile"] .topbar,
+ body[data-page="profileEdit"] .topbar{padding:8px 14px}
+ body[data-page="dashboard"] .brand-logo,
+ body[data-page="project"] .brand-logo,
+ body[data-page="profile"] .brand-logo,
+ body[data-page="profileEdit"] .brand-logo{height:40px;max-width:150px}
+ .workspace-title-row,.workspace-boundary,.project-page .pagehead,.customer-heading{align-items:flex-start;flex-direction:column}
+ .workspace-title-row .btn,.project-page-actions,.profile-page .customer-heading>.actions{width:100%}
+ .project-page-actions .btn,.profile-page .customer-heading>.actions .btn{flex:1}
+ .project-summary{align-items:flex-start;flex-direction:column}
+ .project-summary-actions{width:100%;align-items:flex-start;flex-direction:row}
+ .project-summary-actions .btn{margin-left:auto}
+ .profile-project-detail{grid-column:auto}
+}
+@media(max-width:430px){
+ body[data-page="dashboard"] .brand-logo,
+ body[data-page="project"] .brand-logo,
+ body[data-page="profile"] .brand-logo,
+ body[data-page="profileEdit"] .brand-logo{height:34px;max-width:118px}
+ body[data-page="dashboard"] .topbar .nav,
+ body[data-page="project"] .topbar .nav,
+ body[data-page="profile"] .topbar .nav,
+ body[data-page="profileEdit"] .topbar .nav{gap:3px}
+ body[data-page="dashboard"] .topbar .nav button,
+ body[data-page="project"] .topbar .nav button,
+ body[data-page="profile"] .topbar .nav button,
+ body[data-page="profileEdit"] .topbar .nav button{padding:8px 7px;font-size:.77rem}
+ .project-page-actions,.profile-page .customer-heading>.actions{flex-direction:column}
+ .project-page-actions .btn,.profile-page .customer-heading>.actions .btn{width:100%}
+}
+
+/* CEO Master My Projects 97:129 — approved 20 September 2026. */
+body:is([data-page="dashboard"],[data-page="createProject"]){background:#fbfcfb}
+body:is([data-page="dashboard"],[data-page="createProject"]) .topbar{height:68px;padding:0 max(16px,calc((100vw - 1180px)/2));border-bottom:3px solid #058029;box-shadow:none}
+body:is([data-page="dashboard"],[data-page="createProject"]) .topbar .brand-logo{width:270px;height:58px;object-fit:contain}
+body:is([data-page="dashboard"],[data-page="createProject"]) .site-nav-actions{gap:12px}
+body:is([data-page="dashboard"],[data-page="createProject"]) .header-quick-action{width:106px;height:42px;min-height:42px;max-width:none;padding:6px 10px;border-radius:12px;font-size:12px;line-height:15px;white-space:normal;background:#058029}
+body:is([data-page="dashboard"],[data-page="createProject"]) .menu-button{width:44px;height:44px;border-radius:13px;gap:5px;flex-shrink:0}
+body:is([data-page="dashboard"],[data-page="createProject"]) .menu-button span{width:25px;height:3px;background:#058029}
+body:is([data-page="dashboard"],[data-page="createProject"]) .workspace-dashboard{display:grid;width:100%;max-width:920px;margin:0 auto;padding:24px;gap:16px;background:#fff}
+body:is([data-page="dashboard"],[data-page="createProject"]) .workspace-progress{display:flex;flex-direction:column;gap:8px;padding:20px;margin:0;background:#f6f8f7;border:0;border-radius:18px;box-shadow:none;text-align:center}
+body:is([data-page="dashboard"],[data-page="createProject"]) .workspace-title-row{display:block}
+body:is([data-page="dashboard"],[data-page="createProject"]) .workspace-title-row>div{display:flex;flex-direction:column;gap:8px}
+body:is([data-page="dashboard"],[data-page="createProject"]) .workspace-dashboard .eyebrow{font-size:12px;line-height:1.45;letter-spacing:0;color:#08752a;font-weight:700}
+body:is([data-page="dashboard"],[data-page="createProject"]) .workspace-progress h1{margin:0;font-size:27px;line-height:1.45;color:#091b2e}
+body:is([data-page="dashboard"],[data-page="createProject"]) .workspace-stage,body:is([data-page="dashboard"],[data-page="createProject"]) .workspace-progress .meta{margin:0;color:#525961;font-size:16px;font-weight:400;line-height:1.45}
+body:is([data-page="dashboard"],[data-page="createProject"]) .workspace-progress>.btn{width:100%}
+body:is([data-page="dashboard"],[data-page="createProject"]) .workspace-dashboard .btn{min-height:51px;padding:14px;border-radius:12px;font-size:16px;font-weight:700;line-height:1.45}
+body:is([data-page="dashboard"],[data-page="createProject"]) .workspace-dashboard .btn.secondary{background:#fff;border:1px solid #091b2e;color:#091b2e}
+body:is([data-page="dashboard"],[data-page="createProject"]) .workspace-dashboard .btn.green{background:#0b701b;color:#fff}
+body:is([data-page="dashboard"],[data-page="createProject"]) .workspace-section>.eyebrow{margin:0 0 16px}
+body:is([data-page="dashboard"],[data-page="createProject"]) .project-summary{padding:20px;border:1px solid #dee3e0;border-radius:18px;background:#fff;box-shadow:none;min-width:0}
+body:is([data-page="dashboard"],[data-page="createProject"]) .project-summary h2{margin:0 0 8px;font-size:22px;line-height:1.45;color:#091b2e;overflow-wrap:anywhere}
+body:is([data-page="dashboard"],[data-page="createProject"]) .project-summary p{font-size:16px;line-height:1.45;color:#525961;overflow-wrap:anywhere}
+body:is([data-page="dashboard"],[data-page="createProject"]) .project-summary-empty{display:flex;flex-direction:column;align-items:stretch;gap:8px;text-align:center}
+body:is([data-page="dashboard"],[data-page="createProject"]) .project-summary-actions{flex-wrap:wrap}
+body:is([data-page="dashboard"],[data-page="createProject"]) .sitefooter{display:none}
+body:is([data-page="dashboard"],[data-page="createProject"]) .home-footer{max-width:920px;margin:0 auto;padding:16px 24px;gap:10px;border:0}
+body:is([data-page="dashboard"],[data-page="createProject"]) .home-footer>img{width:220px;height:62px}
+body:is([data-page="dashboard"],[data-page="createProject"]) .home-footer nav{width:100%;justify-content:center;gap:28px}
+body:is([data-page="dashboard"],[data-page="createProject"]) .home-footer nav button{font-size:15px}
+body:is([data-page="dashboard"],[data-page="createProject"]) .home-footer-legal{width:100%;gap:10px}
+body:is([data-page="dashboard"],[data-page="createProject"]) .home-footer-legal>div{width:100%;justify-content:center;gap:22px}
+body:is([data-page="dashboard"],[data-page="createProject"]) .home-footer-legal button,body:is([data-page="dashboard"],[data-page="createProject"]) .home-footer-legal small{font-size:13px}
+@media(max-width:768px){
+body:is([data-page="dashboard"],[data-page="createProject"]) .topbar{padding:0 16px 0 12px}
+body:is([data-page="dashboard"],[data-page="createProject"]) .topbar .brand-logo{width:190px;height:53px}
+body:is([data-page="dashboard"],[data-page="createProject"]) .topbar .brand{min-width:0}
+body:is([data-page="dashboard"],[data-page="createProject"]) .site-nav-actions{flex-shrink:0;gap:12px}
+}
+@media(max-width:389px){
+body:is([data-page="dashboard"],[data-page="createProject"]) .topbar{padding-inline:10px}
+body:is([data-page="dashboard"],[data-page="createProject"]) .topbar .brand-logo{width:clamp(135px,44vw,170px)}
+body:is([data-page="dashboard"],[data-page="createProject"]) .site-nav-actions{gap:7px}
+body:is([data-page="dashboard"],[data-page="createProject"]) .header-quick-action{width:100px}
+}
+
+/* CEO Master Create project 101:147 — approved 20 September 2026. */
+body[data-page="createProject"] .site-nav-actions:not([hidden]){display:flex}
+body[data-page="createProject"] .topbar .brand{display:flex;padding:0}
+body[data-page="createProject"] .sitefooter{display:none}
+.create-project-screen{width:min(100%,480px);margin:0 auto;background:#fff}
+.create-project-screen .project-flow-modal{display:flex;flex-direction:column;gap:16px;width:100%;max-width:none;max-height:none;margin:0;padding:24px;border:0;border-radius:0;box-shadow:none;overflow:visible}
+.create-project-screen .project-flow-head,.create-project-screen .project-flow-intro .eyebrow{display:none}
+.create-project-screen .project-flow-intro{padding:20px;margin:0;border-radius:18px;background:#f6f8f7;text-align:center}
+.create-project-screen .project-flow-intro h2{margin:0 0 8px;font-size:27px;line-height:1.45;color:#091b2e}
+.create-project-screen .project-flow-intro p{margin:0;font-size:16px;line-height:1.45;color:#525961}
+.create-project-screen #briefFields,.create-project-screen .dimensions-grid{display:flex;flex-direction:column;gap:16px;margin:0;padding:0}
+.create-project-screen .field{margin:0}
+.create-project-screen .field label{display:block;margin:0 0 6px;font-size:14px;line-height:1.45;font-weight:600;color:#091b2e}
+.create-project-screen .field input,.create-project-screen .field select{width:100%;height:56px;min-width:0;padding:16px;border:1px solid #dfe3e1;border-radius:12px;background:#fff;font:400 16px/1.45 Inter,Arial,sans-serif;color:#091b2e}
+.create-project-screen .field input::placeholder{color:#747b80}
+.create-project-screen .actions{display:flex;flex-direction:column;gap:16px;margin:0}
+.create-project-screen #npCreate{order:-1}
+.create-project-screen .actions .btn{width:100%;min-height:51px;padding:14px;border-radius:12px;font-size:16px;font-weight:700;line-height:1.45}
+.create-project-screen .btn.green{background:#0b701b;color:#fff}
+.create-project-screen .btn.secondary{background:#fff;border:1px solid #091b2e;color:#091b2e}
+body[data-page="createProject"] .home-footer{max-width:480px}
+
+/* Task 2: one approved shell across the existing customer journey. */
+body[data-review-shell] .topbar{box-sizing:border-box;height:68px!important;min-height:68px!important;padding:0 max(16px,calc((100vw - 1180px)/2))!important;background:#fff!important;border-bottom:3px solid #058029!important;box-shadow:none!important}
+body[data-review-shell] .topbar .brand{display:flex!important;min-width:0!important;padding:0!important;flex-shrink:1}
+body[data-review-shell] .topbar .brand-logo{display:block!important;width:270px!important;height:58px!important;max-width:100%!important;object-fit:contain;object-position:left center}
+body[data-review-shell] .site-nav-actions:not([hidden]){display:flex!important;align-items:center;gap:12px;flex-shrink:0}
+body[data-review-shell] .header-quick-action{width:106px!important;max-width:none!important;min-height:42px!important;height:42px!important;padding:6px 10px!important;border-radius:12px!important;background:#058029!important;color:#fff!important;display:inline-flex;align-items:center;justify-content:center;text-align:center;font-size:14px!important;line-height:20px!important;white-space:normal!important}
+body[data-review-shell][data-page="dashboard"] .header-quick-action{font-size:12px!important;line-height:15px!important}
+body[data-review-shell] .menu-button{width:44px!important;height:44px!important;flex-shrink:0;border-radius:13px;gap:5px}
+body[data-review-shell] .menu-button span{width:25px;height:3px;background:#058029}
+body[data-review-shell] .sitefooter[hidden]{display:none!important}
+body[data-review-shell] .sitefooter:not([hidden]){display:flex!important}
+body[data-review-shell] :is(.home-footer,.sitefooter){box-sizing:border-box;padding:16px 24px!important;gap:10px!important;background:#fff;border:0!important;align-items:center}
+body[data-review-shell] :is(.home-footer>img,.sitefooter-logo){width:220px!important;height:62px!important;max-width:100%;object-fit:contain}
+body[data-review-shell] :is(.home-footer nav,.sitefooter-primary){display:flex;justify-content:center!important;flex-wrap:wrap;gap:28px!important}
+body[data-review-shell] :is(.home-footer nav,.sitefooter-primary) button{font-size:15px!important;color:#091b2e}
+body[data-review-shell] :is(.home-footer-legal>div,.sitefooter-links){display:flex;justify-content:center;flex-wrap:wrap;gap:22px!important}
+body[data-review-shell] :is(.home-footer-legal button,.home-footer-legal small,.sitefooter-links button,.sitefooter-copy){font-size:13px!important}
+body[data-review-shell] :is(.profile-page,.project-management-page,.stage1-workspace){overflow-wrap:anywhere}
+body[data-review-shell] .document-table-wrap{max-width:100%;overflow-x:auto}
+body[data-review-shell] .document-register tr[hidden]{display:none}
+@media(max-width:768px){
+ body[data-review-shell] .topbar{padding:0 16px 0 12px!important}
+ body[data-review-shell] .topbar .brand-logo{width:190px!important;height:53px!important}
+ body[data-review-shell] :is(.security-row,.stage1-section-heading,.document-register-heading){flex-wrap:wrap}
+ body[data-review-shell] .stage1-section-heading>.btn{width:100%}
+ body[data-review-shell] .profile-details{grid-template-columns:1fr}
+}
+@media(max-width:389px){
+ body[data-review-shell] .topbar{padding-inline:10px!important}
+ body[data-review-shell] .topbar .brand-logo{width:clamp(135px,44vw,170px)!important}
+ body[data-review-shell] .site-nav-actions{gap:7px!important}
+ body[data-review-shell] .header-quick-action{width:100px!important}
+}
+
+/* CEO Master 40:30 — guided Pricing replacement, 20 September 2026. */
+body[data-page="pricing"] .ceo-guided-pricing{padding:0;background:#fff}
+.ceo-guided-pricing .ceo-pricing-body{display:flex;flex-direction:column;gap:24px;width:min(100%,760px);margin:0 auto;padding:12px 12px 24px;box-sizing:border-box;font-family:Inter,Arial,sans-serif}
+.ceo-guided-pricing .ceo-pricing-body>section,.ceo-guided-pricing .pricing-cta-section{box-sizing:border-box;width:100%;margin:0}
+.ceo-guided-pricing .pricing-hero{padding:20px;background:#f0faf3;border-radius:18px}
+.ceo-guided-pricing .pricing-hero .eyebrow{margin:0;color:#058029;font-size:14px;font-weight:700;line-height:20px;letter-spacing:1px}
+.ceo-guided-pricing .pricing-hero h1{margin:14px 0;font-size:27px;line-height:32px;color:#091b2e}
+.ceo-guided-pricing .pricing-hero p{margin:0;font-size:16px;line-height:24px;color:#5c636d;max-width:none}
+.ceo-guided-pricing .pricing-card{padding:18px;border:1px solid #d9e0db;border-radius:18px;background:#fff;box-shadow:0 7px 16px rgba(16,24,40,.06)}
+.ceo-guided-pricing .pricing-card h2{margin:0 0 12px;color:#091b2e;font-size:20px;line-height:26px}
+.ceo-guided-pricing .pricing-card-intro{margin:0 0 14px;color:#5c636d;font-size:16px;line-height:24px}
+.ceo-guided-pricing .pricing-card>p:last-child{margin-bottom:0}
+.ceo-guided-pricing .pricing-steps{gap:14px}
+.ceo-guided-pricing .pricing-step-row{padding:16px 20px;border-radius:16px;background:#f6f8f7}
+.ceo-guided-pricing .pricing-step-title,.ceo-guided-pricing .pricing-appointment-name{margin:0;color:#091b2e;font-size:15px;font-weight:600;line-height:20px}
+.ceo-guided-pricing .pricing-step-desc,.ceo-guided-pricing .pricing-appointment-desc{margin:8px 0 0;color:#5c636d;font-size:16px;line-height:24px}
+.ceo-guided-pricing .pricing-appointments{background:#f2fbf4;box-shadow:none}
+.ceo-guided-pricing .pricing-appointments-list{gap:12px;margin-top:12px}
+.ceo-guided-pricing .pricing-appointment-row{display:block;padding:16px;border-radius:16px;border:1px solid #d9e0db;box-shadow:0 7px 16px rgba(16,24,40,.06)}
+.ceo-guided-pricing .pricing-cta-full{min-height:56px;padding:16px;border:0;border-radius:10px;background:#058029;font:700 16px/22px Inter,Arial,sans-serif;cursor:pointer}
+.ceo-guided-pricing .home-footer{margin-top:0}
+
+/* CEO-approved Stage 1 workspace 111:183, 20 September 2026. */
+body[data-page="stage1Workspace"]{background:#fff}
+body[data-page="stage1Workspace"] .stage1-workspace{width:100%;max-width:760px;margin:0 auto;padding:24px 16px;gap:16px;font-family:Inter,Arial,sans-serif;color:#091b2e}
+.stage1-workspace :is(.stage1-technical-header,.stage1-readiness-card,.stage1-tech-card,.stage1-workspace-action){padding:20px;border:0;border-radius:18px;background:#f6f9f7;box-shadow:none}
+.stage1-workspace .stage1-technical-header{display:flex;flex-direction:column;gap:12px;color:#091b2e}
+.stage1-workspace .stage1-technical-header h1{margin:12px 0;font-size:27px;line-height:1.45;color:#091b2e}
+.stage1-workspace .stage1-technical-header p{color:#091b2e;font-size:16px;line-height:1.45}
+.stage1-workspace .eyebrow{color:#091b2e;font-size:12px;font-weight:700;letter-spacing:0}
+.stage1-workspace .stage1-technical-header .pill{padding:0;background:none;color:#091b2e;font-size:13px}
+.stage1-workspace .stage1-readiness-row{display:flex;flex-direction:column;align-items:stretch;gap:12px}
+.stage1-workspace .stage1-readiness-row>div{display:flex;flex-direction:column;align-items:flex-start;gap:12px}
+.stage1-workspace .stage1-readiness-row span{color:#091b2e;font-size:18px;font-weight:700}
+.stage1-workspace .stage1-readiness-row strong{color:#091b2e;font-size:27px}
+.stage1-workspace .stage1-readiness-row p{text-align:left;color:#091b2e;font-size:14px;line-height:1.45}
+.stage1-workspace .stage1-source-legend{padding:0;gap:4px 10px;border:0;border-radius:18px;background:#f6f9f7}
+.stage1-workspace .stage1-source-legend .stage1-source{padding:0;font-weight:400;background:none;color:#091b2e}
+.stage1-workspace .stage1-source>span{display:none}
+.stage1-workspace .stage1-section-heading{grid-template-columns:auto 1fr;gap:12px 6px;padding:0;border:0}
+.stage1-workspace .stage1-section-heading>span{display:block;width:auto;height:auto;padding:0;background:none;color:#091b2e;font-size:22px;line-height:1.45}
+.stage1-workspace .stage1-section-heading>span::after{content:" ·"}
+.stage1-workspace .stage1-section-heading h2{margin:0;font-size:22px;line-height:1.45}
+.stage1-workspace .stage1-section-heading p{margin-top:12px;color:#091b2e;font-size:14px;line-height:1.45}
+.stage1-workspace .stage1-section-heading .btn{grid-column:1/-1;width:100%}
+.stage1-workspace .btn{min-height:56px;padding:16px;border-radius:10px;font:700 16px/22px Inter,Arial,sans-serif;white-space:normal}
+.stage1-workspace .btn.secondary{border:1px solid #091b2e;background:#fff;color:#091b2e}
+.stage1-workspace .btn.green{background:#058029;border:0;color:#fff}
+.stage1-workspace .stage1-basis-grid{grid-template-columns:1fr;gap:12px;margin:12px 0 0}
+.stage1-workspace .stage1-basis-wide{grid-column:auto}
+.stage1-workspace :is(.stage1-basis-item,.stage1-check-row,.stage1-evidence-row){padding:16px;border:1px solid #d9e0db;border-radius:16px;background:#fff;box-shadow:0 7px 16px rgba(16,24,40,.06)}
+.stage1-workspace .stage1-basis-item dt{font-size:15px;line-height:20px;font-weight:600;letter-spacing:0;text-transform:none;color:#091b2e}
+.stage1-workspace .stage1-basis-item dd{min-height:0;margin:8px 0 0;font-size:16px;line-height:24px;font-weight:400;color:#5c636d}
+.stage1-workspace .stage1-basis-item .stage1-source{font-size:12px;line-height:20px;font-weight:400;color:#5c636d}
+.stage1-workspace .stage1-empty-evidence{display:flex;flex-direction:column;align-items:stretch;padding:0;border:0;gap:12px}
+.stage1-workspace .stage1-empty-evidence p{color:#091b2e;font-size:16px;line-height:1.45}
+.stage1-workspace .stage1-evidence-list,.stage1-workspace .stage1-check-list{margin-top:12px;gap:12px}
+.stage1-workspace .stage1-check-row>span{display:none}
+.stage1-workspace .stage1-check-row strong{font-size:15px;line-height:20px}
+.stage1-workspace .stage1-check-row p{font-size:16px;line-height:24px;margin:8px 0 0;color:#5c636d}
+.stage1-workspace .stage1-workspace-action{display:flex;flex-direction:column;align-items:stretch;gap:12px}
+.stage1-workspace .stage1-workspace-action h2{margin:12px 0;font-size:24px;line-height:1.45}
+.stage1-workspace .stage1-workspace-action p{font-size:16px;line-height:1.45;color:#091b2e}
+body[data-page="stage1Workspace"] .sitefooter{max-width:760px;margin:0 auto}
+
+/* CEO-approved Project Settings 115:227. */
+body[data-page="projectSettings"]{background:#fff}
+.ceo-project-settings{display:flex;flex-direction:column;gap:16px;width:100%;max-width:528px;margin:0 auto;padding:24px;font-family:Inter,Arial,sans-serif;color:#091b2e}
+.ceo-project-settings .customer-heading{display:block;margin:0;padding:20px;background:#f6f8f7;border-radius:18px;text-align:center}
+.ceo-project-settings .customer-heading .eyebrow{display:none}
+.ceo-project-settings .customer-heading h1{margin:0 0 8px;font-size:27px;line-height:1.45}
+.ceo-project-settings .meta{font-size:16px;line-height:1.45;color:#525961}
+.ceo-project-settings .customer-heading .meta{margin:0}
+.ceo-project-settings .management-card{display:flex;flex-direction:column;gap:16px;margin:0;padding:0;border:0;box-shadow:none;background:#fff}
+.ceo-project-settings .project-settings-section-head{display:block;margin:0;padding:0}
+.ceo-project-settings .project-settings-section-head>div{display:none}
+.ceo-project-settings .project-specification-form{display:flex;flex-direction:column;gap:16px;margin:0}
+.ceo-project-settings .field{margin:0;padding:0}
+.ceo-project-settings .field label{display:block;margin:0 0 6px;font-size:14px;line-height:1.45;font-weight:600;color:#091b2e}
+.ceo-project-settings .field input,.ceo-project-settings .field select{box-sizing:border-box;width:100%;height:56px;padding:16px;border:1px solid #dfe3e1;border-radius:12px;background:#fff;font:400 16px/1.45 Inter,Arial,sans-serif;color:#091b2e}
+.ceo-project-settings .field-note{font-size:13px;line-height:1.45}
+.ceo-project-settings .project-ridge-preview{display:flex;flex-direction:column;gap:12px;margin:0;padding:16px;border:0;border-radius:18px;background:#f6f9f7}
+.ceo-project-settings .project-ridge-preview span{font-size:18px;font-weight:700}
+.ceo-project-settings .project-ridge-preview strong{font-size:16px;color:#091b2e}
+.ceo-project-settings .project-ridge-preview p{margin:0;font-size:14px;line-height:1.45;color:#091b2e}
+.ceo-project-settings .actions{display:flex;flex-direction:column;gap:16px;margin:0}
+.ceo-project-settings .btn,.ceo-project-settings .project-settings-delete{display:flex;align-items:center;justify-content:center;box-sizing:border-box;width:100%;min-height:53px;padding:14px;border-radius:12px;font:700 16px/1.45 Inter,Arial,sans-serif;white-space:normal}
+.ceo-project-settings .btn.secondary{background:#fff;border:1px solid #091b2e;color:#091b2e}
+.ceo-project-settings .btn.green{background:#058029;color:#fff;border:0}
+.ceo-project-settings .management-card~.management-card{padding:16px;background:#f6f9f7;border-radius:18px}
+.ceo-project-settings .management-card>h2{margin:0;font-size:22px;line-height:1.45}
+.ceo-project-settings .management-card>p{margin:0;font-size:14px;line-height:1.45}
+.ceo-project-settings .project-settings-delete{background:#fff;border:1px solid #a62626;color:#a62626}
+body[data-page="projectSettings"] .sitefooter{max-width:528px;margin:0 auto}
+
+/* Project overview navigation and direct editing */
+.project-journey-nav{position:sticky;top:68px;z-index:5;background:#fff;border:1px solid #dce5df;border-radius:12px;padding:12px 16px;display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;box-shadow:0 4px 12px #10251b0a}
+.project-journey-nav>strong{overflow-wrap:anywhere}
+.project-journey-nav>span{color:#536259;font-size:14px}
+.project-journey-nav>div{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.project-journey-nav [aria-current]{font-size:14px;color:#1f763d}
+.project-journey-nav .btn{padding:8px 12px;font-size:14px;min-height:40px}
+.stage1-workspace .stage1-basis-item{gap:8px;min-height:0;padding:18px}
+.stage1-workspace .journey-edit{align-self:flex-end;width:auto;min-width:72px;min-height:46px;margin-top:6px;padding:10px 16px;border-radius:10px;font:700 14px/20px Inter,Arial,sans-serif;white-space:nowrap}
+.stage1-workspace .stage1-evidence-row{gap:12px;flex-wrap:wrap}
+.stage1-workspace .stage1-evidence-row strong{overflow-wrap:anywhere}
+.ceo-project-settings input:focus,.ceo-project-settings select:focus{outline:3px solid #217a42;outline-offset:3px}
+@media(max-width:600px){.project-journey-nav{padding:10px 12px;gap:6px}.project-journey-nav>strong,.project-journey-nav>span{width:100%}.stage1-workspace .stage1-basis-grid{gap:12px}}
+
+/* Approved returning-customer dashboard */
+.workspace-dashboard .dashboard-active-name{font-size:22px;margin:12px 0}
+.dashboard-journey{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));list-style:none;padding:0;margin:20px 0;gap:8px;text-align:center}
+.dashboard-journey li{font-size:12px;color:#65706b}
+.dashboard-journey li>span{display:block;margin:0 auto 6px;border:1px solid #d8e2db;border-radius:50%;width:26px;height:26px;line-height:26px}
+.dashboard-journey [aria-current]{color:#167439;font-weight:700}
+.dashboard-journey [aria-current]>span{background:#167439;color:white}
+.workspace-dashboard .dashboard-next{background:#eef8f0;padding:24px;border:1px solid #d6e7da}
+.dashboard-next h2{font-size:26px;margin:12px 0}
+.dashboard-next p{line-height:1.6;color:#53615a}
+.dashboard-next .btn{width:100%;margin-top:12px}
+.dashboard-guide{margin-top:24px;padding:20px}
+.dashboard-guide summary{cursor:pointer;font-weight:700;color:#176d36}
+.dashboard-guide summary span{float:right;font-size:14px}
+.dashboard-guide ol{padding-left:24px;line-height:1.6}
+.dashboard-guide li+li{margin-top:14px}
+.workspace-dashboard .project-summary-actions{flex-wrap:wrap}
+@media(max-width:600px){.workspace-dashboard .workspace-progress-label{flex-wrap:wrap;gap:8px}.workspace-dashboard .project-summary-actions .btn{width:100%}.workspace-dashboard .dashboard-next{padding:20px}}
+
+
+/* Stage 1 carried-forward confirmation screen — 21 September 2026. */
+body[data-page="stage1Confirm"]{background:#fff}
+body[data-page="stage1Confirm"] .stage1-workspace{width:100%;max-width:760px;margin:0 auto;padding:24px 16px 48px;gap:16px;font-family:Inter,Arial,sans-serif;color:#091b2e}
+.stage1-confirmation .confirmation-intro{background:#eef8f0}
+.stage1-confirmation .confirmation-intro h1{margin:10px 0;font-size:30px;line-height:1.25}
+.stage1-confirmation .confirmation-intro p{margin:0;font-size:16px;line-height:1.55}
+.stage1-confirmation .confirmation-legend{padding:12px 14px}
+.stage1-confirmation .confirmation-section{padding:20px}
+.stage1-confirmation .confirmation-section .stage1-basis-grid{margin-top:14px}
+.stage1-confirmation .confirmation-missing{font-weight:700;color:#8a5a00}
+.stage1-confirmation .stage1-source--pending{color:#8a5a00}
+.stage1-confirmation .confirmation-answer-list,.stage1-confirmation .confirmation-document-list,.stage1-confirmation .confirmation-evidence-notices{display:grid;gap:12px;margin-top:14px}
+.stage1-confirmation .confirmation-answer,.stage1-confirmation .confirmation-document,.stage1-confirmation .confirmation-evidence-notice{padding:16px;border:1px solid #d9e0db;border-radius:16px;background:#fff}
+.stage1-confirmation .confirmation-answer p,.stage1-confirmation .confirmation-document p,.stage1-confirmation .confirmation-evidence-notice p{margin:7px 0 0;line-height:1.45}
+.stage1-confirmation .confirmation-document{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.stage1-confirmation .confirmation-document>div{min-width:0}
+.stage1-confirmation .confirmation-document strong{overflow-wrap:anywhere}
+.stage1-confirmation .confirmation-evidence-notices h3{margin:8px 0 0;font-size:18px}
+.stage1-confirmation .confirmation-outstanding ul{margin:14px 0 0;padding-left:22px}
+.stage1-confirmation .confirmation-outstanding li{margin:0 0 10px;line-height:1.45}
+.stage1-confirmation .confirmation-ready{margin:14px 0 0;font-weight:700;color:#167439}
+.stage1-confirmation .confirmation-actions{gap:16px}
+.stage1-confirmation .confirmation-action-buttons{display:grid;gap:10px;width:100%}
+.stage1-confirmation .confirmation-action-buttons .btn{width:100%}
+@media(max-width:600px){
+body[data-page="stage1Confirm"] .stage1-workspace{padding:16px 14px 36px}
+.stage1-confirmation .confirmation-section{padding:18px}
+.stage1-confirmation .confirmation-document{align-items:stretch;flex-direction:column}
+.stage1-confirmation .confirmation-document .journey-edit{align-self:flex-start}
+}
+
+/* Desktop customer pages must not inherit the deliberately narrow mobile
+   compositions above. Keep all phone rules intact and expand only wide views. */
+@media(min-width:900px){
+body:is([data-page="dashboard"],[data-page="createProject"]) .workspace-dashboard{max-width:1180px;padding:32px 24px 56px;gap:22px}
+body:is([data-page="dashboard"],[data-page="createProject"]) .home-footer{max-width:1180px}
+body:is([data-page="dashboard"],[data-page="createProject"]) .workspace-progress{padding:28px 32px;text-align:left}
+body:is([data-page="dashboard"],[data-page="createProject"]) .workspace-title-row{display:flex;align-items:flex-start;justify-content:space-between;gap:24px}
+body:is([data-page="dashboard"],[data-page="createProject"]) .workspace-progress>.btn{width:auto;min-width:190px;align-self:flex-start}
+body:is([data-page="dashboard"],[data-page="createProject"]) .project-summary{padding:26px 28px}
+
+body:is([data-page="stage1Workspace"],[data-page="stage1Confirm"]) .stage1-workspace{max-width:1180px;padding:32px 24px 56px;gap:22px}
+body[data-page="stage1Workspace"] .sitefooter{max-width:1180px}
+.stage1-workspace :is(.stage1-technical-header,.stage1-readiness-card,.stage1-tech-card,.stage1-workspace-action){padding:28px 32px}
+.stage1-workspace .stage1-technical-header{flex-direction:row;align-items:flex-start;justify-content:space-between;gap:32px}
+.stage1-workspace .stage1-technical-header>div{min-width:0;max-width:780px}
+.stage1-workspace .stage1-readiness-row{flex-direction:row;align-items:center;justify-content:space-between;gap:32px}
+.stage1-workspace .stage1-readiness-row>div{flex-direction:row;align-items:baseline;gap:16px}
+.stage1-workspace .stage1-readiness-row p{max-width:560px;text-align:right}
+.stage1-workspace .stage1-section-heading{grid-template-columns:auto 1fr auto;align-items:start;column-gap:10px}
+.stage1-workspace .stage1-section-heading .btn{grid-column:auto;width:auto;min-width:170px}
+.stage1-workspace .stage1-basis-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.stage1-workspace .stage1-basis-wide{grid-column:1/-1}
+.stage1-workspace .stage1-workspace-action{flex-direction:row;align-items:center;justify-content:space-between;gap:32px}
+.stage1-workspace .stage1-workspace-action>div{max-width:760px}
+.stage1-workspace .stage1-workspace-action>.btn{width:auto;min-width:220px}
+.stage1-confirmation .confirmation-action-buttons{grid-template-columns:repeat(2,minmax(0,1fr));max-width:520px}
+.stage1-confirmation .confirmation-action-buttons .btn:last-child:nth-child(odd){grid-column:1/-1}
+}
+
+
+/* Stage 1 combined Site Layout — 21 September 2026. */
+body[data-page="siteLayout"]{background:#fff}
+body[data-page="siteLayout"] .stage1-workspace{width:100%;max-width:760px;margin:0 auto;padding:24px 16px 48px;gap:16px;font-family:Inter,Arial,sans-serif;color:#091b2e}
+.site-layout-page .site-layout-intro{background:#eef8f0}
+.site-layout-page .site-layout-intro h1{margin:10px 0;font-size:30px;line-height:1.25}
+.site-layout-page .site-layout-intro p{margin:0;font-size:16px;line-height:1.55}
+.site-layout-guide{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.site-layout-guide-step{display:flex;gap:12px;align-items:flex-start;padding:14px;border:1px solid #d9e3dc;border-radius:14px;background:#fff}
+.site-layout-guide-step>span{display:grid;place-items:center;flex:0 0 32px;width:32px;height:32px;border-radius:50%;background:#eef8f0;color:#167439;font-weight:800}
+.site-layout-guide-step strong{display:block;font-size:15px}
+.site-layout-guide-step p{margin:4px 0 0;color:#59675f;font-size:13px;line-height:1.4}
+.site-layout-guide-step.is-current{border-color:#9fcbb0;background:#f7fcf8}
+.site-layout-page .stage1-tech-card{padding:20px}
+.site-layout-page .site-layout-note{margin:14px 0;padding:12px 14px;border-radius:12px;background:#f4f7f5;color:#33463b;font-size:14px;line-height:1.45}
+.site-layout-warning{margin:12px 0;padding:12px 14px;border:1px solid #e7c46a;border-radius:12px;background:#fff8e7;color:#6a4a00;font-weight:600;line-height:1.45}
+.site-layout-dimensions{display:grid;gap:3px;margin:14px 0;padding:14px;border:1px solid #d9e3dc;border-radius:14px;background:#fff}
+.site-layout-dimensions span,.site-layout-dimensions small{color:#59675f}
+.site-layout-dimensions strong{font-size:23px;line-height:1.25}
+.site-layout-layer-toggle{display:flex;gap:18px;margin:14px 0;padding:12px 14px;border:1px solid #d9e3dc;border-radius:12px;background:#fff}
+.site-layout-layer-toggle .layer-toggle{display:flex;gap:8px;align-items:center;font-weight:600}
+.site-layout-map{width:100%;height:430px;min-height:430px;border:1px solid #cfdad3;border-radius:18px;overflow:hidden;background:#eef2ef}
+.site-layout-page .map-status{margin:12px 0;color:#33463b;font-size:14px;line-height:1.45}
+.site-layout-controls,.site-layout-confirm-row,.site-layout-boundary-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
+.site-layout-controls{grid-template-columns:repeat(3,minmax(0,1fr))}
+.site-layout-page .btn{min-height:48px;white-space:normal}
+.site-layout-page .btn.secondary{background:#fff;border:1px solid #091b2e;color:#091b2e}
+.site-layout-page .btn.green{background:#058029;color:#fff;border:0}
+.site-layout-page .btn:disabled{opacity:.5;cursor:not-allowed}
+.site-layout-disclaimer{margin:14px 0 0;padding-top:14px;border-top:1px solid #e0e7e2;color:#65726b;font-size:13px;line-height:1.5}
+.site-layout-boundary-card[hidden]{display:none!important}
+.site-layout-boundary-help{margin:14px 0;padding:14px 16px;border-radius:14px;background:#eef8f0}
+.site-layout-boundary-help strong{display:block;margin-bottom:8px}
+.site-layout-boundary-help ol{margin:0;padding-left:22px;line-height:1.55}
+@media(max-width:600px){
+ body[data-page="siteLayout"] .stage1-workspace{padding:16px 14px 36px}
+ .site-layout-guide{grid-template-columns:1fr}
+ .site-layout-page .stage1-tech-card{padding:18px}
+ .site-layout-map{height:360px;min-height:360px}
+ .site-layout-controls{grid-template-columns:1fr 1fr}
+ .site-layout-controls .btn:last-child{grid-column:1/-1}
+ .site-layout-confirm-row,.site-layout-boundary-controls{grid-template-columns:1fr}
+  }
+
+
+/* Company/site address separation — 21 September 2026. */
+.project-address-choice{margin:0;padding:0;border:0}
+.project-address-choice legend{margin:0 0 10px;font-weight:700;color:#091b2e}
+.project-address-choice>label{display:flex;align-items:flex-start;gap:10px;margin:10px 0;padding:12px 14px;border:1px solid #d9e3dc;border-radius:12px;background:#fff;line-height:1.4}
+.project-address-choice input[type="radio"]{width:20px;height:20px;flex:0 0 20px;margin:1px 0 0}
+.site-layout-map.is-locating{visibility:hidden}
+
+
+/* Site Layout touch-rotation guidance — 21 September 2026. */
+.site-layout-position-help{margin:14px 0;padding:16px;border:1px solid #cfe2d5;border-radius:14px;background:#eef8f0}
+.site-layout-position-help[hidden]{display:none!important}
+.site-layout-position-help h3{margin:0 0 8px;color:#091b2e;font-size:20px;line-height:1.3}
+.site-layout-position-help p{margin:0;color:#33463b;line-height:1.5}
+.site-layout-position-help ul{margin:12px 0;padding-left:22px;color:#33463b;line-height:1.55}
+.site-layout-position-help li+li{margin-top:6px}
+.site-layout-position-action{padding-top:4px}
+.site-layout-gesture-reminder{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:14px}
+.site-layout-gesture-reminder span{padding:10px 8px;border:1px solid #c9d9ce;border-radius:10px;background:#fff;text-align:center;color:#425148;font-size:13px;line-height:1.35}
+.site-layout-gesture-reminder strong{display:block;color:#176d36;font-size:14px}
+@media(max-width:600px){
+ .site-layout-position-help{padding:14px}
+ .site-layout-gesture-reminder{grid-template-columns:1fr}
+ .site-layout-gesture-reminder span{display:flex;justify-content:space-between;gap:12px;text-align:left}
+ .site-layout-gesture-reminder strong{display:inline}
+}
+
+
+/* Confirmed building state — 21 September 2026. */
+#siteLayoutBuildingControls[hidden],
+#siteLayoutBuildingConfirm[hidden],
+#siteLayoutBuildingConfirmedState[hidden]{display:none!important}
+.site-layout-building-confirmed{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center;margin-top:14px;padding:14px 16px;border:1px solid #b8d8c1;border-radius:14px;background:#eef8f0}
+.site-layout-building-confirmed strong{display:block;color:#0f6b2c;font-size:17px;line-height:1.35}
+.site-layout-building-confirmed p{margin:5px 0 0;color:#425148;line-height:1.45}
+@media(max-width:600px){
+ .site-layout-building-confirmed{grid-template-columns:1fr}
+ .site-layout-building-confirmed .btn{width:100%}
+}
+
+
+/* Site Layout Figma redesign — 2026-11-02 */
+.site-layout-page.site-layout-redesign{
+  max-width:1280px!important;
+  padding-inline:clamp(12px,2vw,28px);
+  padding-bottom:5rem;
+}
+.site-layout-redesign-hero{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(300px,.55fr);
+  gap:24px;
+  align-items:center;
+}
+.site-layout-redesign-hero h1{margin-bottom:8px}
+.site-layout-project-summary{
+  display:grid;
+  gap:10px;
+  margin:0;
+  padding:14px 16px;
+  border:1px solid #d8e4dc;
+  border-radius:14px;
+  background:#fff;
+}
+.site-layout-project-summary div{display:grid;grid-template-columns:100px 1fr;gap:12px;align-items:start}
+.site-layout-project-summary dt{font-size:.78rem;font-weight:800;color:#52635a;text-transform:uppercase;letter-spacing:.04em}
+.site-layout-project-summary dd{margin:0;font-weight:700;color:#14261c}
+.site-layout-project-summary .site-layout-dimensions{display:flex;gap:8px;align-items:baseline}
+.site-layout-project-summary .site-layout-dimensions span{font-size:.78rem;color:#68766f}
+.site-layout-map-card{padding:clamp(14px,2.5vw,28px);overflow:visible}
+.site-layout-card-heading{display:flex;justify-content:space-between;gap:20px;align-items:end;margin-bottom:14px}
+.site-layout-card-heading h2{margin:4px 0 0}
+.site-layout-step-label{font-size:.76rem;font-weight:850;letter-spacing:.06em;text-transform:uppercase;color:#087a32}
+.site-layout-card-heading .site-layout-note{max-width:520px;margin:0;text-align:right}
+.site-layout-map-config{
+  margin:10px 0;
+  border:1px solid #d8e4dc;
+  border-radius:12px;
+  background:#f9fbfa;
+}
+.site-layout-map-config summary{padding:10px 14px;font-weight:800;cursor:pointer}
+.site-layout-config-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr 1.3fr;
+  gap:16px;
+  padding:0 14px 14px;
+}
+.site-layout-config-grid fieldset{display:flex;gap:12px;align-items:center;margin:0;padding:10px 12px;border:1px solid #dce6e0;border-radius:10px;background:#fff}
+.site-layout-config-grid legend{padding:0 4px;font-size:.76rem;font-weight:800;color:#53645a}
+.site-layout-config-grid label{display:flex;gap:6px;align-items:center;font-size:.88rem}
+.site-layout-config-grid dl{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0}
+.site-layout-config-grid dl div{padding:8px 10px;border:1px solid #dce6e0;border-radius:10px;background:#fff}
+.site-layout-config-grid dt{font-size:.72rem;color:#607168}
+.site-layout-config-grid dd{margin:3px 0 0;font-weight:850}
+.site-layout-map-frame{position:relative;border:1px solid #c9d8cf;border-radius:16px;overflow:hidden;background:#dce9df}
+.site-layout-map{height:min(62vh,620px)!important;min-height:460px;width:100%}
+.site-layout-map-key{
+  position:absolute;
+  left:12px;
+  bottom:12px;
+  z-index:3;
+  display:flex;
+  gap:12px;
+  padding:7px 10px;
+  border-radius:9px;
+  background:rgba(255,255,255,.92);
+  box-shadow:0 2px 10px rgba(13,40,24,.15);
+  font-size:.76rem;
+}
+.site-layout-map-key span{display:flex;align-items:center;gap:5px}
+.site-layout-map-key i{display:inline-block;width:14px;height:8px;border:2px solid #0a963f;background:rgba(55,199,93,.28)}
+.site-layout-map-key i.is-boundary{height:0;border-width:0 0 3px;border-color:#2f5ea8;background:none}
+.site-layout-building-handle{
+  width:34px;
+  height:34px;
+  padding:0;
+  border:3px solid #fff;
+  border-radius:50%;
+  background:#078637;
+  box-shadow:0 3px 12px rgba(0,0,0,.28);
+  cursor:grab;
+}
+.site-layout-building-handle:active{cursor:grabbing}
+.site-layout-building-handle span{display:block;width:8px;height:8px;margin:auto;border-radius:50%;background:#fff}
+.site-layout-building-confirmed{margin-top:10px}
+.site-layout-sticky-actions{
+  position:sticky;
+  bottom:10px;
+  z-index:8;
+  display:flex;
+  justify-content:space-between;
+  gap:18px;
+  align-items:center;
+  margin-top:12px;
+  padding:12px 14px;
+  border:1px solid #c9d8cf;
+  border-radius:14px;
+  background:rgba(255,255,255,.96);
+  box-shadow:0 10px 28px rgba(19,48,31,.16);
+  backdrop-filter:blur(8px);
+}
+.site-layout-boundary-card{max-width:none}
+.site-layout-map .maplibregl-canvas{cursor:grab}
+.site-layout-map .maplibregl-canvas:active{cursor:grabbing}
+.site-layout-rotate-handle{width:30px;height:30px;padding:0;border:3px solid #fff;border-radius:50%;background:#091b2e;color:#fff;font-size:16px;line-height:1;box-shadow:0 3px 12px rgba(0,0,0,.28);cursor:grab}
+.site-layout-rotate-handle[hidden]{display:none}
+@media (max-width:800px){
+ .site-layout-redesign-hero{grid-template-columns:1fr}
+ .site-layout-card-heading{display:block}
+ .site-layout-card-heading .site-layout-note{margin-top:8px;text-align:left}
+ .site-layout-config-grid{grid-template-columns:1fr}
+ .site-layout-map{height:54vh!important;min-height:390px}
+}
+@media (max-width:480px){
+ .site-layout-project-summary div{grid-template-columns:1fr;gap:3px}
+ .site-layout-project-summary .site-layout-dimensions{display:block}
+ .site-layout-map{min-height:350px}
+}
+
+/* Complete desktop-canvas correction — 6 November 2026.
+   A later mobile-first review layer deliberately made several customer
+   screens compact, but its fixed 480/528/760/920px caps also applied on a
+   desktop monitor. Keep every existing phone rule unchanged and restore a
+   genuine desktop composition only when there is room for one. */
+@media(min-width:900px){
+  /* Guided pricing: retain the approved content and order, but use the
+     available canvas for the route and appointment comparisons. */
+  .ceo-guided-pricing .ceo-pricing-body{
+    width:min(calc(100% - 48px),1180px);
+    padding:32px 24px 56px;
+    gap:22px;
+  }
+  .ceo-guided-pricing .pricing-hero{padding:30px 34px}
+  .ceo-guided-pricing .pricing-hero h1{font-size:clamp(34px,3.4vw,48px);line-height:1.12}
+  .ceo-guided-pricing .pricing-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+  .ceo-guided-pricing .pricing-step-row{height:100%}
+  .ceo-guided-pricing .pricing-appointments-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+  .ceo-guided-pricing .pricing-appointment-row{height:100%}
+  body[data-page="pricing"] .home-footer{max-width:1180px}
+
+  /* Create Project: the phone form remains one column; desktop presents the
+     same fields in a clear two-column form with dimensions together. */
+  .create-project-screen{
+    width:min(calc(100% - 48px),1180px);
+    padding:32px 24px 56px;
+    background:#fff;
+  }
+  .create-project-screen .project-flow-modal{gap:22px;padding:0}
+  .create-project-screen .project-flow-intro{padding:28px 32px;text-align:left}
+  .create-project-screen .project-flow-intro h2{font-size:34px;line-height:1.2}
+  .create-project-screen #briefFields{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:18px 22px;
+  }
+  .create-project-screen .dimensions-grid{
+    grid-column:1/-1;
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:16px;
+  }
+  .create-project-screen .actions{flex-direction:row;justify-content:flex-end}
+  .create-project-screen .actions .btn{width:auto;min-width:190px}
+  body[data-page="createProject"] .home-footer{max-width:1180px}
+
+  /* Profile and account editing: remove the inherited 920px mobile cap.
+     Overview cards become a balanced pair; the edit form keeps its native
+     two-column desktop grid. */
+  body:is([data-page="profile"],[data-page="profileEdit"]) .profile-page{
+    width:min(calc(100% - 48px),1180px);
+    max-width:1180px;
+    padding:32px 24px 56px;
+  }
+  body[data-page="profile"] .profile-page{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:22px;
+  }
+  body[data-page="profile"] .profile-page>:is(.customer-heading,.profile-identity){grid-column:1/-1}
+  body[data-page="profile"] .profile-page .profile-card{
+    width:100%;
+    max-width:none;
+    height:100%;
+    margin:0;
+  }
+  body[data-page="profileEdit"] .profile-page .profile-card{max-width:none;margin:0}
+  body[data-page="profileEdit"] .profile-form{grid-template-columns:repeat(2,minmax(0,1fr));gap:0 22px}
+
+  /* Project Settings: convert the fixed 528px phone form into a proper
+     desktop workspace. No fields or behaviour are changed. */
+  .ceo-project-settings{
+    width:min(calc(100% - 48px),1180px);
+    max-width:1180px;
+    padding:32px 24px 56px;
+    gap:22px;
+  }
+  .ceo-project-settings .customer-heading{padding:28px 32px;text-align:left}
+  .ceo-project-settings .customer-heading h1{font-size:34px;line-height:1.2}
+  .ceo-project-settings .management-card:first-of-type{padding:28px 32px;border:1px solid #d9e0db;border-radius:18px}
+  .ceo-project-settings .project-specification-form{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:18px 22px;
+  }
+  .ceo-project-settings .project-ridge-preview{grid-column:1/-1}
+  .ceo-project-settings .actions{flex-direction:row;justify-content:flex-end}
+  .ceo-project-settings .actions .btn{width:auto;min-width:210px}
+  .ceo-project-settings .management-card~.management-card{padding:22px 26px}
+  body[data-page="projectSettings"] .sitefooter{max-width:1180px}
+
+  /* Project Documents is a register/table screen and must use the desktop
+     canvas rather than the generic 920px customer-card cap. */
+  body[data-page="projectDocuments"] .project-management-page{
+    width:min(calc(100% - 48px),1180px);
+    max-width:1180px;
+    padding:32px 24px 56px;
+  }
+}
+
+
+/* Simplified Site Layout — sticky bottom action, full-width confirm */
+.site-layout-sticky-actions{
+  position:sticky;
+  bottom:0;
+  z-index:30;
+  background:#fff;
+  padding:12px 0 8px;
+  border-top:1px solid #e3e5e5;
+  box-shadow:0 -4px 12px rgba(0,0,0,.06);
+  display:flex;flex-direction:column;gap:6px;align-items:stretch;
+}
+.site-layout-sticky-actions>span{font-size:.82rem;color:#53645a;text-align:center}
+.site-layout-sticky-actions .btn{
+  width:100%;
+  white-space:nowrap;
+  min-height:52px;
+}
+@media (max-width:800px){
+  .site-layout-map{height:50vh!important;min-height:320px}
+  .site-layout-boundary-controls{display:flex;gap:8px;flex-wrap:wrap}
+  .site-layout-boundary-controls .btn{flex:1;min-width:120px}
+}

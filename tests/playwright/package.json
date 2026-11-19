@@ -1,0 +1,14 @@
+{
+  "name": "project-check-playwright-tests",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Automated responsive/device acceptance, XSS-regression, accessibility and error-handling suite for the Project Check MVP. Not shipped to customers — dev/CI tooling only.",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.62.1",
+    "@axe-core/playwright": "4.13.0",
+    "serve": "14.2.6"
+  }
+}

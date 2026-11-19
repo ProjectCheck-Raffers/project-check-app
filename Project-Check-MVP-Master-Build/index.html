@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Project Check — Know Before You Build</title>
+  <meta name="description" content="Independent industrial building project support from early project definition through deeper assessment, supplier comparison and project support.">
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" integrity="sha384-p5cy4wHtKSqjnLUNjQ+8ffCwUp0vlLS+6lg1lc3qqXax2E1EmVCMCAimU+R0MOZH" crossorigin="anonymous">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="styles.css?v=journey-menu-20261114">
+  <link rel="stylesheet" href="site-layout-presentation.css?v=s1-report-workspace-btn-20261118">
+  <link rel="stylesheet" href="building-layout.css?v=mobile-action-bar-20261118">
+  <link rel="stylesheet" href="cross-device-audit.css?v=20261107">
+</head>
+<body>
+  <header class="topbar">
+    <button type="button" class="brand" data-route="home" aria-label="Project Check home">
+      <img class="brand-logo" src="assets/project-check-banner-logo.png" alt="Project Check — Know before you build.">
+    </button>
+    <div class="site-nav-actions" id="siteNavActions">
+      <button type="button" class="header-quick-action" id="quickActionBtn">Start</button>
+      <button type="button" class="menu-button" id="menuBtn" aria-label="Open menu" aria-expanded="false" aria-controls="siteDrawer">
+        <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
+      </button>
+    </div>
+  </header>
+  <div class="drawer-backdrop" id="drawerBackdrop" hidden></div>
+  <aside class="site-drawer" id="siteDrawer" aria-label="Site navigation" aria-hidden="true" inert tabindex="-1">
+    <div class="drawer-header">
+      <img src="assets/project-check-banner-logo.png" alt="Project Check — Know before you build.">
+      <button type="button" class="drawer-close" id="drawerClose" aria-label="Close menu">&times;</button>
+    </div>
+    <div class="drawer-project-context" id="drawerProjectContext" hidden>
+      <section class="drawer-guest-intro" id="drawerGuestIntro" hidden aria-label="Start your Stage 1 check">
+        <p>Start a project to begin your Stage 1 check</p>
+        <button type="button" class="btn green" id="drawerGuestStart">Start a project</button>
+      </section>
+      <section class="drawer-project-card" id="drawerProjectCard" aria-label="Active project">
+        <div class="drawer-project-title-row">
+          <strong id="drawerProjectName"></strong>
+          <button type="button" id="drawerChangeProject" data-route="dashboard">Change</button>
+        </div>
+        <span id="drawerProjectProgressLabel"></span>
+        <div class="drawer-project-progress" aria-hidden="true"><span id="drawerProjectProgressBar"></span></div>
+      </section>
+      <div class="drawer-journey-label">Your project journey</div>
+      <nav class="drawer-project-journey" id="drawerProjectJourney" aria-label="Project journey"></nav>
+    </div>
+    <nav class="drawer-nav" aria-label="Site menu">
+      <button type="button" id="drawerHome" data-route="home" data-drawer-route="home">Home</button>
+      <button type="button" id="drawerPricing" data-route="pricing" data-drawer-route="pricing">Pricing</button>
+      <button type="button" id="projectsBtn" data-route="dashboard" data-drawer-route="dashboard">My Projects</button>
+      <button type="button" id="profileBtn" data-route="profile" data-drawer-route="profile">Profile &amp; Settings</button>
+      <div class="drawer-signout-separator" id="drawerSignoutSeparator" hidden aria-hidden="true"></div>
+      <button type="button" class="drawer-signout" id="authBtn">Sign out</button>
+      <button type="button" id="drawerSignIn">Sign in</button>
+      <button type="button" id="drawerCreateAccount">Create account</button>
+    </nav>
+    <div class="drawer-account" id="drawerAccount" hidden>
+      <span>Signed in as</span>
+      <strong id="drawerAccountName"></strong>
+    </div>
+  </aside>
+  <main id="app"></main>
+  <footer class="sitefooter">
+    <img class="sitefooter-logo" src="assets/project-check-banner-logo.png" alt="Project Check — Know before you build.">
+    <nav class="sitefooter-primary" aria-label="Footer navigation">
+      <button type="button" data-route="home">Home</button>
+      <button type="button" data-route="pricing">Pricing</button>
+      <button type="button" data-route="dashboard">My Projects</button>
+    </nav>
+    <div class="sitefooter-rule"></div>
+    <nav class="sitefooter-links" aria-label="Legal navigation">
+      <button type="button" data-route="terms">Terms &amp; Conditions</button>
+      <button type="button" data-route="privacy">Privacy Policy</button>
+    </nav>
+    <span class="sitefooter-copy">&copy; 2026 Project Check</span>
+  </footer>
+
+  <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js" integrity="sha384-3WUbXI7T+/GIrWP/5MDMjhzLyHQ+0utF3PnJ7ozD7UeN1/bbZ96Hk+Vvd024VYfW" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk" crossorigin="anonymous"></script>
+  <script src="geometry.js?v=roller-page-removed-20261114"></script>
+  <script src="drawing.js?v=design-match-20261117"></script>
+  <script src="background-checks.js?v=fire-exit-toggle-20261118b"></script>
+  <script src="assets/vendor/pdfjs/pdf.min.js" integrity="sha384-/1qUCSGwTur9vjf/z9lmu/eCUYbpOTgSjmpbMQZ1/CtX2v/WcAIKqRv+U1DUCG6e"></script>
+  <script src="evidence.js?v=dwg-20260920"></script>
+  <script src="brain/stage-1/door-size-defaults.js"></script>
+  <script src="brain/stage-1/heated-building-risk.js"></script>
+  <script src="brain/stage-1/compressed-programme-risk.js"></script>
+  <script src="brain/stage-1/services-drainage-risk.js"></script>
+  <script src="brain/stage-1/building-position-status-risk.js"></script>
+  <script src="brain/stage-1/site-boundary-status-risk.js"></script>
+  <script src="brain/stage-1/close-boundary-risk.js"></script>
+  <script src="brain/stage-1/level-risk.js"></script>
+  <script src="brain/stage-1/base-uncertain-risk.js"></script>
+  <script src="brain/stage-1/base-surface-risk.js"></script>
+  <script src="brain/stage-1/missing-info-level-no.js"></script>
+  <script src="brain/stage-1/missing-info-building-position.js"></script>
+  <script src="brain/stage-1/missing-info-site-boundary.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="platform-config.js?v=20260911-3"></script>
+  <script src="platform.js?v=steel-stage1-20261112"></script>
+  <script src="site-layout.js?v=bregs-20261114"></script>
+  <script src="building-layout.js?v=mobile-action-bar-20261118"></script>
+  <script src="app.js?v=adjacent-water-check-20261118b"></script>
+  <script src="site-layout-presentation.js?v=roller-page-removed-20261114"></script>
+</body>
+</html>

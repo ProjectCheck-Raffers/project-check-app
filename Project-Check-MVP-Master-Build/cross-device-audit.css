@@ -1,0 +1,37 @@
+/* Cross-device audit 2026-11-07.
+   Loaded after styles.css. Does not rewrite site-layout-presentation.css.
+   No global overflow hiding. No canvas, drawing or map sizing changes.
+   Code inspection only. Real devices and watch remain untested. */
+img,svg,video{max-width:100%;height:auto}
+input,select,textarea{max-width:100%}
+@media (max-width:768px){
+  .hero,.section,.container,.profile-card,.project-management-page,.stage1-workspace,.approved-pricing-grid,.legal-doc,.project-settings-dialog{
+    max-width:100%;
+    padding-left:16px;
+    padding-right:16px;
+  }
+  .hero{grid-template-columns:1fr}
+  .hero h1{font-size:36px}
+  .hero h2{font-size:22px}
+  .pagehead{flex-wrap:wrap}
+  .pagehead > .btn{min-width:0;width:100%}
+  .topbar{padding-inline:12px}
+  .brand-logo{max-width:min(180px,42vw)}
+  .sitefooter,.sitefooter-primary,.sitefooter-links{flex-wrap:wrap;justify-content:center;gap:8px}
+  .approved-pricing-grid{grid-template-columns:1fr}
+  .supplier-banner{flex-wrap:wrap}
+  .supplier-banner .btn{white-space:normal}
+  .project-settings-trigger{white-space:normal}
+}
+@media (max-width:390px){
+  .card,.hero-card{padding:16px}
+  .btn{max-width:100%}
+  .pagehead h1{font-size:26px}
+  .header-quick-action{max-width:80px;font-size:11px}
+}
+@media (max-width:280px){
+  .topbar{padding-inline:6px}
+  .brand-logo{max-width:68px}
+  .pagehead h1{font-size:22px}
+  .card{padding:12px}
+}
