@@ -297,3 +297,20 @@ body[data-page="buildingLayout"] .sitefooter{display:none}
   .bd-persistent-actions{padding-inline:12px}
   .bd-persistent-actions .bd-action-buttons .btn{padding:6px 8px;font-size:12px}
 }
+/* Compact action bar on laptop/desktop (2026-11-19, Stuart): smaller padding,
+   text and buttons so more of the drawing is in view. Phones unchanged. */
+@media(min-width:801px){
+  .bd-persistent-actions{padding-top:8px;padding-bottom:8px;gap:16px}
+  .bd-persistent-actions:has(>.bd-fire-option){padding-top:6px;row-gap:4px}
+  .bd-persistent-actions .bd-fire-option label{font-size:.85rem}
+  .bd-persistent-actions .bd-fire-option-row{min-height:26px}
+  .bd-persistent-actions .bd-fire-info{width:26px;height:26px;font-size:.95rem}
+  .bd-persistent-actions .bd-current-view{gap:1px}
+  .bd-persistent-actions .bd-current-view>span{font-size:9px}
+  .bd-persistent-actions .bd-current-view strong{font-size:13px}
+  .bd-persistent-actions .bd-current-view em{font-size:10px}
+  .bd-persistent-actions .bd-action-buttons{gap:8px}
+  .bd-persistent-actions .bd-action-buttons .btn,.bd-persistent-actions .bd-free-report .btn{min-height:36px;padding:5px 10px;font-size:13px;line-height:1.2}
+  .bd-persistent-actions .bd-free-report{gap:3px}
+  .bd-persistent-actions .bd-free-report p{font-size:11px;line-height:1.25}
+}
