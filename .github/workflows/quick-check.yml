@@ -1,0 +1,44 @@
+name: Quick check
+
+# Runs once per pull request (about 1 minute). Nothing runs again after merge.
+on:
+  pull_request:
+    branches: [approved]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quick-check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quick:
+    name: Syntax, HTML, CSS, logo and secrets
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: JavaScript syntax
+        run: |
+          for f in Project-Check-MVP-Master-Build/*.js; do node --check "$f"; done
+      - name: HTML validity
+        run: |
+          echo '{"extends":["html-validate:recommended"]}' > "$RUNNER_TEMP/htmlvalidate.json"
+          npx --yes html-validate@11.8.0 --config "$RUNNER_TEMP/htmlvalidate.json" "Project-Check-MVP-Master-Build/index.html"
+      - name: CSS validity (syntax only)
+        run: |
+          echo '{"rules":{}}' > "$RUNNER_TEMP/stylelintrc.json"
+          npx --yes stylelint@17.14.1 --config "$RUNNER_TEMP/stylelintrc.json" "Project-Check-MVP-Master-Build/styles.css"
+      - name: Logo asset present
+        run: test -s Project-Check-MVP-Master-Build/assets/project-check-logo.png
+      - name: Secrets scan
+        run: |
+          curl -fsSL -o gitleaks.tar.gz https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz
+          tar -xzf gitleaks.tar.gz gitleaks
+          ./gitleaks detect --source . --no-banner --redact
