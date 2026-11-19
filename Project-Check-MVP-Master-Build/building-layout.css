@@ -314,3 +314,11 @@ body[data-page="buildingLayout"] .sitefooter{display:none}
   .bd-persistent-actions .bd-free-report{gap:3px}
   .bd-persistent-actions .bd-free-report p{font-size:11px;line-height:1.25}
 }
+/* Fire-exit toggle in the Add an opening panel (2026-11-19, Stuart): its own
+   line under Double door / Casement window; the ⓘ text sits beside Delete opening. */
+.bd-add-buttons>.bd-fire-option{grid-column:1/-1;margin:2px 0 0;padding:0}
+.bd-add-buttons>.bd-fire-option label{font-size:13px}
+.bd-add-buttons>.bd-fire-option .bd-fire-option-row{min-height:28px}
+.bd-add-buttons>.bd-fire-option .bd-fire-info{width:28px;height:28px}
+.bd-add-buttons>.bd-fire-info-text{grid-column:2;align-self:center;margin:0;font-size:11px;line-height:1.3;color:#334155}
+@media(max-width:800px){.bd-add-buttons>.bd-fire-info-text{grid-column:1}}

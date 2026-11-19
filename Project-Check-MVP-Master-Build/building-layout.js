@@ -1388,7 +1388,7 @@ function buildingDesignRenderControls(){
     (planView
       ?'<div class="bd-add-label">Add a roof opening</div><div class="bd-add-buttons is-plan"><button type="button" class="btn green" '+(state.locked?'disabled':'')+' onclick="buildingDesignAddSkylight()">＋ Skylight</button><button type="button" class="bd-delete bd-delete-placement" '+(deleteSkylightDisabled?'disabled':'')+' onclick="buildingDesignDeleteDoor()">Delete skylight</button></div><p class="bd-opening-guidance">Skylights are available in Plan view only and sit between the indicative structural roof frames.</p>'+
         '<div class="bd-add-label">Add solar panels</div><div class="bd-add-buttons is-plan"><button type="button" class="btn green" '+(state.locked?'disabled':'')+' onclick="buildingDesignAddSolarArray()">＋ Solar panels</button><button type="button" class="btn secondary bd-fill-solar" '+(state.locked?'disabled':'')+' onclick="buildingDesignFillRoofSolar()">Fill roof with solar</button><button type="button" class="bd-delete bd-delete-placement" '+(deleteSolarDisabled?'disabled':'')+' onclick="buildingDesignDeleteDoor()">Delete solar array</button></div><p class="bd-opening-guidance">Each click fills the next free roof bay with a solar array, between the roof frames and clear of the skylight rows. Drag an array to snap it to another free bay, or use Fill roof with solar to fill every free bay.</p>'
-      :'<div class="bd-add-label">Add an opening</div><div class="bd-add-buttons"><button type="button" class="btn green" '+(state.locked?'disabled':'')+' onclick="buildingDesignAddDoor(\'roller\')">＋ Roller door</button><button type="button" class="btn secondary" '+(state.locked?'disabled':'')+' onclick="buildingDesignAddDoor(\'personnel\')">＋ Personnel door</button><button type="button" class="btn secondary" '+(state.locked?'disabled':'')+' onclick="buildingDesignAddDoor(\'double\')">＋ Double door</button><button type="button" class="btn secondary" '+(state.locked||windowUnavailable?'disabled':'')+' '+(windowUnavailable?'title="Casement windows are available on sidewalls B and D only"':'')+' onclick="buildingDesignAddDoor(\'window\')">＋ Casement window</button><button type="button" class="bd-delete bd-delete-placement" '+(deleteOpeningDisabled?'disabled':'')+' onclick="buildingDesignDeleteDoor()">Delete opening</button></div>')+
+      :'<div class="bd-add-label">Add an opening</div><div class="bd-add-buttons"><button type="button" class="btn green" '+(state.locked?'disabled':'')+' onclick="buildingDesignAddDoor(\'roller\')">＋ Roller door</button><button type="button" class="btn secondary" '+(state.locked?'disabled':'')+' onclick="buildingDesignAddDoor(\'personnel\')">＋ Personnel door</button><button type="button" class="btn secondary" '+(state.locked?'disabled':'')+' onclick="buildingDesignAddDoor(\'double\')">＋ Double door</button><button type="button" class="btn secondary" '+(state.locked||windowUnavailable?'disabled':'')+' '+(windowUnavailable?'title="Casement windows are available on sidewalls B and D only"':'')+' onclick="buildingDesignAddDoor(\'window\')">＋ Casement window</button>'+buildingDesignFireExitOptionMarkup(state)+'<button type="button" class="bd-delete bd-delete-placement" '+(deleteOpeningDisabled?'disabled':'')+' onclick="buildingDesignDeleteDoor()">Delete opening</button>'+buildingDesignFireExitInfoMarkup(state)+'</div>')+
     openingNavigation+
     '<section class="bd-selected-orientation"><strong>'+esc(view.label)+'</strong><span>'+esc(view.side)+(view.wall?' · Facing '+esc(bearing.label)+' '+bearing.degrees+'°':'')+'</span></section>'+
     buildingDesignOpeningControls()+
@@ -1478,7 +1478,13 @@ function buildingDesignFireExitOptionMarkup(state){
   if(!p||typeof pcFireExitIsIndustrial!=='function'||!pcFireExitIsIndustrial(p))return '';
   const on=typeof pcFireExitPersonnelOption==='function'&&pcFireExitPersonnelOption(p);
   const open=buildingDesignFireInfoOpen;
-  return '<div class="bd-fire-option" id="buildingDesignFireExitOption"><div class="bd-fire-option-row"><label><input type="checkbox" id="buildingDesignPdFireExits" '+(on?'checked ':'')+(state.locked?'disabled ':'')+'onchange="buildingDesignSetPdFireExits(this.checked)"><span class="bd-fire-option-text">'+esc(BUILDING_DESIGN_FIRE_EXIT_LABEL)+'</span></label><button type="button" class="bd-fire-info" id="buildingDesignFireExitInfoButton" aria-expanded="'+open+'" aria-controls="buildingDesignFireExitInfo" aria-label="About fire exits and personnel doors" title="About fire exits and personnel doors" onclick="buildingDesignToggleFireInfo()">&#9432;</button></div><p id="buildingDesignFireExitInfo"'+(open?'':' hidden')+'>'+esc(PC_FIRE_EXIT_PD_NOTE)+'</p></div>'
+  return '<div class="bd-fire-option" id="buildingDesignFireExitOption"><div class="bd-fire-option-row"><label><input type="checkbox" id="buildingDesignPdFireExits" '+(on?'checked ':'')+(state.locked?'disabled ':'')+'onchange="buildingDesignSetPdFireExits(this.checked)"><span class="bd-fire-option-text">'+esc(BUILDING_DESIGN_FIRE_EXIT_LABEL)+'</span></label><button type="button" class="bd-fire-info" id="buildingDesignFireExitInfoButton" aria-expanded="'+open+'" aria-controls="buildingDesignFireExitInfo" aria-label="About fire exits and personnel doors" title="About fire exits and personnel doors" onclick="buildingDesignToggleFireInfo()">&#9432;</button></div></div>'
+}
+// 2026-11-19 (Stuart): the ⓘ explanation sits beside the Delete opening button.
+function buildingDesignFireExitInfoMarkup(state){
+  const p=state&&getP(state.projectId);
+  if(!p||typeof pcFireExitIsIndustrial!=='function'||!pcFireExitIsIndustrial(p))return '';
+  return '<p class="bd-fire-info-text" id="buildingDesignFireExitInfo"'+(buildingDesignFireInfoOpen?'':' hidden')+'>'+esc(PC_FIRE_EXIT_PD_NOTE)+'</p>'
 }
 // The ⓘ explanation stays open or closed across re-renders of the panel.
 let buildingDesignFireInfoOpen=false;
@@ -1546,32 +1552,19 @@ function buildingDesignRenderActions(){
     :editingConfirmed
       ?'<button type="button" class="btn secondary bd-back" onclick="route(\'siteLayout\',\''+esc(state.projectId)+'\')">Back to Site Layout</button><button type="button" class="btn secondary" onclick="cancelConfirmedBuildingDesignEdit()">Cancel editing</button><button type="button" class="btn green" onclick="confirmBuildingDesign()">Confirm Updated Building Design</button>'
       :'<button type="button" class="btn secondary bd-back" onclick="route(\'siteLayout\',\''+esc(state.projectId)+'\')">Back to Site Layout</button><button type="button" class="btn secondary" '+(!state.dirty?'disabled':'')+' onclick="saveBuildingDesignDraft()">Save draft</button><button type="button" class="btn green" onclick="confirmBuildingDesign()">Confirm Building Design</button>';
-  const fireOption=buildingDesignFireExitOptionMarkup(state);
-  // Phones (2026-11-18): the bar keeps only the two action buttons on one slim
-  // row. The fire-exit toggle sits in the page below the door settings and the
-  // free report button at the end of the page. Desktop is unchanged.
-  const phone=buildingDesignIsPhone(),fireHost=phone?document.querySelector('#buildingDesignPhoneFire'):null,reportHost=phone?document.querySelector('#buildingDesignPhoneReport'):null;
-  if(phone&&fireHost&&reportHost){
+  // 2026-11-19 (Stuart): the fire-exit toggle now sits in the Add an opening
+  // panel, so the bar holds only the current view and the action buttons.
+  // Phones keep the slim one-row bar with the free report at the end of the page.
+  const phone=buildingDesignIsPhone(),fireHost=document.querySelector('#buildingDesignPhoneFire'),reportHost=phone?document.querySelector('#buildingDesignPhoneReport'):null;
+  if(fireHost)fireHost.innerHTML='';
+  if(phone&&reportHost){
     host.innerHTML='<div class="bd-action-buttons">'+actions+'</div>';
-    const existingPhone=fireHost.querySelector(':scope > #buildingDesignFireExitOption');
-    if(!(fireOption&&existingPhone&&buildingDesignSyncFireExitOption(existingPhone,state)))fireHost.innerHTML=fireOption;
     reportHost.innerHTML=buildingDesignFreeReportMarkup(state);
     return;
   }
-  document.querySelectorAll('#buildingDesignPhoneFire,#buildingDesignPhoneReport').forEach(el=>{el.innerHTML=''});
-  const rest='<div class="bd-current-view"><span>Current view</span><strong>'+esc(view.label+(door?' · '+buildingDesignDoorName(door)+' selected':''))+'</strong><em class="'+(state.dirty?'is-dirty':'')+'">'+esc(status)+(issues.length?' · '+issues.length+' issue'+(issues.length===1?'':'s'):'')+'</em></div>'+
+  if(reportHost)reportHost.innerHTML='';
+  host.innerHTML='<div class="bd-current-view"><span>Current view</span><strong>'+esc(view.label+(door?' · '+buildingDesignDoorName(door)+' selected':''))+'</strong><em class="'+(state.dirty?'is-dirty':'')+'">'+esc(status)+(issues.length?' · '+issues.length+' issue'+(issues.length===1?'':'s'):'')+'</em></div>'+
     '<div class="bd-action-buttons">'+actions+'</div>'+buildingDesignFreeReportMarkup(state);
-  // Keep the fire-exit toggle node in place across redraws (2026-11-18). The
-  // redraw runs inside the checkbox's own change event; replacing the tapped
-  // label there left its text unpainted in mobile Safari's sticky action bar
-  // ("Once ticked, the text disappears"). Update it in place and redraw only
-  // the rest of the bar.
-  const existing=host.querySelector(':scope > #buildingDesignFireExitOption');
-  if(fireOption&&existing&&buildingDesignSyncFireExitOption(existing,state)){
-    while(existing.nextSibling)existing.nextSibling.remove();
-    while(existing.previousSibling)existing.previousSibling.remove();
-    existing.insertAdjacentHTML('afterend',rest);
-  }else host.innerHTML=fireOption+rest;
 }
 const BUILDING_DESIGN_PHONE_QUERY=typeof window!=='undefined'&&window.matchMedia?window.matchMedia('(max-width: 800px)'):null;
 function buildingDesignIsPhone(){return Boolean(BUILDING_DESIGN_PHONE_QUERY&&BUILDING_DESIGN_PHONE_QUERY.matches)}
