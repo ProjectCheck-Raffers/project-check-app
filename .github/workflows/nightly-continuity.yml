@@ -1,0 +1,77 @@
+name: Nightly continuity record
+
+# Lightweight nightly record (no AI). Reads GitHub state,
+# appends one "Nightly continuity record – YYYY-MM-DD" entry to
+# docs/continuity/CURRENT-CHAT-INDEX.md on approved, and pushes it with
+# [skip ci]. No AI model, no dependency install; typically ~10 seconds.
+
+on:
+  schedule:
+    # 00:05 UTC = 00:05 Europe/London in winter, 01:05 in summer (GMT/BST).
+    # Off the top of the hour to avoid GitHub's scheduled-run congestion.
+    - cron: "5 0 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  record:
+    name: Append nightly continuity record
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out approved
+        uses: actions/checkout@v4
+        with:
+          ref: approved
+          fetch-depth: 100
+
+      - name: Append record, commit and push (retry on concurrent update)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          INDEX=docs/continuity/CURRENT-CHAT-INDEX.md
+
+          for attempt in 1 2 3; do
+            rm -f "$RUNNER_TEMP/out"
+            GITHUB_OUTPUT="$RUNNER_TEMP/out" bash .github/scripts/nightly-continuity-record.sh
+            if ! grep -qx 'written=true' "$RUNNER_TEMP/out"; then
+              echo "Nothing to record."
+              exit 0
+            fi
+            DATE=$(sed -n 's/^date=//p' "$RUNNER_TEMP/out")
+
+            # Append-only guard: no deleted lines, and only the index changed.
+            if [ "$(git diff --numstat | awk '{d+=$2} END {print d+0}')" != "0" ] \
+               || [ "$(git diff --name-only)" != "$INDEX" ]; then
+              git diff --stat
+              echo "::error::Unexpected change outside an append to $INDEX; aborting." >&2
+              exit 1
+            fi
+
+            git add "$INDEX"
+            git commit -m "docs(continuity): nightly continuity record – ${DATE} [skip ci]"
+            if git push origin HEAD:approved; then
+              echo "Pushed $(git rev-parse HEAD) to approved."
+              exit 0
+            fi
+
+            # approved moved (e.g. another writer). Discard the unpushed local
+            # commit, take the new tip and regenerate; the script stops if the
+            # other writer already recorded today.
+            echo "Push rejected (attempt $attempt); refreshing from approved."
+            git fetch origin approved
+            git reset --hard FETCH_HEAD
+            sleep $((attempt * 5))
+          done
+          echo "::error::Could not push after 3 attempts." >&2
+          exit 1
