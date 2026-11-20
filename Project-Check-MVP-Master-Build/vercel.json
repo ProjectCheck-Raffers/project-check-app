@@ -1,0 +1,5 @@
+{
+  "rewrites": [
+    { "source": "/platform-config.js", "destination": "/api/platform-config" }
+  ]
+}
