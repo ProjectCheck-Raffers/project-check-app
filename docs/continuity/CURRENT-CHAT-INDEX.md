@@ -45,3 +45,48 @@ Carried forward unchanged from the previous nightly record and not re-checked by
 ### Note
 
 This is an automated GitHub-state record, not a full transcript. It was generated without an AI model and has no access to private chats. It changes only this file.
+
+## Nightly continuity record – 2026-11-21
+
+### Date and stopping point
+
+21 November 2026, recorded by the GitHub Actions workflow `nightly-continuity.yml` (run 44877727712). The current stopping point visible in the repository is as follows.
+
+Live `approved` HEAD when this run read the branch is `6095800490427e16949124831cbd0e7d01759def` ("Merge pull request #1 from ProjectCheck-Raffers/review", 20 November 2026 17:07 Europe/London). The last non-continuity commit on `approved` within the fetched history is `6095800490427e16949124831cbd0e7d01759def` ("Merge pull request #1 from ProjectCheck-Raffers/review", 20 November 2026 17:07 Europe/London).
+
+Commits on `approved` in the 24 hours before this run:
+
+- `6095800490427e16949124831cbd0e7d01759def` ("Merge pull request #1 from ProjectCheck-Raffers/review", ProjectCheck-Raffers)
+- `fdd6487b430eb41d7b896b90c49e69a93ac6f02e` ("Quick check: secrets scan checks only the PR's new commits", ProjectCheck-Raffers)
+- `8730578488980f48b0dbda8fbe08f64dbf684d35` ("Serve platform-config.js from Vercel env vars; remove hardcoded Supabase key", ProjectCheck-Raffers)
+- `b2e30262c525b9431c04838f85bf77fd193a26b6` ("Restore HTML entities the GitHub web edit decoded (keeps heading change)", ProjectCheck-Raffers)
+- `d9066fe56205f13973510ef4a77807178a6032cd` ("Pricing: remove 'not a package' from 'Follow the project' heading", ProjectCheck-Raffers)
+- `b6817d5eb202eaf08b58d2e70c0176affecce9fc` ("docs(continuity): nightly continuity record – 2026-11-20 [skip ci]", github-actions[bot])
+
+Pull requests closed or merged in the same 24 hours:
+
+- PR #1, "Compact bottom bar; fire-exit toggle in Add an opening panel": merged (merge commit `6095800490427e16949124831cbd0e7d01759def`) at 2026-11-20T17:07:52Z.
+
+This run has no access to private chats, so any Project Check work outside GitHub cannot be determined from the repository.
+
+### Live-verified approved HEAD
+
+`6095800490427e16949124831cbd0e7d01759def` on `approved` ("Merge pull request #1 from ProjectCheck-Raffers/review", 20 November 2026 17:07 Europe/London), read live from GitHub immediately before this entry was written.
+
+### Open PRs
+
+Read live: 1 open PR(s); none touched by this record. Check-run results were not read by this run.
+
+PR #3, "Continuity index: 19 Nov 2026 Grok-to-Claude handover", head `continuity-2026-11-19` (`aa04353f9f90d5c5b31ee07052e4e8f5758596a0`), base `approved` (`fdd6487b430eb41d7b896b90c49e69a93ac6f02e`); created 20 November 2026 11:47 Europe/London, last updated 20 November 2026 17:00 Europe/London; open, not draft, unmerged; not touched.
+
+### Unresolved blockers
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+- None recorded in the previous nightly record.
+
+### Note
+
+This is an automated GitHub-state record, not a full transcript. It was generated without an AI model and has no access to private chats. It changes only this file.
