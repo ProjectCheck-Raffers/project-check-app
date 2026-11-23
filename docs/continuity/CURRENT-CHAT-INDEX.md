@@ -176,3 +176,42 @@ Carried forward unchanged from the previous nightly record and not re-checked by
 ### Note
 
 This is an automated GitHub-state record, not a full transcript. It was generated without an AI model and has no access to private chats. It changes only this file.
+
+---
+
+## 23 November 2026 – Grok-to-Claude handover: Building Regulations "Potential Issues" checker
+
+Approved by Stuart on 23 Nov 2026 ("go"). Claude: read CLAUDE.md first, then do exactly this.
+
+TASK: Build the Project Check "Potential Issues" checker (England, industrial/storage steel buildings).
+
+REPO: ProjectCheck-Raffers/project-check-app. App folder: Project-Check-MVP-Master-Build/.
+BRANCH: "review". Open ONE PR into "approved". Do NOT merge – Stuart is the final approver.
+COMMIT AS: git -c user.name=ProjectCheck-Raffers -c user.email=317329518+ProjectCheck-Raffers@users.noreply.github.com
+DO NOT: use, read, import or change anything in brain/ or any stage-1 brain files. Do not change any existing layout, size, wording or behaviour except what is listed here. No Playwright, screenshots or long tests. No secrets or customer details in the repo. Anything else you think is needed: list it in the PR summary, do not do it.
+
+PURPOSE: Stage 1 (free) = the hook. It shows POTENTIAL PROBLEMS only, using the client's own numbers. It must never show solutions, methods, products or costs. Stage 2 (paid) = solutions (not built now). There is no Stage 3.
+
+1. NEW FOLDER Project-Check-MVP-Master-Build/regs-checker/
+   a) rules.json – each rule: id, part (A, B, L...), regsRef, trigger, stage1Problem, stage1WhyItMatters, stage2Solution ("Stuart to write"), approved (false).
+      Starter rules – all approved:false until Stuart signs them off:
+      - B_BOUNDARY: per elevation, distance to boundary under 25 m AND cladding fire rating "unknown" or "not rated" -> "Elevation X is Y m from the boundary – this wall may need to meet fire separation rules." (ADB Vol 2 Section 13). If cladding is rated -> no flag.
+      - B_BOUNDARY_1M: any elevation under 1 m from boundary -> "Elevation X is under 1 m from the boundary – strict fire rules apply to this wall." (ADB 13.8)
+      - B_HEIGHT_10M: mean roof height ((eaves+ridge)/2) over 10 m -> "Your building height may need a specialist fire assessment." (ADB 13.21)
+      - A_FRAME_BOUNDARY: B_BOUNDARY flagged AND eaves over 7 m -> "The frame and foundations near the boundary may need extra design checks." (ADB 13.16)
+      - B_TRAVEL: furthest point in plan to nearest personnel or fire-exit door, straight line x 1.5. Normal hazard: 45 m if exits in 2+ directions, 25 m if one direction. Flammable storage: 25 m / 12 m. Roller doors and doors into another building do NOT count. Over limit -> "The furthest point is about Z m from an exit – this may be over the limit." (ADB Table 2.1)
+      - B_EXITS: floor area / 30 m2 (storage) or / 5 m2 (production) over 60 people and fewer than 2 exits -> "Your building may need more fire exits." (ADB 2.6)
+      - L_ENERGY: ONLY if heated for people working inside (not unheated, not frost protection, not localised heaters) -> "Heated buildings need an energy calculation (SBEM/BRUKL) for Building Control." No fixed U-value rule.
+      - L_2027: Building Control application on/after 24 Mar 2027, or start on/after 24 Mar 2028 -> "New 2027 energy rules may apply to your project."
+   b) checker.js – pure function runChecks(projectData) returns [{ruleId, result: "ok" | "potential problem" | "need info", measured, stage1Problem, stage1WhyItMatters}]. Only rules with approved:true are shown to clients. If an input is missing, result "need info" – never shown as a problem, never guessed.
+   c) README.md – how Stuart adds, changes or approves a rule by editing rules.json only.
+
+2. RUN: when the user presses "Design confirmed", run runChecks and save to project_data.backgroundChecks.regsChecker. Keep all existing fields. Remove nothing.
+
+3. STAGE 1 REPORT: add one section "Potential issues to review". Each potential problem: headline with the client's number, one why-it-matters line, then "Your Stage 2 report explains the solutions." Footer: "Guide only – confirm with Building Control." If there are none: "No potential issues found from the information given." Must work on phone and laptop.
+
+4. EXTRA QUESTIONS (only if not already asked, shown on the existing details step): what is stored (general / flammable liquids, gases or spirits), heating (unheated / frost protection / localised heaters / fully heated / heated office only), cladding fire rating (rated / not rated / unknown), Building Control application date, nation (England / Wales / Scotland / NI). If not England: "Checks cover England only" and skip all checks.
+
+5. PR SUMMARY: every file changed, every rule added, and anything you think is needed but did not do.
+
+After Claude opens the PR, Grok checks the PR and the review link against this handover before Stuart merges.
