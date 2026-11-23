@@ -132,3 +132,47 @@ Carried forward unchanged from the previous nightly record and not re-checked by
 ### Note
 
 This is an automated GitHub-state record, not a full transcript. It was generated without an AI model and has no access to private chats. It changes only this file.
+
+## Nightly continuity record – 2026-11-23
+
+### Date and stopping point
+
+23 November 2026, recorded by the GitHub Actions workflow `nightly-continuity.yml` (run 45130438572). The current stopping point visible in the repository is as follows.
+
+Live `approved` HEAD when this run read the branch is `626a00d44b7e91bbc3483e75a3be6398487bc151` ("docs(continuity): nightly continuity record – 2026-11-22 [skip ci]", 22 November 2026 06:30 Europe/London). The last non-continuity commit on `approved` within the fetched history is `6095800490427e16949124831cbd0e7d01759def` ("Merge pull request #1 from ProjectCheck-Raffers/review", 20 November 2026 17:07 Europe/London).
+
+Commits on `approved` in the 24 hours before this run:
+
+- None.
+
+Pull requests closed or merged in the same 24 hours:
+
+- None.
+
+This run has no access to private chats, so any Project Check work outside GitHub cannot be determined from the repository.
+
+### Live-verified approved HEAD
+
+`626a00d44b7e91bbc3483e75a3be6398487bc151` on `approved` ("docs(continuity): nightly continuity record – 2026-11-22 [skip ci]", 22 November 2026 06:30 Europe/London), read live from GitHub immediately before this entry was written.
+
+### Open PRs
+
+Read live: 1 open PR(s); none touched by this record. Check-run results were not read by this run.
+
+PR #3, "Continuity index: 19 Nov 2026 Grok-to-Claude handover", head `continuity-2026-11-19` (`aa04353f9f90d5c5b31ee07052e4e8f5758596a0`), base `approved` (`fdd6487b430eb41d7b896b90c49e69a93ac6f02e`); created 20 November 2026 11:47 Europe/London, last updated 20 November 2026 17:00 Europe/London; open, not draft, unmerged; not touched.
+
+### Unresolved blockers
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+- None recorded in the previous nightly record.
+
+### Note
+
+This is an automated GitHub-state record, not a full transcript. It was generated without an AI model and has no access to private chats. It changes only this file.
