@@ -1190,7 +1190,6 @@ function stage1RollerOpeningListMarkup(p,drawing=p.geometry,drawingLabel='Saved 
 }
 const REGS_QUESTION_OPTIONS={
   regsStored:[['general','General storage'],['flammable','Flammable liquids, gases or spirits']],
-  regsHeating:[['unheated','Unheated'],['frost protection','Frost protection only'],['localised heaters','Localised heaters'],['fully heated','Fully heated for people working inside'],['heated office only','Heated office only']],
   regsCladding:[['rated','Fire rated'],['not rated','Not fire rated'],['unknown','Not sure']],
   regsNation:[['England','England'],['Wales','Wales'],['Scotland','Scotland'],['Northern Ireland','Northern Ireland']]
 };
@@ -1203,7 +1202,6 @@ function regsQuestionsMarkup(facts){
 ${regsQuestionSelect('psRegsNation','Which nation is the building in?','regsNation',facts)}
 <p class="field-note" id="psRegsNationNote" ${facts.regsNation&&facts.regsNation!=='England'?'':'hidden'}>Checks cover England only</p>
 ${regsQuestionSelect('psRegsStored','What will be stored?','regsStored',facts)}
-${regsQuestionSelect('psRegsHeating','How will the building be heated?','regsHeating',facts)}
 ${regsQuestionSelect('psRegsCladding','What is the fire rating of the cladding?','regsCladding',facts)}
 <div class="field"><label for="psRegsBcDate">Building Control application date (planned or actual)</label><input id="psRegsBcDate" type="date" value="${esc(facts.regsBcDate||'')}"></div>
 </div>`
@@ -1283,7 +1281,7 @@ nextFacts.heated=({"Ambient working temperature — heated":"Yes","Ambient stora
 if(temperatureCondition==="Other temperature requirement")nextFacts.requiredTemperatureC=requiredTemperatureC;else delete nextFacts.requiredTemperatureC;
 delete nextFacts.ambientProtectionNeeded;
 if(adjacentExistingBuilding)nextFacts.adjacentExistingBuilding=adjacentExistingBuilding;else delete nextFacts.adjacentExistingBuilding;
-[["regsNation","#psRegsNation"],["regsStored","#psRegsStored"],["regsHeating","#psRegsHeating"],["regsCladding","#psRegsCladding"],["regsBcDate","#psRegsBcDate"]].forEach(([key,sel])=>{const value=document.querySelector(sel).value.trim();if(value)nextFacts[key]=value;else delete nextFacts[key]});
+[["regsNation","#psRegsNation"],["regsStored","#psRegsStored"],["regsCladding","#psRegsCladding"],["regsBcDate","#psRegsBcDate"]].forEach(([key,sel])=>{const value=document.querySelector(sel).value.trim();if(value)nextFacts[key]=value;else delete nextFacts[key]});
 if(intendsToReuseExistingBase==="No — a new base is planned")delete nextFacts.siteEvidenceAvailability;else nextFacts.siteEvidenceAvailability=siteEvidenceAvailability;
 nextAssessments={...nextAssessments,specialistLowTemperatureFlag:temperatureCondition==="Other temperature requirement"&&Number(requiredTemperatureC)<2,baseSuitabilityStatus:intendsToReuseExistingBase==="No — a new base is planned"?"NOT_ASSESSED":"UNVERIFIED",anchoringSuitabilityStatus:"UNVERIFIED"}
 }

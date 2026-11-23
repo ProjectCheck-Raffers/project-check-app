@@ -13,6 +13,12 @@
   function fill(t, v) { return String(t || '').replace(/\{(\w+)\}/g, function (m, k) { return v && v[k] !== undefined ? v[k] : m; }); }
   function r1(n) { return Math.round(n * 10) / 10; }
 
+  // Same fallback as projectTemperatureCondition in app.js
+  function temperatureCondition(f) {
+    if (f.temperatureCondition) return f.temperatureCondition;
+    return ({ Yes: 'Ambient working temperature \u2014 heated', No: 'Ambient storage \u2014 unheated', 'Not sure': 'Not sure yet' })[f.heated] || '';
+  }
+
   function inputs(p) {
     p = p || {};
     var f = p.facts || {}, g = p.geometry || {};
@@ -24,7 +30,7 @@
     if (!ridge && eaves && W) ridge = eaves + (W / 2) * Math.tan(pitch * Math.PI / 180);
     var doors = Array.isArray(g.doors) ? g.doors.filter(Boolean) : [];
     return {
-      nation: f.regsNation || '', stored: f.regsStored || '', heating: f.regsHeating || '',
+      nation: f.regsNation || '', stored: f.regsStored || '', heating: temperatureCondition(f),
       cladding: f.regsCladding || '', bcDate: f.regsBcDate || '', startDate: f.regsStartDate || '',
       use: String(f.buildingUse || f.use || ''), W: W, L: L, eaves: eaves, ridge: ridge, doors: doors,
       distances: regs && regs.boundaryDistances ? regs.boundaryDistances : null
@@ -115,8 +121,9 @@
       return [entry(r, people > r.limits.maxPeopleOneExit && exits < 2 ? PROBLEM : OK, { people: people, exits: exits })];
     },
     L_ENERGY: function (r, i) {
-      if (!i.heating) return [entry(r, NEED)];
-      return [entry(r, i.heating === 'fully heated' ? PROBLEM : OK, { heating: i.heating })];
+      if (i.heating === 'Ambient working temperature \u2014 heated') return [entry(r, PROBLEM, { heating: i.heating })];
+      if (i.heating === 'Ambient storage \u2014 unheated') return [entry(r, OK, { heating: i.heating })];
+      return [entry(r, NEED)];
     },
     L_2027: function (r, i) {
       var app = i.bcDate ? Date.parse(i.bcDate) : NaN;
