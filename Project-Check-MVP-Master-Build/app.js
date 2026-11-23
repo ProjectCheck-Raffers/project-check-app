@@ -1083,6 +1083,7 @@ function stage1RegsCheckerMarkup(p){
   const head='<h2>Potential issues to review</h2>';
   const foot='<p class="meta">Guide only – confirm with Building Control.</p>';
   if(saved.nation&&saved.nation!=='England')return `<section class="stage1-tech-card stage1-regs-checker" aria-label="Potential issues to review">${head}<p>Checks cover England only</p>${foot}</section>`;
+  if(!(saved.results||[]).length)return '';
   const issues=(saved.results||[]).filter(item=>item.result==='potential problem');
   const body=issues.length?`<ul class="stage1-regs-list">${issues.map(item=>`<li><strong>${esc(item.stage1Problem)}</strong><br>${esc(item.stage1WhyItMatters)}<br><em>Your Stage 2 report explains the solutions.</em></li>`).join('')}</ul>`:'<p>No potential issues found from the information given.</p>';
   return `<section class="stage1-tech-card stage1-regs-checker" aria-label="Potential issues to review">${head}${body}${foot}</section>`
