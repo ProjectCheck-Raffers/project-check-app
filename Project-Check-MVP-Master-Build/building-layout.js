@@ -879,6 +879,7 @@ function confirmBuildingDesign(){
     return
   }
   if(buildingDesignSaveModel('confirmed')){
+    if(typeof runRegsChecker==='function')runRegsChecker(getP(activeBuildingDesign.projectId));
     activeBuildingDesign.locked=true;
     activeBuildingDesign.editingConfirmed=false;
     activeBuildingDesign.editOrigin=null;

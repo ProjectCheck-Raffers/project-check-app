@@ -1,0 +1,90 @@
+{
+  "version": "regs-checker-20261123",
+  "note": "Stage 1 text must show potential problems only - never solutions, methods, products or costs. Placeholders: {elevation} {distance} {travel}. Set approved to true only when Stuart has signed the rule off.",
+  "rules": [
+    {
+      "id": "B_BOUNDARY",
+      "part": "B",
+      "regsRef": "ADB Vol 2 Section 13",
+      "trigger": "Per elevation: distance to boundary under 25 m AND cladding fire rating is 'unknown' or 'not rated'. Rated cladding = no flag.",
+      "stage1Problem": "Elevation {elevation} is {distance} m from the boundary – this wall may need to meet fire separation rules.",
+      "stage1WhyItMatters": "Walls close to a boundary are limited in how much fire can spread to the neighbouring site.",
+      "stage2Solution": "Stuart to write",
+      "approved": false
+    },
+    {
+      "id": "B_BOUNDARY_1M",
+      "part": "B",
+      "regsRef": "ADB Vol 2 13.8",
+      "trigger": "Per elevation: distance to boundary under 1 m.",
+      "stage1Problem": "Elevation {elevation} is under 1 m from the boundary – strict fire rules apply to this wall.",
+      "stage1WhyItMatters": "Very close walls face the tightest fire limits, which can affect the wall and any openings in it.",
+      "stage2Solution": "Stuart to write",
+      "approved": false
+    },
+    {
+      "id": "B_HEIGHT_10M",
+      "part": "B",
+      "regsRef": "ADB Vol 2 13.21",
+      "trigger": "Mean roof height ((eaves + ridge) / 2) over 10 m.",
+      "stage1Problem": "Your building height may need a specialist fire assessment.",
+      "stage1WhyItMatters": "Taller buildings are treated differently for fire spread and may need a specialist assessment.",
+      "stage2Solution": "Stuart to write",
+      "approved": false
+    },
+    {
+      "id": "A_FRAME_BOUNDARY",
+      "part": "A",
+      "regsRef": "ADB Vol 2 13.16",
+      "trigger": "B_BOUNDARY flagged AND eaves height over 7 m.",
+      "stage1Problem": "The frame and foundations near the boundary may need extra design checks.",
+      "stage1WhyItMatters": "A tall wall close to a boundary can affect how the frame and foundations are designed.",
+      "stage2Solution": "Stuart to write",
+      "approved": false
+    },
+    {
+      "id": "B_TRAVEL",
+      "part": "B",
+      "regsRef": "ADB Table 2.1",
+      "trigger": "Furthest point in plan to nearest personnel or fire-exit door, straight line x 1.5. Limits: normal hazard 45 m (exits in 2+ directions) / 25 m (one direction); flammable storage 25 m / 12 m. Roller doors and doors into another building do not count.",
+      "limits": { "normal": { "multi": 45, "single": 25 }, "flammable": { "multi": 25, "single": 12 } },
+      "factor": 1.5,
+      "stage1Problem": "The furthest point is about {travel} m from an exit – this may be over the limit.",
+      "stage1WhyItMatters": "People inside need to reach an exit within a set distance if there is a fire.",
+      "stage2Solution": "Stuart to write",
+      "approved": false
+    },
+    {
+      "id": "B_EXITS",
+      "part": "B",
+      "regsRef": "ADB 2.6",
+      "trigger": "People = floor area / 30 m2 (storage) or / 5 m2 (production). Over 60 people AND fewer than 2 exits.",
+      "limits": { "storageM2PerPerson": 30, "productionM2PerPerson": 5, "maxPeopleOneExit": 60 },
+      "stage1Problem": "Your building may need more fire exits.",
+      "stage1WhyItMatters": "A building this size can hold more people than a single exit is allowed to serve.",
+      "stage2Solution": "Stuart to write",
+      "approved": false
+    },
+    {
+      "id": "L_ENERGY",
+      "part": "L",
+      "regsRef": "Approved Document L (Vol 2)",
+      "trigger": "ONLY if heated for people working inside (fully heated; not unheated, frost protection, localised heaters or heated office only). No fixed U-value rule.",
+      "stage1Problem": "Heated buildings need an energy calculation (SBEM/BRUKL) for Building Control.",
+      "stage1WhyItMatters": "Building Control will ask for this calculation with the application.",
+      "stage2Solution": "Stuart to write",
+      "approved": false
+    },
+    {
+      "id": "L_2027",
+      "part": "L",
+      "regsRef": "2027 energy rule changes",
+      "trigger": "Building Control application on/after 24 Mar 2027, OR start on/after 24 Mar 2028.",
+      "dates": { "application": "2027-03-24", "start": "2028-03-24" },
+      "stage1Problem": "New 2027 energy rules may apply to your project.",
+      "stage1WhyItMatters": "Projects submitted or started after these dates are assessed against the newer rules.",
+      "stage2Solution": "Stuart to write",
+      "approved": false
+    }
+  ]
+}

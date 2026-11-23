@@ -1077,6 +1077,16 @@ const STAGE1_ADJACENT_JUNCTION_NOTES=[
   'This should be agreed with the designer and installer before the building is ordered.'
 ];
 function stage1AdjacentJunctionApplies(p){const facts=projectFacts(p);return projectIsSteelFreeStanding(facts)&&projectAdjacentBuildingNeedsJunction(facts)}
+function stage1RegsCheckerMarkup(p){
+  const saved=p.backgroundChecks&&p.backgroundChecks.regsChecker;
+  if(!saved||!saved.nation)return '';
+  const head='<h2>Potential issues to review</h2>';
+  const foot='<p class="meta">Guide only – confirm with Building Control.</p>';
+  if(saved.nation&&saved.nation!=='England')return `<section class="stage1-tech-card stage1-regs-checker" aria-label="Potential issues to review">${head}<p>Checks cover England only</p>${foot}</section>`;
+  const issues=(saved.results||[]).filter(item=>item.result==='potential problem');
+  const body=issues.length?`<ul class="stage1-regs-list">${issues.map(item=>`<li><strong>${esc(item.stage1Problem)}</strong><br>${esc(item.stage1WhyItMatters)}<br><em>Your Stage 2 report explains the solutions.</em></li>`).join('')}</ul>`:'<p>No potential issues found from the information given.</p>';
+  return `<section class="stage1-tech-card stage1-regs-checker" aria-label="Potential issues to review">${head}${body}${foot}</section>`
+}
 function stage1AdjacentJunctionMarkup(p){
   if(!stage1AdjacentJunctionApplies(p))return '';
   return `<section class="stage1-tech-card stage1-adjacent-junction" aria-label="Junction with existing building"><h2>${esc(STAGE1_ADJACENT_JUNCTION_HEADING)}</h2><ul>${STAGE1_ADJACENT_JUNCTION_NOTES.map(item=>`<li>${esc(item)}</li>`).join('')}</ul></section>`;
@@ -1177,6 +1187,26 @@ function stage1RollerOpeningListMarkup(p,drawing=p.geometry,drawingLabel='Saved 
     <h3>${esc(drawingLabel)} · ${drawn?.length??'Not recorded'}</h3>${drawn?list(drawn):''}
     ${needsReview.length?`<p><strong>Needs checking</strong></p><ul>${needsReview.map(note=>`<li>${esc(note)}</li>`).join('')}</ul>`:''}</section>`;
 }
+const REGS_QUESTION_OPTIONS={
+  regsStored:[['general','General storage'],['flammable','Flammable liquids, gases or spirits']],
+  regsHeating:[['unheated','Unheated'],['frost protection','Frost protection only'],['localised heaters','Localised heaters'],['fully heated','Fully heated for people working inside'],['heated office only','Heated office only']],
+  regsCladding:[['rated','Fire rated'],['not rated','Not fire rated'],['unknown','Not sure']],
+  regsNation:[['England','England'],['Wales','Wales'],['Scotland','Scotland'],['Northern Ireland','Northern Ireland']]
+};
+function regsQuestionSelect(id,label,key,facts){
+  return `<div class="field"><label for="${id}">${label}</label><select id="${id}"><option value="">Choose…</option>${REGS_QUESTION_OPTIONS[key].map(([value,text])=>`<option value="${esc(value)}" ${facts[key]===value?'selected':''}>${esc(text)}</option>`).join('')}</select></div>`
+}
+function regsQuestionsMarkup(facts){
+  return `<div class="project-requirement-card" id="psRegsCard">
+<h3>Building Regulations information</h3>
+${regsQuestionSelect('psRegsNation','Which nation is the building in?','regsNation',facts)}
+<p class="field-note" id="psRegsNationNote" ${facts.regsNation&&facts.regsNation!=='England'?'':'hidden'}>Checks cover England only</p>
+${regsQuestionSelect('psRegsStored','What will be stored?','regsStored',facts)}
+${regsQuestionSelect('psRegsHeating','How will the building be heated?','regsHeating',facts)}
+${regsQuestionSelect('psRegsCladding','What is the fire rating of the cladding?','regsCladding',facts)}
+<div class="field"><label for="psRegsBcDate">Building Control application date (planned or actual)</label><input id="psRegsBcDate" type="date" value="${esc(facts.regsBcDate||'')}"></div>
+</div>`
+}
 function projectSettings(id){
 if(!requireUser())return;const p=getP(id);if(!p)return route("dashboard");const facts=projectFacts(p),pitch=projectRoofPitch(p),ridge=projectRidgeHeight(p),returnRoute=projectEditReturnRoute||"stage1Workspace";projectEditReturnRoute="stage1Workspace";
 const temperatureCondition=projectTemperatureCondition(facts),existingBase=projectExistingBase(facts),steelFree=projectIsSteelFreeStanding(facts);
@@ -1198,6 +1228,7 @@ app.innerHTML=`<div class="container customer-area project-management-page ceo-p
 <h3>Existing buildings nearby</h3>
 <div class="field"><label for="psAdjacentBuilding">Will the new building link to, or sit close to, an existing building?</label><select id="psAdjacentBuilding"><option value="">Choose… (optional)</option>${PROJECT_ADJACENT_BUILDING_OPTIONS.map(value=>`<option value="${esc(value)}" ${projectAdjacentExistingBuilding(facts)===value?'selected':''}>${esc(value)}</option>`).join('')}</select><p class="field-note">Optional. If it links to or sits close to another building, the report will flag the junction so water can be kept out.</p></div>
 </div>
+${regsQuestionsMarkup(facts)}
 </section>
 <div class="field"><label for="psAddress">Proposed building site address</label><input id="psAddress" autocomplete="street-address" value="${esc(p.address||"")}" placeholder="Enter the full proposed site address including postcode"><p class="field-note">This project address is used for Site Layout. Changing it requires the site layout to be confirmed again.</p></div><div class="field"><label for="psLength">Length (m)</label><input id="psLength" type="number" min="0.1" step="0.1" value="${esc(facts.length||"")}"></div><div class="field"><label for="psWidth">Width (m)</label><input id="psWidth" type="number" min="0.1" step="0.1" value="${esc(facts.width||"")}"></div><div class="field"><label for="psHeight">Clear height needed (m)</label><input id="psHeight" type="number" min="0.1" step="0.1" value="${esc(facts.height||"")}"></div><div class="field"><label for="psPitch">Roof pitch (degrees)</label><input id="psPitch" type="number" min="${PROJECT_ROOF_PITCH_MIN}" max="${PROJECT_ROOF_PITCH_MAX}" step="0.5" value="${pitch}" aria-describedby="psPitchHelp"><p class="field-note" id="psPitchHelp">Minimum 5° · standard 10° · maximum 22°.</p></div><div class="project-ridge-preview" aria-live="polite"><span>Calculated ridge height</span><strong id="psRidgeHeight">${ridge===null?"Add width and clear height":`${ridge.toFixed(2)} m`}</strong><p>Calculated from the customer dimensions and selected roof pitch.</p></div></div><div class="actions"><button class="btn green" id="saveProjectSettings">${returnRoute==="stage1Confirm"?"Save and return to Project Summary":"Save and return to overview"}</button><button class="btn secondary" id="cancelProjectSettings">Cancel</button></div></section>
 <section class="card management-card"><h2>Project Documents</h2><p class="meta">${(p.evidence||[]).length} document(s) are currently recorded for this project.</p><button class="btn secondary" onclick="openProjectDocuments('${p.id}','${returnRoute}')">Open Project Documents</button></section>
@@ -1220,6 +1251,7 @@ document.querySelector("#psSiteEvidenceWrap").hidden=!reuse||reuse==="No — a n
 document.querySelector("#saveProjectSettings").textContent=reuse&&reuse!=="No — a new base is planned"&&document.querySelector("#psSiteEvidence").value==="Yes — upload them now"?"Save and upload documents":`${returnRoute==="stage1Confirm"?"Save and return to Project Summary":"Save and return to overview"}`
 };
 document.querySelector("#psType").addEventListener("change",updateSteelRequirementVisibility);
+document.querySelector("#psRegsNation").addEventListener("change",()=>{const v=document.querySelector("#psRegsNation").value;document.querySelector("#psRegsNationNote").hidden=!v||v==="England"});
 document.querySelector("#psTemperatureCondition").addEventListener("change",updateTemperatureRequirementVisibility);
 document.querySelector("#psBaseReuse").addEventListener("change",updateSiteEvidenceVisibility);
 document.querySelector("#psSiteEvidence").addEventListener("change",updateSiteEvidenceVisibility);
@@ -1250,6 +1282,7 @@ nextFacts.heated=({"Ambient working temperature — heated":"Yes","Ambient stora
 if(temperatureCondition==="Other temperature requirement")nextFacts.requiredTemperatureC=requiredTemperatureC;else delete nextFacts.requiredTemperatureC;
 delete nextFacts.ambientProtectionNeeded;
 if(adjacentExistingBuilding)nextFacts.adjacentExistingBuilding=adjacentExistingBuilding;else delete nextFacts.adjacentExistingBuilding;
+[["regsNation","#psRegsNation"],["regsStored","#psRegsStored"],["regsHeating","#psRegsHeating"],["regsCladding","#psRegsCladding"],["regsBcDate","#psRegsBcDate"]].forEach(([key,sel])=>{const value=document.querySelector(sel).value.trim();if(value)nextFacts[key]=value;else delete nextFacts[key]});
 if(intendsToReuseExistingBase==="No — a new base is planned")delete nextFacts.siteEvidenceAvailability;else nextFacts.siteEvidenceAvailability=siteEvidenceAvailability;
 nextAssessments={...nextAssessments,specialistLowTemperatureFlag:temperatureCondition==="Other temperature requirement"&&Number(requiredTemperatureC)<2,baseSuitabilityStatus:intendsToReuseExistingBase==="No — a new base is planned"?"NOT_ASSESSED":"UNVERIFIED",anchoringSuitabilityStatus:"UNVERIFIED"}
 }
@@ -1259,7 +1292,7 @@ if(steelFree&&(steelSiteChanged||height!==String(facts.height||'')||roofPitch!==
   nextFacts.buildingDesignStatus="needs_reconfirmation";
 }
 const changed=name!==p.name||address!==p.address||postcode!==(p.postcode||"")||status!==(p.status||"Active")||JSON.stringify(nextFacts)!==JSON.stringify(facts)||JSON.stringify(nextAssessments)!==JSON.stringify(p.stage1Assessments||{});
-Object.assign(p,{name,address,postcode,status,facts:nextFacts,stage1Assessments:nextAssessments});if(changed)p.history.push({at:now(),text:siteAddressChanged?"Project details updated — proposed building site address changed; Site Layout requires reconfirmation":"Project details updated"});if(typeof pcBuildingRegsRun==='function')pcBuildingRegsRun(p);save();if(steelFree&&projectReuseNeedsEvidenceAnswer(nextFacts)&&siteEvidenceAvailability==="Yes — upload them now")openProjectDocuments(p.id,returnRoute);else route(returnRoute,p.id)
+Object.assign(p,{name,address,postcode,status,facts:nextFacts,stage1Assessments:nextAssessments});if(changed)p.history.push({at:now(),text:siteAddressChanged?"Project details updated — proposed building site address changed; Site Layout requires reconfirmation":"Project details updated"});if(typeof pcBuildingRegsRun==='function')pcBuildingRegsRun(p);if(steelFree&&p.backgroundChecks&&p.backgroundChecks.regsChecker&&typeof runRegsChecker==='function')runRegsChecker(p);save();if(steelFree&&projectReuseNeedsEvidenceAnswer(nextFacts)&&siteEvidenceAvailability==="Yes — upload them now")openProjectDocuments(p.id,returnRoute);else route(returnRoute,p.id)
 };
 }
 async function uploadProjectFiles(p,input,refresh,status){
@@ -2885,7 +2918,7 @@ ${stage1RollerOpeningListMarkup(p)}
 <div><b>Building position:</b> ${p.facts.buildingPositionStatus==='confirmed'?'Confirmed on map (customer-placed)':'Not yet confirmed on a map — typed address only'}</div>
 <div><b>Site boundary:</b> ${p.facts.siteBoundaryStatus==='confirmed'?'Confirmed on map (customer-drawn)':'Not yet confirmed on a map'}</div>
 </div><p class="meta" style="margin-top:8px">Map-drawn positions/boundaries reflect the customer's own placement on a satellite map at typical residential/commercial accuracy — they are not a professional survey.</p></div>
-${steel?stage1SteelEnvelopeMarkup(p)+stage1SteelSiteMarkup(p)+stage1BaseFoundationsMarkup(p)+stage1AdjacentJunctionMarkup(p):''}
+${steel?stage1SteelEnvelopeMarkup(p)+stage1SteelSiteMarkup(p)+stage1BaseFoundationsMarkup(p)+stage1AdjacentJunctionMarkup(p)+stage1RegsCheckerMarkup(p):''}
 
 <div class="card" style="margin-top:18px"><h3>Industrial building reference visual</h3><p class="meta">Illustrative reference image of a modern industrial/warehouse-style building, shown for general context only — this is not a depiction of your specific proposed building. Your project-specific preliminary illustration, based on the dimensions you supplied, is shown separately below.</p><img class="report-building" src="assets/project-check-building-reports.png" alt="Illustrative modern industrial building, shown for general reference only"></div>
 
