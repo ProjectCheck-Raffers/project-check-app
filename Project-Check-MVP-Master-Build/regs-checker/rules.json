@@ -35,9 +35,9 @@
     {
       "id": "B_RIDGE_18M",
       "part": "B",
-      "regsRef": "Building Regulations fire safety - buildings with a ridge height over 18 m",
-      "trigger": "Ridge height (measured at the ridge, not mean roof height) over 18 m.",
-      "stage1Problem": "Your ridge height is over 18 m - stricter rules apply.",
+      "regsRef": "ADB Vol 2 Table 12.1 / Diagram D4",
+      "trigger": "Mean roof height ((eaves + ridge) / 2) over 18 m - same height definition as B_HEIGHT_10M, not ridge height.",
+      "stage1Problem": "Your building height (measured to mid-roof) is over 18 m - stricter external wall rules may apply.",
       "stage1WhyItMatters": "Taller buildings face tighter fire safety requirements.",
       "stage2Solution": "Stuart to write",
       "approved": false

@@ -97,8 +97,9 @@
       return [entry(r, mean > 10 ? PROBLEM : OK, { meanRoofHeight: r1(mean) })];
     },
     B_RIDGE_18M: function (r, i) {
-      if (!i.ridge) return [entry(r, NEED)];
-      return [entry(r, i.ridge > 18 ? PROBLEM : OK, { ridgeHeight: r1(i.ridge) })];
+      if (!i.eaves || !i.ridge) return [entry(r, NEED)];
+      var mean = (i.eaves + i.ridge) / 2;
+      return [entry(r, mean > 18 ? PROBLEM : OK, { meanRoofHeight: r1(mean) })];
     },
     A_FRAME_BOUNDARY: function (r, i, all) {
       var b = all.B_BOUNDARY || [];
