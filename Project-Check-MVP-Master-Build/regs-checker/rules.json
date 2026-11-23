@@ -33,6 +33,16 @@
       "approved": false
     },
     {
+      "id": "B_RIDGE_18M",
+      "part": "B",
+      "regsRef": "Building Regulations fire safety - buildings with a ridge height over 18 m",
+      "trigger": "Ridge height (measured at the ridge, not mean roof height) over 18 m.",
+      "stage1Problem": "Your ridge height is over 18 m - stricter rules apply.",
+      "stage1WhyItMatters": "Taller buildings face tighter fire safety requirements.",
+      "stage2Solution": "Stuart to write",
+      "approved": false
+    },
+    {
       "id": "A_FRAME_BOUNDARY",
       "part": "A",
       "regsRef": "ADB Vol 2 13.16",
