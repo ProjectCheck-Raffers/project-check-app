@@ -33,6 +33,7 @@
       nation: f.regsNation || '', stored: f.regsStored || '', heating: temperatureCondition(f),
       cladding: f.regsCladding || '', bcDate: f.regsBcDate || '', startDate: f.regsStartDate || '',
       use: String(f.buildingUse || f.use || ''), W: W, L: L, eaves: eaves, ridge: ridge, doors: doors,
+      fireElevations: f.regsFireAccessElevations, fireWidth: f.regsFireAccessWidth,
       distances: regs && regs.boundaryDistances ? regs.boundaryDistances : null
     };
   }
@@ -100,6 +101,39 @@
       if (!i.eaves || !i.ridge) return [entry(r, NEED)];
       var mean = (i.eaves + i.ridge) / 2;
       return [entry(r, mean > 18 ? PROBLEM : OK, { meanRoofHeight: r1(mean) })];
+    },
+    B_FIRE_ACCESS_11M: function (r, i) {
+      var els = i.fireElevations, width = num(i.fireWidth);
+      if (!i.eaves || !i.ridge || !i.W || !i.L || !Array.isArray(els) || !els.length || width === null) return [entry(r, NEED)];
+      var ticked = WALLS.filter(function (w) { return els.indexOf(w) !== -1; });
+      if (!ticked.length) return [entry(r, NEED)];
+      var mean = (i.eaves + i.ridge) / 2, area = i.W * i.L, perim = 2 * (i.W + i.L), tall = mean > 11;
+      var req, appliance = tall ? 'high reach' : 'pump', para151 = false;
+      if (area <= 2000) { req = 15; if (!tall) para151 = true; }
+      else if (area <= 8000) req = tall ? 50 : 15;
+      else if (area <= 16000) req = 50;
+      else if (area <= 24000) req = 75;
+      else req = 100;
+      var len = 0; ticked.forEach(function (w) { len += (w === 'A' || w === 'C') ? i.W : i.L; });
+      var pct = len / perim * 100, within45 = false;
+      if (para151) {
+        // Access route = ticked wall lines. A (x=L), C (x=0) run across width; D (y=0), B (y=W) run along length.
+        var segs = { A: [i.L, 0, i.L, i.W], C: [0, 0, 0, i.W], D: [0, 0, i.L, 0], B: [0, i.W, i.L, i.W] };
+        var nx = Math.max(1, Math.ceil(i.L / 0.25)), ny = Math.max(1, Math.ceil(i.W / 0.25)), worst = 0;
+        for (var a = 0; a <= nx; a++) for (var b = 0; b <= ny; b++) {
+          var x = i.L * a / nx, y = i.W * b / ny, m = Infinity;
+          ticked.forEach(function (w) {
+            var s = segs[w], dx = s[2] - s[0], dy = s[3] - s[1], t = Math.max(0, Math.min(1, ((x - s[0]) * dx + (y - s[1]) * dy) / (dx * dx + dy * dy)));
+            m = Math.min(m, Math.hypot(x - s[0] - t * dx, y - s[1] - t * dy));
+          });
+          if (m > worst) worst = m;
+        }
+        within45 = worst <= 45;
+      }
+      var measured = { meanRoofHeight: r1(mean), floorArea: r1(area), perimeter: r1(perim), requiredPercent: req, accessiblePercent: r1(pct), accessibleLength: r1(len), narrowestWidth: width, appliance: appliance };
+      if (para151) measured.within45m = within45;
+      var access = pct >= req - 1e-9 || within45;
+      return [entry(r, access && width >= 3.7 ? OK : PROBLEM, measured, { H: r1(mean), X: req })];
     },
     A_FRAME_BOUNDARY: function (r, i, all) {
       var b = all.B_BOUNDARY || [];

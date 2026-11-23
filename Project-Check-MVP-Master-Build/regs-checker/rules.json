@@ -43,6 +43,16 @@
       "approved": false
     },
     {
+      "id": "B_FIRE_ACCESS_11M",
+      "part": "B",
+      "regsRef": "ADB Vol 2 Section 15 Table 15.1 note 2 / Table 15.2",
+      "trigger": "Table 15.1 sets how much of the perimeter fire engines must reach, and the appliance type, from total floor area (width x length) and mean roof height ((eaves + ridge) / 2): up to 2000 m2 and up to 11 m = the less onerous of 15% of the perimeter or a pump within 45 m of every point of the footprint (pump); up to 2000 m2 and over 11 m = 15% (high reach); 2000-8000 m2 = 15% pump up to 11 m, 50% high reach over 11 m; 8000-16000 m2 = 50%; 16000-24000 m2 = 75%; over 24000 m2 = 100% (pump up to 11 m, high reach over 11 m). Access = the ticked elevations (A and C = width, B and D = length) and the narrowest road must be at least 3.7 m between kerbs (Table 15.2). Missing answers = need info.",
+      "stage1Problem": "Your building is about {H} m to mid-roof - fire engine access may need to reach {X}% of the walls, and the roads shown may not be enough.",
+      "stage1WhyItMatters": "Fire engines need to reach enough of the building along a route that is wide enough.",
+      "stage2Solution": "Stuart to write",
+      "approved": false
+    },
+    {
       "id": "A_FRAME_BOUNDARY",
       "part": "A",
       "regsRef": "ADB Vol 2 13.16",
