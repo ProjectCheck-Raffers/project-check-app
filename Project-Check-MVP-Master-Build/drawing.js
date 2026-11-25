@@ -376,13 +376,23 @@ function pcDesignLegend(geom, x, y) {
     <text x="${x}" y="${y + 24}" font-size="5.5" fill="${PC_DIM}">${pcEscXml(roofLine)}</text></g>`;
 }
 
+// Indicative fire exits for project p, mapped as buildingDesignAutoFireDoors does.
+function pcDrawingFireExits(p) {
+  if (!p || typeof pcBackgroundChecksFor !== 'function') return [];
+  if (typeof pcFireExitDesignConfirmed === 'function' && !pcFireExitDesignConfirmed(p)) return [];
+  let checks = null;
+  try { checks = pcBackgroundChecksFor(p); } catch (e) { return []; }
+  return ((checks && checks.fireExits && checks.fireExits.doors) || [])
+    .map(d => ({ ...d, type: 'fireExit', height: Number(d.height) || 2.1 }));
+}
 // ---- STANDARD BUILDING: Plan + Elevations A/B/C/D, matching the Building Design
 // page views (building-layout.js) and read from the same confirmed geometry ----
 function renderStandardDrawingSVG(p, geom) {
   const h = geom.eaveHeight, g = PC_GRID;
-  // Customer openings only. Auto-placed indicative fire exits (Stage 2 background
-  // checks) are not part of the confirmed design geometry and stay off this sheet.
-  const fireExits = [];
+  // Customer openings plus the project's own confirmed indicative fire exits
+  // (same source as Building Design). Read from the project p, never page state,
+  // and never stored in geometry.doors. Empty when unconfirmed or unavailable.
+  const fireExits = pcDrawingFireExits(p);
   const defs = `<defs><marker id="pcArrow" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 Z" fill="${PC_DIM}"/></marker></defs>`;
 
   // Row 1: Plan, A (front), B (right). Row 2: C (back), D (left), title block.
