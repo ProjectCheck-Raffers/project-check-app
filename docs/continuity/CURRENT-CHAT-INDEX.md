@@ -278,3 +278,14 @@ Carried forward unchanged from the previous nightly record and not re-checked by
 ### Note
 
 This is an automated GitHub-state record, not a full transcript. It was generated without an AI model and has no access to private chats. It changes only this file.
+
+## 19 Nov 2026 – handover from Grok to Claude (recorded 20 Nov 2026 by Claude)
+
+- Repo move: app code moved from ProjectCheck-Raffers/Project-Check-MVP-Master-Build (now the private archive) to ProjectCheck-Raffers/project-check-app. Vercel project project-check-app now builds from this repo. Review link: https://project-check-app-git-review-project-check.vercel.app
+- PR #2 merged by Grok on Stuart's instruction (cb3ef08): CLAUDE.md standing rules (including the "tweak" and "creative" rules), this append-only index, and the nightly continuity workflow (00:05 London, no AI).
+- Old repo: nightly continuity workflow disabled; old PR #95 (deletes that workflow file) and old PR #94 (move internal docs out of the publicly served app folder) still open, not merged.
+- PR #1 (review -> approved), fire-exit toggle in the Add an opening panel plus a compact bottom bar, took about 2.5 hours to go wrong. Grok changed things that weren't asked for: in f1729c6 it moved the checkbox below Delete opening, and Delete opening stretched into a large red pill or circle because the ⓘ text shared its grid row.
+- PR #1 fix: 2d7c454 on review (from Claude's patch). Checkbox under Casement window and above Delete opening; Delete opening keeps its original size (align-self:start); ⓘ text beside Delete on laptop and phone (below it only at 390px or narrower, where the panel has one column). Merged into approved on 20 Nov 2026 at 17:07 London (corrected 25 Nov 2026).
+- Target design: Figma https://www.figma.com/design/3GrNpyBjviaCaSpuqHdr6d?node-id=2-2 (node 1:2 = ⓘ closed, node 2:2 = ⓘ open).
+- Still open for Stuart's yes: possible iPhone Safari issue (checkbox text disappearing when ticked) now that the panel redraws on tick; gitleaks allowlist for the publishable Supabase key in platform-config.js (Quick check fails without it).
+- Access: Claude GitHub App now has access to project-check-app (added 20 Nov 2026).
