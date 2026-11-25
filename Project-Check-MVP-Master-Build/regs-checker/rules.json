@@ -116,14 +116,19 @@
       "id": "PLAN_PD",
       "part": "Planning",
       "regsRef": "GPDO 2015 Sch 2 Part 7 Class H (legislation.gov.uk/uksi/2015/596)",
-      "trigger": "Floor-area, boundary and height facts: new area over 1,000 m2, or over 50% of existing floor area, or under 5 m from the boundary, or higher than the existing building. Any missing answer = need info.",
+      "trigger": "England only. Reads Building Design / Site Layout data: footprint (width x length), ridge height, boundary distance on each elevation, free-standing or extension, existing building floor area and height. New free-standing building over 200 m2 = not PD. Extension over the lesser of 50% of the existing floor area or 1,000 m2 = not PD. Any part within 5 m of the boundary = not PD. Within 10 m of the boundary: max height 5 m. Otherwise a new building is no higher than the tallest building on site and max 15 m; an extension is no higher than the building it extends. Any missing answer, or an unmarked boundary side = need info. Scotland or Wales = need info (different rules).",
       "limits": {
-        "maxM2": 1000,
-        "maxFractionOfExisting": 0.5,
-        "minBoundaryM": 5
+        "maxNewM2": 200,
+        "maxExtensionFraction": 0.5,
+        "maxExtensionM2": 1000,
+        "minBoundaryM": 5,
+        "nearBoundaryM": 10,
+        "maxHeightNearM": 5,
+        "maxHeightM": 15
       },
+      "anyNation": true,
       "scope": "customer",
-      "stage1Problem": "Full planning permission is likely to be needed - get professional support.",
+      "stage1Problem": "Full planning permission is likely to be needed \\u2013 get professional support.",
       "stage1WhyItMatters": "Permitted development limits on size, boundary distance and height look to be exceeded.",
       "stage2Solution": "Stuart to write",
       "approved": false

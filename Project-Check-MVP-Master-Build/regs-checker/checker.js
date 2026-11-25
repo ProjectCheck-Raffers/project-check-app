@@ -37,7 +37,7 @@
       use: String(f.buildingUse || f.use || ''), W: W, L: L, eaves: eaves, ridge: ridge, doors: doors,
       distances: regs && regs.boundaryDistances ? regs.boundaryDistances : (f.regsBoundaryDist && typeof f.regsBoundaryDist === 'object' ? f.regsBoundaryDist : null),
       postcode: String(p.postcode || f.postcode || ''), altitude: num(f.regsAltitude), exposure: String(f.regsExposure || ''), solar: f.regsSolar || '',
-      planNew: num(f.planNewArea), planExisting: num(f.planExistingArea), planBoundary: num(f.planBoundaryDist), planHeight: f.planHeight || '',
+      buildingType: String(f.buildingType || f.structure || ''), adjacent: String(f.adjacentExistingBuilding || ''),
       detached: f.regsDetached || '', sleeping: f.regsSleeping || '', tempDays: num(f.regsTempDays),
       rooflights: f.regsRooflights || '', fireWall: f.regsFireWall || '', services: f.regsServices || '', vehiclesWet: f.regsVehiclesWet || ''
     };
@@ -144,14 +144,58 @@
     },
 
     // ---- Added rules (all approved:false). Fact keys are documented in README.md. ----
+    // Permitted development, England, GPDO 2015 Sch 2 Part 7 Class H. Reads Building Design / Site Layout data.
+    // measured.status: 'not-pd' (reasons with figures), 'unknown' (missing list) or 'likely-pd'. Never "no planning needed".
     PLAN_PD: function (r, i) {
-      if (i.planNew === null || i.planExisting === null || i.planBoundary === null || !i.planHeight) return [entry(r, NEED)];
-      var L = r.limits, why = [];
-      if (i.planNew > L.maxM2) why.push('area');
-      if (i.planExisting > 0 && i.planNew > i.planExisting * L.maxFractionOfExisting) why.push('fraction');
-      if (i.planBoundary < L.minBoundaryM) why.push('boundary');
-      if (i.planHeight === 'higher') why.push('height');
-      return [entry(r, why.length ? PROBLEM : OK, { reasons: why, newArea: i.planNew, existingArea: i.planExisting, boundary: i.planBoundary, height: i.planHeight })];
+      var L = r.limits, reasons = [], missing = [];
+      function done(status) {
+        var result = status === 'not-pd' ? PROBLEM : status === 'likely-pd' ? OK : NEED;
+        return [entry(r, result, { status: status, reasons: reasons, missing: missing })];
+      }
+      if (i.nation === 'Scotland' || i.nation === 'Wales') {
+        missing.push(i.nation + ' has different planning rules (Class H is for England) \u2013 get professional support');
+        return done('unknown');
+      }
+      if (i.nation !== 'England') missing.push('the nation (set from the site postcode in Site Layout)');
+      var ext = i.buildingType === 'Extension to an existing building' || i.buildingType === 'Building linked to existing premises' || i.adjacent.indexOf('Yes \u2014 links') === 0;
+      var fresh = i.buildingType === 'Free-standing building' && !ext;
+      if (!ext && !fresh) missing.push('a building type this check covers (free-standing or extension)');
+      var area = i.W && i.L ? i.W * i.L : null, H = i.ridge || null;
+      if (area === null) missing.push('the building width and length');
+      if (H === null) missing.push('the building height');
+      // Distance to the boundary on each elevation: an unmarked side is unknown, never far enough.
+      var known = [], unmarked = [];
+      WALLS.forEach(function (w) { var d = i.distances ? num(i.distances[w]) : null; if (d === null) unmarked.push(w); else known.push({ w: w, d: d }); });
+      if (unmarked.length) missing.push('a marked site boundary on elevation ' + unmarked.join(', ') + ' (mark every site boundary in Site Layout)');
+      if (ext) {
+        if (i.existingArea === null) missing.push('the existing building floor area');
+        if (i.existingHeight === null) missing.push('the existing building height');
+      }
+      // Size
+      if (area !== null && fresh && area > L.maxNewM2) reasons.push('the new building is ' + r1(area) + ' m\u00b2, over the ' + L.maxNewM2 + ' m\u00b2 limit for a new building');
+      if (area !== null && ext && i.existingArea !== null) {
+        var lim = Math.min(i.existingArea * L.maxExtensionFraction, L.maxExtensionM2);
+        if (area > lim) reasons.push('the extension is ' + r1(area) + ' m\u00b2, over the limit of ' + r1(lim) + ' m\u00b2 (the lesser of 50% of the existing ' + r1(i.existingArea) + ' m\u00b2 and ' + L.maxExtensionM2.toLocaleString('en-GB') + ' m\u00b2)');
+      }
+      // Boundary: any part within 5 m
+      known.forEach(function (k) { if (k.d < L.minBoundaryM) reasons.push('elevation ' + k.w + ' is ' + r1(k.d) + ' m from the boundary, within the ' + L.minBoundaryM + ' m limit'); });
+      // Height
+      var near = known.filter(function (k) { return k.d < L.nearBoundaryM; });
+      if (H !== null) {
+        if (near.length) {
+          if (H > L.maxHeightNearM) reasons.push('the building is ' + r1(H) + ' m high and within ' + L.nearBoundaryM + ' m of the boundary (elevation ' + near.map(function (k) { return k.w; }).join(', ') + '), over the ' + L.maxHeightNearM + ' m limit');
+        } else if (!unmarked.length) {
+          if (ext) {
+            if (i.existingHeight !== null && H > i.existingHeight) reasons.push('the extension is ' + r1(H) + ' m high, higher than the existing building (' + r1(i.existingHeight) + ' m)');
+          } else if (fresh) {
+            if (H > L.maxHeightM) reasons.push('the new building is ' + r1(H) + ' m high, over the ' + L.maxHeightM + ' m limit');
+            if (i.existingHeight === null) missing.push('the height of the tallest building on site');
+            else if (H > i.existingHeight) reasons.push('the new building is ' + r1(H) + ' m high, higher than the tallest building on site (' + r1(i.existingHeight) + ' m)');
+          }
+        }
+      }
+      if (reasons.length) return done('not-pd');
+      return done(missing.length ? 'unknown' : 'likely-pd');
     },
     BR_SCHED2_EXEMPT: function (r, i) {
       var area = i.W && i.L ? i.W * i.L : null, lim = r.limits;
@@ -213,11 +257,12 @@
   function evaluate(projectData, rules, options) {
     var list = (rules && rules.rules) || (Array.isArray(rules) ? rules : null) || (root.PC_REGS_RULES && root.PC_REGS_RULES.rules) || [];
     var i = inputs(projectData);
-    if (i.nation !== 'England') return { i: i, items: [] };
+    var england = i.nation === 'England';
     var all = {}, items = [];
     list.forEach(function (r) {
       var fn = CHECKS[r.id];
       if (!fn) return;
+      if (!england && !r.anyNation) return; // other nations: only rules marked anyNation run (they report need info)
       var res = fn(r, i, all);
       all[r.id] = res;
       if (r.approved === true || (options && options.includeUnapproved)) items.push({ rule: r, res: res });
@@ -273,15 +318,31 @@
     return loadRules().then(function (rules) {
       if (!rules) return null;
       var f = p.facts || {};
-      var stored = { version: rules.version, ranAt: new Date().toISOString(), nation: inputs(p).nation, results: runChecks(p, rules) };
+      var stored = { version: rules.version, ranAt: new Date().toISOString(), nation: inputs(p).nation, results: runChecks(p, rules), pdApproved: (rules.rules || []).some(function (r) { return r.id === 'PLAN_PD' && r.approved === true; }) };
       p.backgroundChecks = Object.assign({}, p.backgroundChecks || {}, { regsChecker: stored });
       if (typeof root.save === 'function') root.save();
       return stored;
     });
   }
 
+  // Words for the Permitted development section (Stage 1 report and PDF). Takes the saved regsChecker record.
+  function describePermittedDevelopment(saved) {
+    var tail = ' Get professional support.';
+    if (!saved) return { status: 'unknown', text: "We can't yet say whether this is permitted development. Missing: the Building Design confirmation." };
+    var e = (saved.results || []).filter(function (x) { return x.ruleId === 'PLAN_PD'; })[0];
+    if (!e) {
+      if (saved.pdApproved === false) return { status: 'unknown', text: "We can't yet say whether this is permitted development. Missing: the permitted development check has not been approved yet." + tail };
+      return { status: 'unknown', text: "We can't yet say whether this is permitted development. Missing: the information needed for the check." };
+    }
+    var m = e.measured || {};
+    if (m.status === 'not-pd') return { status: 'not-pd', text: 'Full planning permission is likely to be needed: ' + (m.reasons || []).join('; ') + '. Get professional support.' };
+    if (m.status === 'likely-pd') return { status: 'likely-pd', text: "On the information given, this looks likely to fall within permitted development (Class H). This isn't confirmed \u2013 get professional support to confirm." };
+    return { status: 'unknown', text: "We can't yet say whether this is permitted development. Missing: " + ((m.missing || []).join('; ') || 'the information needed for the check') + '.' };
+  }
+
+  root.describePermittedDevelopment = describePermittedDevelopment;
   root.runChecks = runChecks;
   root.buildQuoteRequest = buildQuoteRequest;
   root.runRegsChecker = runRegsChecker;
-  if (typeof module !== 'undefined' && module.exports) module.exports = { runChecks: runChecks, buildQuoteRequest: buildQuoteRequest };
+  if (typeof module !== 'undefined' && module.exports) module.exports = { runChecks: runChecks, buildQuoteRequest: buildQuoteRequest, describePermittedDevelopment: describePermittedDevelopment };
 })(typeof window !== 'undefined' ? window : globalThis);

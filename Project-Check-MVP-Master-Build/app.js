@@ -1012,6 +1012,12 @@ const STAGE1_ADJACENT_JUNCTION_NOTES=[
   'This should be agreed with the designer and installer before the building is ordered.'
 ];
 function stage1AdjacentJunctionApplies(p){const facts=projectFacts(p);return projectIsSteelFreeStanding(facts)&&projectAdjacentBuildingNeedsJunction(facts)}
+// Permitted development (England, Class H) wording, from the saved regs checker record. Never says "no planning needed".
+function stage1PermittedDevelopment(p){
+  const saved=p.backgroundChecks&&p.backgroundChecks.regsChecker;
+  if(typeof describePermittedDevelopment==='function')return describePermittedDevelopment(saved);
+  return {status:'unknown',text:"We can't yet say whether this is permitted development. Missing: the permitted development check. Get professional support."}
+}
 function stage1RegsCheckerMarkup(p){
   const saved=p.backgroundChecks&&p.backgroundChecks.regsChecker;
   if(!saved||!saved.nation)return '';
@@ -2484,7 +2490,7 @@ ${stage1SteelEnvelopeMarkup(p)+stage1SteelSiteMarkup(p)+stage1BaseFoundationsMar
 
 <div class="card" style="margin-top:18px"><h3>Industrial building reference visual</h3><p class="meta">Illustrative reference image of a modern industrial/warehouse-style building, shown for general context only — this is not a depiction of your specific proposed building. Your project-specific preliminary illustration, based on the dimensions you supplied, is shown separately below.</p><img class="report-building" src="assets/project-check-building-reports.png" alt="Illustrative modern industrial building, shown for general reference only"></div>
 
-<div class="card" style="margin-top:18px"><h3>Planning position — at Stage 1 level</h3><p class="meta">Stage 1 does not check local planning records or nearby planning history — that is a Stage 2 investigation. The only planning-adjacent observation available at this stage is below.</p>${stage1DisciplineBlock(p,'planning','Preliminary planning-adjacent flag','No boundary/neighbour-related flag was identified from the answers supplied.')}</div>
+<div class="card stage1-permitted-development" style="margin-top:18px"><h3>Permitted development</h3><p class="stage1-pd-${stage1PermittedDevelopment(p).status}">${esc(stage1PermittedDevelopment(p).text)}</p></div>
 
 <div class="card" style="margin-top:18px"><h3>Civils &amp; site observations — at Stage 1 level</h3><p class="meta">Based only on what is visible/known about the site so far — not a ground investigation or civils design.</p>${stage1DisciplineBlock(p,'civils','Preliminary civils-adjacent flags','No civils-adjacent flag was identified from the answers supplied.')}</div>
 
@@ -2983,9 +2989,8 @@ if(items.length)items.forEach(r=>add(`• ${r.text}`,9,false,5.6));
 else add(emptyNote,9,false,5.6)
 };
 heading('POTENTIAL ISSUES IDENTIFIED');
-heading('PLANNING POSITION — AT STAGE 1 LEVEL');
-add('Stage 1 does not check local planning records or nearby planning history — that is a Stage 2 investigation.',8,false,5);
-printDiscipline('planning','Preliminary planning-adjacent flag','No boundary/neighbour-related flag was identified from the answers supplied.');
+heading('PERMITTED DEVELOPMENT');
+add(stage1PermittedDevelopment(p).text,9,false,5.6);
 
 heading('CIVILS & SITE OBSERVATIONS — AT STAGE 1 LEVEL');
 printDiscipline('civils','Preliminary civils-adjacent flags','No civils-adjacent flag was identified from the answers supplied.');

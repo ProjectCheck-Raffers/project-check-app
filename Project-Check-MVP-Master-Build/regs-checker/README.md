@@ -26,7 +26,7 @@ New result value `note` = the rule applies but is not a problem (exemption flag,
 
 | Rule | What it does |
 | --- | --- |
-| `PLAN_PD` | Full planning likely: new area over 1,000 m2, over 50% of existing area, under 5 m from boundary, or higher than existing. Customer scope. |
+| `PLAN_PD` | Permitted development, England, GPDO 2015 Sch 2 Part 7 Class H. Reads footprint (width x length), ridge height, per-elevation boundary distance, free-standing or extension, and existing building floor area and height. New building over 200 m2, extension over the lesser of 50% of existing or 1,000 m2, any part within 5 m of the boundary, height over 5 m within 10 m of the boundary (otherwise new building no higher than the tallest building on site and 15 m max; extension no higher than the one it extends) = full planning likely. Scotland or Wales = need info. An unmarked boundary side or any missing answer = need info. Customer scope; runs for every nation (`anyNation`). |
 | `BR_SCHED2_EXEMPT` | "May be exempt from building regs": detached, no sleeping, up to 30 m2; or temporary up to 28 days. Customer scope. |
 | `A_LOADS_QUOTE` | Quote: postcode, altitude, exposure, roof solar (added load). |
 | `B_BOUNDARY_FIRERATED_QUOTE` | Quote: "fire-rated wall needed on elevation X" when under `closeM` from boundary and cladding not stated as rated. Only drawn boundary lines (or the per-elevation answers) count; other buildings on the site are not boundaries. |
@@ -42,7 +42,7 @@ New result value `note` = the rule applies but is not a problem (exemption flag,
 
 ### Fact keys the rules read (questions NOT yet added to the form - app.js is outside regs-checker, needs Stuart's go)
 
-`planNewArea`, `planExistingArea` (m2), `planBoundaryDist` (m), `planHeight` (`higher` / `same or lower`); `regsDetached`, `regsSleeping` (Yes/No), `regsTempDays`; `regsAltitude` (m), `regsExposure`, `regsSolar` (Yes/No), project `postcode`; `regsBoundaryDist` {A,B,C,D} (fallback when no boundaries are drawn); `regsRooflights`, `regsFireWall`, `regsServices` (Yes/No - the heating/toilets/offices/services question does NOT exist yet), `regsVehiclesWet` (Yes/No). Missing = `need info`. Use the existing `regsQuestionSelect` / field styles so the form works on phone and laptop.
+`regsExistingArea` (m2) and `regsExistingHeight` (m) for `PLAN_PD`; `regsDetached`, `regsSleeping` (Yes/No), `regsTempDays`; `regsAltitude` (m), `regsExposure`, `regsSolar` (Yes/No), project `postcode`; `regsBoundaryDist` {A,B,C,D} (fallback when no boundaries are drawn); `regsRooflights`, `regsFireWall`, `regsServices` (Yes/No - the heating/toilets/offices/services question does NOT exist yet), `regsVehiclesWet` (Yes/No). Missing = `need info`. Use the existing `regsQuestionSelect` / field styles so the form works on phone and laptop.
 
 ### Sources and UNKNOWNs
 
@@ -54,3 +54,9 @@ New result value `note` = the rule applies but is not a problem (exemption flag,
 ### Building Design answers (2026-11-25)
 
 The Building Design page now asks (card "Building Regulations and planning"): `regsStored`, `regsServices` (Yes / No / Not sure), and, only for a building that links to or extends an existing one, `regsExistingArea` (m2) and `regsExistingHeight` (m). The cladding fire rating, fire engine access elevations, narrowest road width and Building Control date questions were removed; `B_BOUNDARY` and `B_BOUNDARY_FIRERATED_QUOTE` use boundary distance only ("A fire-rated wall may be needed on elevation X \u2013 the building supplier to confirm.").
+
+### Permitted development (2026-11-25)
+
+`PLAN_PD` was rewritten (still `approved:false`). Its saved result carries `measured.status` (`not-pd`, `unknown`, `likely-pd`) with `reasons` (figures) and `missing`. `describePermittedDevelopment(savedRegsChecker)` turns that into the three allowed sentences for the Stage 1 report and PDF; the saved record also carries `pdApproved` so an unapproved rule reads "We can't yet say ... not approved yet" instead of a conclusion. It never says "no planning needed".
+A boundary side with no marked boundary line facing it (Site Layout) has no distance and is need info; `pcBgBoundaryDistances` in background-checks.js returns null for that side.
+**Not coded / UNKNOWN:** article 2(3) land and SSSI lower limits; the tallest building on site for a free-standing building (needs `regsExistingHeight`, which the Building Design card only asks when the building links to an existing one, so a free-standing building reads need info until that is answered); existing floor area is compared with the footprint (single storey assumed).
