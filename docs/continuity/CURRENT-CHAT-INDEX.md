@@ -289,3 +289,58 @@ This is an automated GitHub-state record, not a full transcript. It was generate
 - Target design: Figma https://www.figma.com/design/3GrNpyBjviaCaSpuqHdr6d?node-id=2-2 (node 1:2 = ⓘ closed, node 2:2 = ⓘ open).
 - Still open for Stuart's yes: possible iPhone Safari issue (checkbox text disappearing when ticked) now that the panel redraws on tick; gitleaks allowlist for the publishable Supabase key in platform-config.js (Quick check fails without it).
 - Access: Claude GitHub App now has access to project-check-app (added 20 Nov 2026).
+
+---
+
+## 23 November 2026 – Grok-to-Claude handover: Building Regulations "Potential Issues" checker
+
+Approved by Stuart on 23 Nov 2026 ("go"). Claude: read CLAUDE.md first, then do exactly this.
+
+TASK: Build the Project Check "Potential Issues" checker (England, industrial/storage steel buildings).
+
+REPO: ProjectCheck-Raffers/project-check-app. App folder: Project-Check-MVP-Master-Build/.
+BRANCH: "review". Open ONE PR into "approved". Do NOT merge – Stuart is the final approver.
+COMMIT AS: git -c user.name=ProjectCheck-Raffers -c user.email=317329518+ProjectCheck-Raffers@users.noreply.github.com
+DO NOT: use, read, import or change anything in brain/ or any stage-1 brain files. Do not change any existing layout, size, wording or behaviour except what is listed here. No Playwright, screenshots or long tests. No secrets or customer details in the repo. Anything else you think is needed: list it in the PR summary, do not do it.
+
+PURPOSE: Stage 1 (free) = the hook. It shows POTENTIAL PROBLEMS only, using the client's own numbers. It must never show solutions, methods, products or costs. Stage 2 (paid) = solutions (not built now). There is no Stage 3.
+
+1. NEW FOLDER Project-Check-MVP-Master-Build/regs-checker/
+   a) rules.json – each rule: id, part (A, B, L...), regsRef, trigger, stage1Problem, stage1WhyItMatters, stage2Solution ("Stuart to write"), approved (false).
+      Starter rules – all approved:false until Stuart signs them off:
+      - B_BOUNDARY: per elevation, distance to boundary under 25 m AND cladding fire rating "unknown" or "not rated" -> "Elevation X is Y m from the boundary – this wall may need to meet fire separation rules." (ADB Vol 2 Section 13). If cladding is rated -> no flag.
+      - B_BOUNDARY_1M: any elevation under 1 m from boundary -> "Elevation X is under 1 m from the boundary – strict fire rules apply to this wall." (ADB 13.8)
+      - B_HEIGHT_10M: mean roof height ((eaves+ridge)/2) over 10 m -> "Your building height may need a specialist fire assessment." (ADB 13.21)
+      - A_FRAME_BOUNDARY: B_BOUNDARY flagged AND eaves over 7 m -> "The frame and foundations near the boundary may need extra design checks." (ADB 13.16)
+      - B_TRAVEL: furthest point in plan to nearest personnel or fire-exit door, straight line x 1.5. Normal hazard: 45 m if exits in 2+ directions, 25 m if one direction. Flammable storage: 25 m / 12 m. Roller doors and doors into another building do NOT count. Over limit -> "The furthest point is about Z m from an exit – this may be over the limit." (ADB Table 2.1)
+      - B_EXITS: floor area / 30 m2 (storage) or / 5 m2 (production) over 60 people and fewer than 2 exits -> "Your building may need more fire exits." (ADB 2.6)
+      - L_ENERGY: ONLY if heated for people working inside (not unheated, not frost protection, not localised heaters) -> "Heated buildings need an energy calculation (SBEM/BRUKL) for Building Control." No fixed U-value rule.
+      - L_2027: Building Control application on/after 24 Mar 2027, or start on/after 24 Mar 2028 -> "New 2027 energy rules may apply to your project."
+   b) checker.js – pure function runChecks(projectData) returns [{ruleId, result: "ok" | "potential problem" | "need info", measured, stage1Problem, stage1WhyItMatters}]. Only rules with approved:true are shown to clients. If an input is missing, result "need info" – never shown as a problem, never guessed.
+   c) README.md – how Stuart adds, changes or approves a rule by editing rules.json only.
+
+2. RUN: when the user presses "Design confirmed", run runChecks and save to project_data.backgroundChecks.regsChecker. Keep all existing fields. Remove nothing.
+
+3. STAGE 1 REPORT: add one section "Potential issues to review". Each potential problem: headline with the client's number, one why-it-matters line, then "Your Stage 2 report explains the solutions." Footer: "Guide only – confirm with Building Control." If there are none: "No potential issues found from the information given." Must work on phone and laptop.
+
+4. EXTRA QUESTIONS (only if not already asked, shown on the existing details step): what is stored (general / flammable liquids, gases or spirits), heating (unheated / frost protection / localised heaters / fully heated / heated office only), cladding fire rating (rated / not rated / unknown), Building Control application date, nation (England / Wales / Scotland / NI). If not England: "Checks cover England only" and skip all checks.
+
+5. PR SUMMARY: every file changed, every rule added, and anything you think is needed but did not do.
+
+After Claude opens the PR, Grok checks the PR and the review link against this handover before Stuart merges.
+
+### Updated 25 Nov 2026 (Grok) – what changed after this handover
+
+The handover above is kept as written. Since then, in PR #5 (review -> approved, not merged):
+- Empty result: the "No potential issues found" message was replaced by hiding the section when no rules are approved (fixes a false all-clear) – 735e5d9.
+- Heating: the duplicate heating question was removed; L_ENERGY uses the existing temperatureCondition (heated -> potential problem, unheated -> ok, other/not sure -> need info) – b2e033d.
+- Added B_RIDGE_18M: height measured to mean roof (eaves+ridge)/2 over 18 m (ADB Table 12.1 / Diagram D4) – 787d965.
+- Added B_FIRE_ACCESS_11M (ADB Tables 15.1/15.2) with elevation access and road width questions – 9d7557e.
+
+Findings not yet built (awaiting Stuart's go):
+- L_ENERGY "no fixed U-value rule" is out of date: heated buildings must meet limiting U-values. England (AD L 2021, from 15 Jun 2022) and Wales (from 29 Mar 2023): walls 0.26, roof 0.18 W/m2K. Scotland (Section 6, from 1 Feb 2023): walls 0.21, roof 0.16. Standard 60/80 mm PIR (about 0.36/0.27) misses these if heated.
+- Checks are England only; Wales and Scotland limits above are now known.
+- Building use question needed: sports/assembly halls (purpose group 5) use 18 m / 45 m travel and real headcount, not storage figures.
+- Scope of supply tags: THORSPAN supplies the building and fire exits. Lighting, heating, ECB court, fire access roads, foundations, M&E and Building Control applications are the customer's – show "get professional support", not "potential problem".
+- A panel brand (e.g. Balex PIR) is not a fire rating; a building on the same site is not automatically a relevant boundary.
+- Stage 2 boundary solution text (cheapest first: move the building, fire-rated panels on that elevation only, fewer openings, confirm same-site with Building Control, rated panels all round).
