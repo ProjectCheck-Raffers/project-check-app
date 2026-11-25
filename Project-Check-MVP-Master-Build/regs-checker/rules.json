@@ -6,8 +6,8 @@
       "id": "B_BOUNDARY",
       "part": "B",
       "regsRef": "ADB Vol 2 Section 13",
-      "trigger": "Per elevation: distance to boundary under 25 m AND cladding fire rating is 'unknown' or 'not rated'. Rated cladding = no flag.",
-      "stage1Problem": "Elevation {elevation} is {distance} m from the boundary – this wall may need to meet fire separation rules.",
+      "trigger": "Per elevation: distance to the drawn site boundary under 25 m. The cladding fire rating is not asked; standard PIR is never treated as unprotected by default. Unmarked side = need info.",
+      "stage1Problem": "A fire-rated wall may be needed on elevation {elevation} – the building supplier to confirm.",
       "stage1WhyItMatters": "Walls close to a boundary are limited in how much fire can spread to the neighbouring site.",
       "stage2Solution": "Stuart to write",
       "approved": false
@@ -46,11 +46,13 @@
       "id": "B_FIRE_ACCESS_11M",
       "part": "B",
       "regsRef": "ADB Vol 2 Section 15 Table 15.1 note 2 / Table 15.2",
-      "trigger": "Table 15.1 sets how much of the perimeter fire engines must reach, and the appliance type, from total floor area (width x length) and mean roof height ((eaves + ridge) / 2): up to 2000 m2 and up to 11 m = the less onerous of 15% of the perimeter or a pump within 45 m of every point of the footprint (pump); up to 2000 m2 and over 11 m = 15% (high reach); 2000-8000 m2 = 15% pump up to 11 m, 50% high reach over 11 m; 8000-16000 m2 = 50%; 16000-24000 m2 = 75%; over 24000 m2 = 100% (pump up to 11 m, high reach over 11 m). Access = the ticked elevations (A and C = width, B and D = length) and the narrowest road must be at least 3.7 m between kerbs (Table 15.2). Missing answers = need info.",
-      "stage1Problem": "Your building is about {H} m to mid-roof - fire engine access may need to reach {X}% of the walls, and the roads shown may not be enough.",
-      "stage1WhyItMatters": "Fire engines need to reach enough of the building along a route that is wide enough.",
+      "trigger": "Always a customer-scope note: fire engine access is for the customer's professional team. No inputs needed.",
+      "stage1Problem": "",
+      "stage1WhyItMatters": "",
       "stage2Solution": "Stuart to write",
-      "approved": false
+      "approved": false,
+      "scope": "customer",
+      "stage1Note": "Fire engine access – get professional support"
     },
     {
       "id": "A_FRAME_BOUNDARY",
@@ -102,25 +104,13 @@
       "id": "L_ENERGY",
       "part": "L",
       "regsRef": "Approved Document L (Vol 2)",
-      "trigger": "ONLY if heated for people working inside (fully heated; not unheated, frost protection, localised heaters or heated office only). No fixed U-value rule.",
-      "stage1Problem": "Heated buildings need an energy calculation (SBEM/BRUKL) for Building Control.",
-      "stage1WhyItMatters": "Building Control will ask for this calculation with the application.",
+      "trigger": "Building Design answer 'Will this building have heating, toilets, offices or any services?': Yes = note, No = ok, Not sure or blank = need info.",
+      "stage1Problem": "",
+      "stage1WhyItMatters": "",
       "stage2Solution": "Stuart to write",
-      "approved": false
-    },
-    {
-      "id": "L_2027",
-      "part": "L",
-      "regsRef": "2027 energy rule changes",
-      "trigger": "Building Control application on/after 24 Mar 2027, OR start on/after 24 Mar 2028.",
-      "dates": {
-        "application": "2027-03-24",
-        "start": "2028-03-24"
-      },
-      "stage1Problem": "New 2027 energy rules may apply to your project.",
-      "stage1WhyItMatters": "Projects submitted or started after these dates are assessed against the newer rules.",
-      "stage2Solution": "Stuart to write",
-      "approved": false
+      "approved": false,
+      "scope": "customer",
+      "stage1Note": "With heating, toilets, offices or other services, an energy calculation for Building Control may be needed. Get professional support."
     },
     {
       "id": "PLAN_PD",
@@ -168,7 +158,7 @@
       "id": "B_BOUNDARY_FIRERATED_QUOTE",
       "part": "B",
       "regsRef": "ADB Vol 2 Section 13",
-      "trigger": "Per elevation: distance to boundary under closeM and cladding not stated as fire rated. Boundary = drawn boundary lines or the per-elevation answers; other buildings on the same site are not boundaries. Quote request only.",
+      "trigger": "Per elevation: distance to boundary under closeM. Boundary = drawn boundary lines or the per-elevation answers; other buildings on the same site are not boundaries. Quote request only.",
       "limits": {
         "closeM": 25
       },
@@ -250,21 +240,19 @@
       "id": "L_2027_HEATED",
       "part": "L",
       "regsRef": "AD L 2026 edition, applies from 24 Mar 2027 (England)",
-      "trigger": "Heated buildings only. Limiting U-values unchanged (walls 0.26, roof 0.18, floor 0.18); pedestrian doors tighten to 1.6; whole-building energy calculation pushes towards low-carbon heating. Old rules apply if BC application is before 24 Mar 2027 AND work starts before transitionEnd (UNKNOWN: exact transition period, set from the existing L_2027 start date). Otherwise flagged.",
-      "dates": {
-        "application": "2027-03-24",
-        "transitionEnd": "2028-03-24"
-      },
+      "trigger": "Heated buildings only (project details). A customer-scope note; no dates are asked.",
       "limits": {
         "walls": 0.26,
         "roof": 0.18,
         "floor": 0.18,
         "personnelDoor": 1.6
       },
-      "stage1Problem": "New 2027 energy rules apply to this heated building.",
-      "stage1WhyItMatters": "Heated buildings face tighter door limits and a whole-building energy calculation from 24 Mar 2027.",
+      "stage1Problem": "",
+      "stage1WhyItMatters": "",
       "stage2Solution": "Personnel doors at U 1.6. Energy calculation favours low-carbon heating.",
-      "approved": false
+      "approved": false,
+      "scope": "customer",
+      "stage1Note": "Heated building – the 2027 energy rules may apply. Get professional support."
     }
   ]
 }

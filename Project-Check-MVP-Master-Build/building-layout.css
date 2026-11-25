@@ -323,3 +323,12 @@ body[data-page="buildingLayout"] .sitefooter{display:none}
 .bd-add-buttons>.bd-fire-option .bd-fire-info{width:28px;height:28px}
 .bd-add-buttons>.bd-fire-info-text{grid-column:2;align-self:center;margin:0;font-size:11px;line-height:1.3;color:#334155}
 @media(max-width:390px){.bd-add-buttons>.bd-fire-info-text{grid-column:1}}
+
+/* Building Regulations and planning card: own container beside (laptop) or below (phone) the drawing controls. */
+.bd-side-column{display:flex;flex-direction:column;gap:16px;min-width:0}
+.bd-regs-card{background:#fff;border:1px solid var(--bd-line);border-radius:14px;padding:17px 19px;min-width:0}
+.bd-regs-card h2{margin:0 0 4px;font-size:18px}
+.bd-regs-note{margin:0 0 12px;color:var(--bd-muted);font-size:12px}
+.bd-regs-card .field select,.bd-regs-card .field input{width:100%;min-height:44px;box-sizing:border-box}
+.bd-regs-saved{margin:6px 0 0;color:var(--bd-green);font-size:12px;min-height:1em}
+@media(max-width:720px){.bd-regs-card{padding:13px;border-radius:12px}}

@@ -18,21 +18,31 @@ async function geocodeSitePostcode(postcode){
  const payload=await response.json();
  const result=payload?.result;
  if(!result||!Number.isFinite(Number(result.latitude))||!Number.isFinite(Number(result.longitude)))return null;
- return {lat:Number(result.latitude),lng:Number(result.longitude),label:result.postcode||postcode,source:"postcode"}
+ return {lat:Number(result.latitude),lng:Number(result.longitude),label:result.postcode||postcode,source:"postcode",country:String(result.country||"")}
+}
+// Nation comes from the postcodes.io country for the site postcode (no question is asked).
+// England, Scotland and Wales only; anything else (including Northern Ireland) clears the stored value.
+function recordSiteNation(p,country){
+ if(!p||!country)return;
+ const facts=projectFacts(p),nation=["England","Scotland","Wales"].includes(country)?country:"";
+ if(nation){if(facts.regsNation!==nation){facts.regsNation=nation;save()}}
+ else if(facts.regsNation){delete facts.regsNation;save()}
 }
 async function resolveProposedSite(p){
  const address=String(p.address||"").trim();
  if(!address)return null;
+ const postcode=siteLayoutPostcode(p);
+ let country="";
+ if(postcode){try{const byPostcode=await geocodeSitePostcode(postcode);if(byPostcode)country=byPostcode.country}catch(e){}}
  try{
   const full=await geocode(address);
-  if(full)return {lat:parseFloat(full.lat),lng:parseFloat(full.lon),label:full.display_name||address,source:"address"}
+  if(full)return {lat:parseFloat(full.lat),lng:parseFloat(full.lon),label:full.display_name||address,source:"address",country}
  }catch(e){}
- const postcode=siteLayoutPostcode(p);
  if(postcode){
   try{const byPostcode=await geocodeSitePostcode(postcode);if(byPostcode)return byPostcode}catch(e){}
   try{
    const fallback=await geocode(postcode);
-   if(fallback)return {lat:parseFloat(fallback.lat),lng:parseFloat(fallback.lon),label:fallback.display_name||postcode,source:"postcode"}
+   if(fallback)return {lat:parseFloat(fallback.lat),lng:parseFloat(fallback.lon),label:fallback.display_name||postcode,source:"postcode",country}
   }catch(e){}
  }
  return null
@@ -290,6 +300,7 @@ try{
  const best=await resolveProposedSite(p);
  if(!best){if(status)status.textContent='Site not found. Tap the map to place the building.';mapEl?.classList.remove('is-locating');return}
  activeSiteLayoutOrigin={lat:best.lat,lng:best.lng};
+ recordSiteNation(p,best.country);
  if(status)status.textContent=best.source==='address'?'Site located.':'Site located from postcode.';
  if(placeInitial){
   activeSiteLayoutMap.jumpTo({center:[activeSiteLayoutOrigin.lng,activeSiteLayoutOrigin.lat],zoom:19});

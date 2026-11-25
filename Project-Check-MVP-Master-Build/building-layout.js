@@ -1405,6 +1405,47 @@ function buildingDesignRenderControls(){
   };
   buildingDesignRenderRollerComparison(project,state.geometry);
 }
+// ---- Building Regulations and planning card (2026-11-25) ---------------------
+// Its own container (#buildingDesignRegsCard), rendered once and never by
+// buildingDesignRenderInteractive, so typing here is not interrupted by the
+// panels that re-render on every change. Answers are saved to project facts
+// (regsStored, regsServices, regsExistingArea, regsExistingHeight) and re-run
+// the regs checker. They do not touch the design, its fingerprint or its lock.
+const BUILDING_DESIGN_REGS_STORED=[['general','General storage'],['flammable','Flammable liquids, gases or spirits']];
+const BUILDING_DESIGN_REGS_SERVICES=['Yes','No','Not sure'];
+function buildingDesignLinksExisting(facts){
+  const adjacent=typeof projectAdjacentExistingBuilding==='function'?projectAdjacentExistingBuilding(facts):'';
+  const type=facts.buildingType||facts.structure||'';
+  return adjacent.indexOf('Yes \u2014 links')===0||type==='Extension to an existing building'||type==='Building linked to existing premises'
+}
+function buildingDesignRegsCardMarkup(p){
+  const facts=buildingDesignProjectFacts(p),links=buildingDesignLinksExisting(facts);
+  const select=(id,label,key,options)=>'<div class="field"><label for="'+id+'">'+label+'</label><select id="'+id+'" onchange="buildingDesignSaveRegsAnswer(\''+key+'\',this.value)"><option value="">Choose\u2026</option>'+options.map(o=>{const value=Array.isArray(o)?o[0]:o,text=Array.isArray(o)?o[1]:o;return '<option value="'+esc(value)+'"'+(facts[key]===value?' selected':'')+'>'+esc(text)+'</option>'}).join('')+'</select></div>';
+  const number=(id,label,key)=>'<div class="field"><label for="'+id+'">'+label+'</label><input id="'+id+'" type="number" min="0" step="0.1" inputmode="decimal" value="'+esc(facts[key]===undefined||facts[key]===null?'':String(facts[key]))+'" onchange="buildingDesignSaveRegsAnswer(\''+key+'\',this.value)"></div>';
+  return '<h2>Building Regulations and planning</h2><p class="bd-regs-note">These answers update the checks. They do not change your drawing.</p>'+
+    select('buildingDesignRegsStored','What will be stored?','regsStored',BUILDING_DESIGN_REGS_STORED)+
+    select('buildingDesignRegsServices','Will this building have heating, toilets, offices or any services?','regsServices',BUILDING_DESIGN_REGS_SERVICES)+
+    (links?number('buildingDesignRegsExistingArea','Existing building floor area (m\u00b2)','regsExistingArea')+number('buildingDesignRegsExistingHeight','Existing building height (m)','regsExistingHeight'):'')+
+    '<p id="buildingDesignRegsSaved" class="bd-regs-saved" role="status" aria-live="polite"></p>'
+}
+function buildingDesignRenderRegsCard(){
+  const host=document.querySelector('#buildingDesignRegsCard'),current=buildingDesignCurrent();
+  if(host&&current&&current.project)host.innerHTML=buildingDesignRegsCardMarkup(current.project)
+}
+function buildingDesignSaveRegsAnswer(key,value){
+  if(!['regsStored','regsServices','regsExistingArea','regsExistingHeight'].includes(key))return;
+  const current=buildingDesignCurrent(),p=current&&current.project;
+  if(!p)return;
+  const facts=buildingDesignProjectFacts(p),clean=String(value==null?'':value).trim();
+  if(clean==='')delete facts[key];
+  else if(key==='regsExistingArea'||key==='regsExistingHeight'){const n=Number(clean);if(!Number.isFinite(n)||n<0)return;facts[key]=n}
+  else facts[key]=clean;
+  if(typeof save==='function')save();
+  if(typeof runRegsChecker==='function')runRegsChecker(p);
+  const note=document.querySelector('#buildingDesignRegsSaved');
+  if(note)note.textContent='Saved.'
+}
+window.buildingDesignSaveRegsAnswer=buildingDesignSaveRegsAnswer;
 const BD_ROLLER_REQUIREMENT_GAP='Some saved roller-door requirements are missing a clear size or access type.';
 const BD_ROLLER_GEOMETRY_COPY='Some requirement values were previously copied from geometry. Confirm them with the customer.';
 const BD_ROLLER_COUNT_DIFF='The roller-door count differs between the requirements and the drawing.';
@@ -1965,11 +2006,12 @@ function buildingLayout(id){
   app.innerHTML='<main class="building-design-page">'+projectJourneyNav(p,'buildingLayout','siteLayout')+
     '<header class="bd-page-header"><div><div class="bd-breadcrumb">'+esc(p.name)+' / Stage 1 / Building Design</div><h1>Design your building</h1><p>Position doors on the correct elevation, check the dimensions, then confirm the preliminary design.</p></div><dl class="bd-project-facts"><div><dt>'+esc(p.name)+'</dt><dd>'+esc(buildingDesignAddress(p))+'</dd><span>'+Number(geometry.length).toFixed(1)+' m × '+Number(geometry.width).toFixed(1)+' m · Clear height '+Number(geometry.eaveHeight).toFixed(1)+' m'+(roofPitch?' · Roof pitch '+buildingDesignRound(roofPitch,1)+'°':'')+' · Indicative ridge '+Number(geometry.ridgeHeight).toFixed(2)+' m</span></div></dl></header>'+
     (source.dimensionsChanged?'<div class="bd-source-warning">Project dimensions or roof pitch changed after the last saved geometry. This design has been refreshed from the current project facts and must be reviewed again.</div>':'')+
-    stage1SteelEnvelopeMarkup(p)+buildingDesignSiteReferenceMarkup()+'<div class="building-design-grid"><section class="bd-workspace" aria-label="Building drawing workspace"><div id="buildingDesignTabs" class="bd-view-tabs" role="toolbar" aria-label="Drawing views"></div><div class="bd-canvas-shell"><div id="buildingDesignCanvas" class="bd-canvas"></div></div><div class="bd-workspace-footer"><p>Drag an opening along the elevation or enter exact dimensions in the control panel.</p><div><button id="buildingDesignUndo" type="button" class="btn secondary" onclick="buildingDesignUndo()">Undo</button><button id="buildingDesignRedo" type="button" class="btn secondary" onclick="buildingDesignRedo()">Redo</button><button type="button" class="btn secondary" onclick="buildingDesignFitView()">Fit view</button><span class="bd-zoom-controls"><button type="button" aria-label="Zoom out" onclick="buildingDesignZoom(-.1)">−</button><b id="buildingDesignZoom">100%</b><button type="button" aria-label="Zoom in" onclick="buildingDesignZoom(.1)">＋</button></span><button id="buildingDesignResetButton" type="button" class="btn secondary" '+(activeBuildingDesign.locked?'disabled':'')+' onclick="buildingDesignReset()">Reset</button></div></div></section><aside id="buildingDesignControls" class="bd-controls" aria-label="Building controls"></aside></div><div id="buildingDesignPhoneFire" class="bd-phone-only"></div>'+
+    stage1SteelEnvelopeMarkup(p)+buildingDesignSiteReferenceMarkup()+'<div class="building-design-grid"><section class="bd-workspace" aria-label="Building drawing workspace"><div id="buildingDesignTabs" class="bd-view-tabs" role="toolbar" aria-label="Drawing views"></div><div class="bd-canvas-shell"><div id="buildingDesignCanvas" class="bd-canvas"></div></div><div class="bd-workspace-footer"><p>Drag an opening along the elevation or enter exact dimensions in the control panel.</p><div><button id="buildingDesignUndo" type="button" class="btn secondary" onclick="buildingDesignUndo()">Undo</button><button id="buildingDesignRedo" type="button" class="btn secondary" onclick="buildingDesignRedo()">Redo</button><button type="button" class="btn secondary" onclick="buildingDesignFitView()">Fit view</button><span class="bd-zoom-controls"><button type="button" aria-label="Zoom out" onclick="buildingDesignZoom(-.1)">−</button><b id="buildingDesignZoom">100%</b><button type="button" aria-label="Zoom in" onclick="buildingDesignZoom(.1)">＋</button></span><button id="buildingDesignResetButton" type="button" class="btn secondary" '+(activeBuildingDesign.locked?'disabled':'')+' onclick="buildingDesignReset()">Reset</button></div></div></section><div class="bd-side-column"><aside id="buildingDesignControls" class="bd-controls" aria-label="Building controls"></aside><section id="buildingDesignRegsCard" class="bd-regs-card" aria-label="Building Regulations and planning"></section></div></div><div id="buildingDesignPhoneFire" class="bd-phone-only"></div>'+
     (projectIsSteelFreeStanding(facts)?'<div id="buildingDesignRollerComparison"></div>':'')+
     '<p class="bd-disclaimer">Preliminary geometry only. This page does not verify structural design, fire safety, planning, Building Regulations or surveyed setting-out.</p><div id="buildingDesignPhoneReport" class="bd-phone-only"></div>'+
     '<section id="buildingDesignActions" class="bd-persistent-actions" aria-label="Building design actions"></section><div id="buildingDesignLive" class="sr-only" aria-live="polite"></div></main>';
   buildingDesignRenderInteractive();
+  buildingDesignRenderRegsCard();
   buildingDesignInitSiteReference()
 }
 

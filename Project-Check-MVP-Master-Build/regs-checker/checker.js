@@ -31,10 +31,10 @@
     if (!ridge && eaves && W) ridge = eaves + (W / 2) * Math.tan(pitch * Math.PI / 180);
     var doors = Array.isArray(g.doors) ? g.doors.filter(Boolean) : [];
     return {
-      nation: f.regsNation || '', stored: f.regsStored || '', heating: temperatureCondition(f),
-      cladding: f.regsCladding || '', bcDate: f.regsBcDate || '', startDate: f.regsStartDate || '',
+      nation: (f.regsNation === 'England' || f.regsNation === 'Scotland' || f.regsNation === 'Wales') ? f.regsNation : '',
+      stored: f.regsStored || '', heating: temperatureCondition(f),
+      existingArea: num(f.regsExistingArea), existingHeight: num(f.regsExistingHeight),
       use: String(f.buildingUse || f.use || ''), W: W, L: L, eaves: eaves, ridge: ridge, doors: doors,
-      fireElevations: f.regsFireAccessElevations, fireWidth: f.regsFireAccessWidth,
       distances: regs && regs.boundaryDistances ? regs.boundaryDistances : (f.regsBoundaryDist && typeof f.regsBoundaryDist === 'object' ? f.regsBoundaryDist : null),
       postcode: String(p.postcode || f.postcode || ''), altitude: num(f.regsAltitude), exposure: String(f.regsExposure || ''), solar: f.regsSolar || '',
       planNew: num(f.planNewArea), planExisting: num(f.planExistingArea), planBoundary: num(f.planBoundaryDist), planHeight: f.planHeight || '',
@@ -85,13 +85,12 @@
 
   var CHECKS = {
     B_BOUNDARY: function (r, i) {
-      var unrated = i.cladding === 'unknown' || i.cladding === 'not rated';
+      // Distance only. The cladding fire rating is not asked; standard PIR is never treated as unprotected by default.
       return WALLS.map(function (w) {
         var d = i.distances ? num(i.distances[w]) : null, m = { elevation: w, distance: d };
         if (d === null) return entry(r, NEED, m);
         if (d >= 25) return entry(r, OK, m);
-        if (!i.cladding) return entry(r, NEED, m);
-        return entry(r, unrated ? PROBLEM : OK, m, { elevation: w, distance: r1(d) });
+        return entry(r, PROBLEM, m, { elevation: w, distance: r1(d) });
       });
     },
     B_BOUNDARY_1M: function (r, i) {
@@ -111,39 +110,8 @@
       var mean = (i.eaves + i.ridge) / 2;
       return [entry(r, mean > 18 ? PROBLEM : OK, { meanRoofHeight: r1(mean) })];
     },
-    B_FIRE_ACCESS_11M: function (r, i) {
-      var els = i.fireElevations, width = num(i.fireWidth);
-      if (!i.eaves || !i.ridge || !i.W || !i.L || !Array.isArray(els) || !els.length || width === null) return [entry(r, NEED)];
-      var ticked = WALLS.filter(function (w) { return els.indexOf(w) !== -1; });
-      if (!ticked.length) return [entry(r, NEED)];
-      var mean = (i.eaves + i.ridge) / 2, area = i.W * i.L, perim = 2 * (i.W + i.L), tall = mean > 11;
-      var req, appliance = tall ? 'high reach' : 'pump', para151 = false;
-      if (area <= 2000) { req = 15; if (!tall) para151 = true; }
-      else if (area <= 8000) req = tall ? 50 : 15;
-      else if (area <= 16000) req = 50;
-      else if (area <= 24000) req = 75;
-      else req = 100;
-      var len = 0; ticked.forEach(function (w) { len += (w === 'A' || w === 'C') ? i.W : i.L; });
-      var pct = len / perim * 100, within45 = false;
-      if (para151) {
-        // Access route = ticked wall lines. A (x=L), C (x=0) run across width; D (y=0), B (y=W) run along length.
-        var segs = { A: [i.L, 0, i.L, i.W], C: [0, 0, 0, i.W], D: [0, 0, i.L, 0], B: [0, i.W, i.L, i.W] };
-        var nx = Math.max(1, Math.ceil(i.L / 0.25)), ny = Math.max(1, Math.ceil(i.W / 0.25)), worst = 0;
-        for (var a = 0; a <= nx; a++) for (var b = 0; b <= ny; b++) {
-          var x = i.L * a / nx, y = i.W * b / ny, m = Infinity;
-          ticked.forEach(function (w) {
-            var s = segs[w], dx = s[2] - s[0], dy = s[3] - s[1], t = Math.max(0, Math.min(1, ((x - s[0]) * dx + (y - s[1]) * dy) / (dx * dx + dy * dy)));
-            m = Math.min(m, Math.hypot(x - s[0] - t * dx, y - s[1] - t * dy));
-          });
-          if (m > worst) worst = m;
-        }
-        within45 = worst <= 45;
-      }
-      var measured = { meanRoofHeight: r1(mean), floorArea: r1(area), perimeter: r1(perim), requiredPercent: req, accessiblePercent: r1(pct), accessibleLength: r1(len), narrowestWidth: width, appliance: appliance };
-      if (para151) measured.within45m = within45;
-      var access = pct >= req - 1e-9 || within45;
-      return [entry(r, access && width >= 3.7 ? OK : PROBLEM, measured, { H: r1(mean), X: req })];
-    },
+    // Customer scope: no inputs needed, always a note.
+    B_FIRE_ACCESS_11M: function (r) { return [entry(r, NOTE)]; },
     A_FRAME_BOUNDARY: function (r, i, all) {
       var b = all.B_BOUNDARY || [];
       var hit = b.filter(function (e) { return e.result === PROBLEM; });
@@ -169,8 +137,9 @@
       return [entry(r, people > r.limits.maxPeopleOneExit && exits < 2 ? PROBLEM : OK, { people: people, exits: exits })];
     },
     L_ENERGY: function (r, i) {
-      if (i.heating === 'Ambient working temperature \u2014 heated') return [entry(r, PROBLEM, { heating: i.heating })];
-      if (i.heating === 'Ambient storage \u2014 unheated') return [entry(r, OK, { heating: i.heating })];
+      // Uses the Building Design services answer (heating, toilets, offices or any services). 'Not sure' or no answer = need info.
+      if (i.services === 'Yes') return [entry(r, NOTE, { services: i.services })];
+      if (i.services === 'No') return [entry(r, OK, { services: i.services })];
       return [entry(r, NEED)];
     },
 
@@ -199,7 +168,6 @@
     },
     B_BOUNDARY_FIRERATED_QUOTE: function (r, i) {
       // Boundary = drawn site boundary lines only (or the manual per-elevation answers); other buildings on the site are not boundaries.
-      if (i.cladding === 'rated') return WALLS.map(function (w) { return entry(r, OK, { elevation: w }); });
       return WALLS.map(function (w) {
         var d = i.distances ? num(i.distances[w]) : null, m = { elevation: w, distance: d };
         if (d === null) return entry(r, NEED, m);
@@ -225,7 +193,7 @@
       return [entry(r, i.rooflights === 'Yes' && i.heating === HEATED ? NOTE : OK)];
     },
     M_ACCESS: function (r, i) {
-      if (!i.services) return [entry(r, NEED)];
+      if (i.services !== 'Yes' && i.services !== 'No') return [entry(r, NEED)];
       return [entry(r, i.services === 'Yes' ? PROBLEM : OK, { services: i.services })];
     },
     F_CONDENSATION: function (r, i) {
@@ -235,19 +203,9 @@
     },
     H_DRAINAGE_QUOTE: function (r) { return [entry(r, NOTE)]; },
     L_2027_HEATED: function (r, i) {
+      // Heated jobs only: a customer-scope note. No dates are asked.
       if (!i.heating || i.heating === 'Not sure yet') return [entry(r, NEED)];
-      if (i.heating !== HEATED) return [entry(r, OK, { heating: i.heating })];
-      var app = i.bcDate ? Date.parse(i.bcDate) : NaN, st = i.startDate ? Date.parse(i.startDate) : NaN;
-      var oldRules = !isNaN(app) && !isNaN(st) && app < Date.parse(r.dates.application) && st < Date.parse(r.dates.transitionEnd);
-      return [entry(r, oldRules ? OK : PROBLEM, { oldRulesApply: oldRules, applicationDate: i.bcDate, startDate: i.startDate })];
-    },
-    L_2027: function (r, i) {
-      var app = i.bcDate ? Date.parse(i.bcDate) : NaN;
-      if (isNaN(app)) return [entry(r, NEED)];
-      if (app >= Date.parse(r.dates.application)) return [entry(r, PROBLEM, { applicationDate: i.bcDate })];
-      var st = i.startDate ? Date.parse(i.startDate) : NaN;
-      if (isNaN(st)) return [entry(r, NEED, { applicationDate: i.bcDate })];
-      return [entry(r, st >= Date.parse(r.dates.start) ? PROBLEM : OK, { applicationDate: i.bcDate, startDate: i.startDate })];
+      return [entry(r, i.heating === HEATED ? NOTE : OK, { heating: i.heating })];
     }
   };
 
@@ -280,7 +238,7 @@
       return ['Site loads (Part A): postcode ' + i.postcode + '; altitude ' + i.altitude + ' m; site exposure ' + i.exposure + '; planned roof solar panels: ' + (i.solar === 'Yes' ? 'yes - allow for the added roof load' : 'no') + '.'];
     },
     B_BOUNDARY_FIRERATED_QUOTE: function (r, i, res) {
-      return res.filter(function (e) { return e.result === NOTE; }).map(function (e) { return 'Fire-rated wall needed on elevation ' + e.measured.elevation + ' (close to the boundary; standard PIR has no declared fire resistance).'; });
+      return res.filter(function (e) { return e.result === NOTE; }).map(function (e) { return 'Fire-rated wall needed on elevation ' + e.measured.elevation + ' (close to the boundary).'; });
     },
     B_DOORS_QUOTE: function (r, i, res) {
       var m = res[0].measured, out = ['Roller and sectional doors do not count as fire exits.'];
@@ -289,7 +247,7 @@
     },
     L_ROOFLIGHT_U_QUOTE: function (r, i, res) { return res[0].result === NOTE ? ['Heated building: rooflights U-value 2.2 W/m2K maximum.'] : []; },
     H_DRAINAGE_QUOTE: function () { return ['Gutters and downpipes are by the building supplier.', 'The surface water connection is customer scope (not by the building supplier).']; },
-    L_2027_HEATED: function (r, i, res) { return res[0].result === PROBLEM ? ['Heated building, 2027 rules (AD L 2026 edition): personnel doors at U-value 1.6 W/m2K maximum.'] : []; }
+    L_2027_HEATED: function (r, i, res) { return res[0].result === NOTE ? ['Heated building, 2027 rules (AD L 2026 edition): personnel doors at U-value 1.6 W/m2K maximum.'] : []; }
   };
 
   function buildQuoteRequest(projectData, rules, options) {
@@ -315,7 +273,7 @@
     return loadRules().then(function (rules) {
       if (!rules) return null;
       var f = p.facts || {};
-      var stored = { version: rules.version, ranAt: new Date().toISOString(), nation: f.regsNation || '', results: runChecks(p, rules) };
+      var stored = { version: rules.version, ranAt: new Date().toISOString(), nation: inputs(p).nation, results: runChecks(p, rules) };
       p.backgroundChecks = Object.assign({}, p.backgroundChecks || {}, { regsChecker: stored });
       if (typeof root.save === 'function') root.save();
       return stored;

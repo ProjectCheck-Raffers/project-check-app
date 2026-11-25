@@ -695,7 +695,7 @@ const PROJECT_ROOF_PITCH_MAX=22;
 const PROJECT_ROOF_PITCH_DEFAULT=10;
 const BUILDING_USE_OPTIONS=["Warehousing and general storage","Distribution and logistics","Manufacturing or factory use","Workshop or vehicle repair","Vehicle or plant wash facility","Timber or materials storage","Food production or chilled storage","Spray room or process enclosure","Indoor sports or leisure use","Other industrial or commercial use"];
 const BUILDING_TYPE_OPTIONS=["Free-standing building","Extension to an existing building","Building linked to existing premises","Loading or dispatch canopy","Covered loading bay","Service-yard canopy","Enclosed workshop or process building","Temporary or demountable building","Other building type"];
-function projectFacts(p){if(!p.facts||typeof p.facts!=="object")p.facts={};return p.facts}
+function projectFacts(p){if(!p.facts||typeof p.facts!=="object")p.facts={};if(p.facts.regsNation==="Northern Ireland")delete p.facts.regsNation;return p.facts}
 function extractProjectPostcode(value){
  const match=String(value||"").toUpperCase().match(/\b([A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2})\b/);
  return match?match[1].replace(/\s+/g," ").replace(/^(.*?)(\d[A-Z]{2})$/,(_,outward,inward)=>outward.trim()+" "+inward):""
@@ -1123,27 +1123,6 @@ function stage1RollerOpeningListMarkup(p,drawing=p.geometry,drawingLabel='Saved 
     <h3>${esc(drawingLabel)} · ${drawn?.length??'Not recorded'}</h3>${drawn?list(drawn):''}
     ${needsReview.length?`<p><strong>Needs checking</strong></p><ul>${needsReview.map(note=>`<li>${esc(note)}</li>`).join('')}</ul>`:''}</section>`;
 }
-const REGS_QUESTION_OPTIONS={
-  regsStored:[['general','General storage'],['flammable','Flammable liquids, gases or spirits']],
-  regsCladding:[['rated','Fire rated'],['not rated','Not fire rated'],['unknown','Not sure']],
-  regsNation:[['England','England'],['Wales','Wales'],['Scotland','Scotland'],['Northern Ireland','Northern Ireland']]
-};
-function regsQuestionSelect(id,label,key,facts){
-  return `<div class="field"><label for="${id}">${label}</label><select id="${id}"><option value="">Choose…</option>${REGS_QUESTION_OPTIONS[key].map(([value,text])=>`<option value="${esc(value)}" ${facts[key]===value?'selected':''}>${esc(text)}</option>`).join('')}</select></div>`
-}
-function regsQuestionsMarkup(facts){
-  return `<div class="project-requirement-card" id="psRegsCard">
-<h3>Building Regulations information</h3>
-${regsQuestionSelect('psRegsNation','Which nation is the building in?','regsNation',facts)}
-<p class="field-note" id="psRegsNationNote" ${facts.regsNation&&facts.regsNation!=='England'?'':'hidden'}>Checks cover England only</p>
-${regsQuestionSelect('psRegsStored','What will be stored?','regsStored',facts)}
-${regsQuestionSelect('psRegsCladding','What is the fire rating of the cladding?','regsCladding',facts)}
-<div class="field"><label for="psRegsBcDate">Building Control application date (planned or actual)</label><input id="psRegsBcDate" type="date" value="${esc(facts.regsBcDate||'')}"></div>
-<div class="field" id="psRegsFireAccess"><label>Which elevations have a road or yard a fire engine can drive along?</label>
-${[['A','Elevation A (front)'],['B','Elevation B (right sidewall)'],['C','Elevation C (rear)'],['D','Elevation D (left sidewall)']].map(([v,t])=>`<div class="consent-row" style="padding:8px 0"><input type="checkbox" id="psRegsFire${v}" value="${v}" style="width:22px;height:22px" ${Array.isArray(facts.regsFireAccessElevations)&&facts.regsFireAccessElevations.includes(v)?'checked':''}><label for="psRegsFire${v}">${t}</label></div>`).join('')}
-<label for="psRegsFireWidth">Narrowest road width (m)</label><input id="psRegsFireWidth" type="number" step="0.1" inputmode="decimal" min="0" value="${esc(facts.regsFireAccessWidth??'')}"></div>
-</div>`
-}
 function projectSettings(id){
 if(!requireUser())return;const p=getP(id);if(!p)return route("dashboard");const facts=projectFacts(p),pitch=projectRoofPitch(p),ridge=projectRidgeHeight(p),returnRoute=projectEditReturnRoute||"stage1Workspace";projectEditReturnRoute="stage1Workspace";
 const temperatureCondition=projectTemperatureCondition(facts),existingBase=projectExistingBase(facts),steelFree=projectIsSteelFreeStanding(facts);
@@ -1165,7 +1144,6 @@ app.innerHTML=`<div class="container customer-area project-management-page ceo-p
 <h3>Existing buildings nearby</h3>
 <div class="field"><label for="psAdjacentBuilding">Will the new building link to, or sit close to, an existing building?</label><select id="psAdjacentBuilding"><option value="">Choose… (optional)</option>${PROJECT_ADJACENT_BUILDING_OPTIONS.map(value=>`<option value="${esc(value)}" ${projectAdjacentExistingBuilding(facts)===value?'selected':''}>${esc(value)}</option>`).join('')}</select><p class="field-note">Optional. If it links to or sits close to another building, the report will flag the junction so water can be kept out.</p></div>
 </div>
-${regsQuestionsMarkup(facts)}
 </section>
 <div class="field"><label for="psAddress">Proposed building site address</label><input id="psAddress" autocomplete="street-address" value="${esc(p.address||"")}" placeholder="Enter the full proposed site address including postcode"><p class="field-note">This project address is used for Site Layout. Changing it requires the site layout to be confirmed again.</p></div><div class="field"><label for="psLength">Length (m)</label><input id="psLength" type="number" min="0.1" step="0.1" value="${esc(facts.length||"")}"></div><div class="field"><label for="psWidth">Width (m)</label><input id="psWidth" type="number" min="0.1" step="0.1" value="${esc(facts.width||"")}"></div><div class="field"><label for="psHeight">Clear height needed (m)</label><input id="psHeight" type="number" min="0.1" step="0.1" value="${esc(facts.height||"")}"></div><div class="field"><label for="psPitch">Roof pitch (degrees)</label><input id="psPitch" type="number" min="${PROJECT_ROOF_PITCH_MIN}" max="${PROJECT_ROOF_PITCH_MAX}" step="0.5" value="${pitch}" aria-describedby="psPitchHelp"><p class="field-note" id="psPitchHelp">Minimum 5° · standard 10° · maximum 22°.</p></div><div class="project-ridge-preview" aria-live="polite"><span>Calculated ridge height</span><strong id="psRidgeHeight">${ridge===null?"Add width and clear height":`${ridge.toFixed(2)} m`}</strong><p>Calculated from the customer dimensions and selected roof pitch.</p></div></div><div class="actions"><button class="btn green" id="saveProjectSettings">${returnRoute==="stage1Confirm"?"Save and return to Project Summary":"Save and return to overview"}</button><button class="btn secondary" id="cancelProjectSettings">Cancel</button></div></section>
 <section class="card management-card"><h2>Project Documents</h2><p class="meta">${(p.evidence||[]).length} document(s) are currently recorded for this project.</p><button class="btn secondary" onclick="openProjectDocuments('${p.id}','${returnRoute}')">Open Project Documents</button></section>
@@ -1188,7 +1166,6 @@ document.querySelector("#psSiteEvidenceWrap").hidden=!reuse||reuse==="No — a n
 document.querySelector("#saveProjectSettings").textContent=reuse&&reuse!=="No — a new base is planned"&&document.querySelector("#psSiteEvidence").value==="Yes — upload them now"?"Save and upload documents":`${returnRoute==="stage1Confirm"?"Save and return to Project Summary":"Save and return to overview"}`
 };
 document.querySelector("#psType").addEventListener("change",updateSteelRequirementVisibility);
-document.querySelector("#psRegsNation").addEventListener("change",()=>{const v=document.querySelector("#psRegsNation").value;document.querySelector("#psRegsNationNote").hidden=!v||v==="England"});
 document.querySelector("#psTemperatureCondition").addEventListener("change",updateTemperatureRequirementVisibility);
 document.querySelector("#psBaseReuse").addEventListener("change",updateSiteEvidenceVisibility);
 document.querySelector("#psSiteEvidence").addEventListener("change",updateSiteEvidenceVisibility);
@@ -1219,8 +1196,6 @@ nextFacts.heated=({"Ambient working temperature — heated":"Yes","Ambient stora
 if(temperatureCondition==="Other temperature requirement")nextFacts.requiredTemperatureC=requiredTemperatureC;else delete nextFacts.requiredTemperatureC;
 delete nextFacts.ambientProtectionNeeded;
 if(adjacentExistingBuilding)nextFacts.adjacentExistingBuilding=adjacentExistingBuilding;else delete nextFacts.adjacentExistingBuilding;
-[["regsNation","#psRegsNation"],["regsStored","#psRegsStored"],["regsCladding","#psRegsCladding"],["regsBcDate","#psRegsBcDate"]].forEach(([key,sel])=>{const value=document.querySelector(sel).value.trim();if(value)nextFacts[key]=value;else delete nextFacts[key]});
-{const fireEls=["A","B","C","D"].filter(v=>document.querySelector("#psRegsFire"+v)?.checked);if(fireEls.length)nextFacts.regsFireAccessElevations=fireEls;else delete nextFacts.regsFireAccessElevations;const fireW=(document.querySelector("#psRegsFireWidth")?.value||"").trim();if(fireW)nextFacts.regsFireAccessWidth=fireW;else delete nextFacts.regsFireAccessWidth}
 if(intendsToReuseExistingBase==="No — a new base is planned")delete nextFacts.siteEvidenceAvailability;else nextFacts.siteEvidenceAvailability=siteEvidenceAvailability;
 nextAssessments={...nextAssessments,specialistLowTemperatureFlag:temperatureCondition==="Other temperature requirement"&&Number(requiredTemperatureC)<2,baseSuitabilityStatus:intendsToReuseExistingBase==="No — a new base is planned"?"NOT_ASSESSED":"UNVERIFIED",anchoringSuitabilityStatus:"UNVERIFIED"}
 }
