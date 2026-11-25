@@ -402,7 +402,7 @@ const startAction=state.user?"route('dashboard')":"authModal('create')";
 app.innerHTML=`<div class="figma-homepage ceo-guided-pricing">
 <div class="ceo-pricing-body">
 <section class="pricing-hero" aria-label="Pricing introduction"><div class="eyebrow">GUIDED ROUTE</div><h1>Start with the project.<br>Decide the support later.</h1><p>A calmer, step-by-step pricing story for customers who do not yet know whether they need planning, Building Regulations, civils or structural input.</p></section>
-<section class="pricing-card" aria-labelledby="pricing-route-title"><h2 id="pricing-route-title">Follow the project—not a package</h2><p class="pricing-card-intro">Four decisions, in the order they become useful.</p><div class="pricing-steps">
+<section class="pricing-card" aria-labelledby="pricing-route-title"><h2 id="pricing-route-title">Follow the project</h2><p class="pricing-card-intro">Four decisions, in the order they become useful.</p><div class="pricing-steps">
 <div class="pricing-step-row"><h3 class="pricing-step-title">1 Share the facts · FREE</h3><p class="pricing-step-desc">Site, building use, system and available evidence</p></div>
 <div class="pricing-step-row"><h3 class="pricing-step-title">2 Reveal the risks · FREE</h3><p class="pricing-step-desc">Missing information, constraints and early actions</p></div>
 <div class="pricing-step-row"><h3 class="pricing-step-title">3 Choose a route · £99 if needed</h3><p class="pricing-step-desc">Organised solutions and specialist pathway</p></div>

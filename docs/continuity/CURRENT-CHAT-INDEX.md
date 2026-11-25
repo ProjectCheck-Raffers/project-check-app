@@ -46,6 +46,239 @@ Carried forward unchanged from the previous nightly record and not re-checked by
 
 This is an automated GitHub-state record, not a full transcript. It was generated without an AI model and has no access to private chats. It changes only this file.
 
+## Nightly continuity record – 2026-11-21
+
+### Date and stopping point
+
+21 November 2026, recorded by the GitHub Actions workflow `nightly-continuity.yml` (run 44877727712). The current stopping point visible in the repository is as follows.
+
+Live `approved` HEAD when this run read the branch is `6095800490427e16949124831cbd0e7d01759def` ("Merge pull request #1 from ProjectCheck-Raffers/review", 20 November 2026 17:07 Europe/London). The last non-continuity commit on `approved` within the fetched history is `6095800490427e16949124831cbd0e7d01759def` ("Merge pull request #1 from ProjectCheck-Raffers/review", 20 November 2026 17:07 Europe/London).
+
+Commits on `approved` in the 24 hours before this run:
+
+- `6095800490427e16949124831cbd0e7d01759def` ("Merge pull request #1 from ProjectCheck-Raffers/review", ProjectCheck-Raffers)
+- `fdd6487b430eb41d7b896b90c49e69a93ac6f02e` ("Quick check: secrets scan checks only the PR's new commits", ProjectCheck-Raffers)
+- `8730578488980f48b0dbda8fbe08f64dbf684d35` ("Serve platform-config.js from Vercel env vars; remove hardcoded Supabase key", ProjectCheck-Raffers)
+- `b2e30262c525b9431c04838f85bf77fd193a26b6` ("Restore HTML entities the GitHub web edit decoded (keeps heading change)", ProjectCheck-Raffers)
+- `d9066fe56205f13973510ef4a77807178a6032cd` ("Pricing: remove 'not a package' from 'Follow the project' heading", ProjectCheck-Raffers)
+- `b6817d5eb202eaf08b58d2e70c0176affecce9fc` ("docs(continuity): nightly continuity record – 2026-11-20 [skip ci]", github-actions[bot])
+
+Pull requests closed or merged in the same 24 hours:
+
+- PR #1, "Compact bottom bar; fire-exit toggle in Add an opening panel": merged (merge commit `6095800490427e16949124831cbd0e7d01759def`) at 2026-11-20T17:07:52Z.
+
+This run has no access to private chats, so any Project Check work outside GitHub cannot be determined from the repository.
+
+### Live-verified approved HEAD
+
+`6095800490427e16949124831cbd0e7d01759def` on `approved` ("Merge pull request #1 from ProjectCheck-Raffers/review", 20 November 2026 17:07 Europe/London), read live from GitHub immediately before this entry was written.
+
+### Open PRs
+
+Read live: 1 open PR(s); none touched by this record. Check-run results were not read by this run.
+
+PR #3, "Continuity index: 19 Nov 2026 Grok-to-Claude handover", head `continuity-2026-11-19` (`aa04353f9f90d5c5b31ee07052e4e8f5758596a0`), base `approved` (`fdd6487b430eb41d7b896b90c49e69a93ac6f02e`); created 20 November 2026 11:47 Europe/London, last updated 20 November 2026 17:00 Europe/London; open, not draft, unmerged; not touched.
+
+### Unresolved blockers
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+- None recorded in the previous nightly record.
+
+### Note
+
+This is an automated GitHub-state record, not a full transcript. It was generated without an AI model and has no access to private chats. It changes only this file.
+
+## Nightly continuity record – 2026-11-22
+
+### Date and stopping point
+
+22 November 2026, recorded by the GitHub Actions workflow `nightly-continuity.yml` (run 44993999748). The current stopping point visible in the repository is as follows.
+
+Live `approved` HEAD when this run read the branch is `e8a0d22d6d0142ccf72f76f707be6b6fa97d9181` ("docs(continuity): nightly continuity record – 2026-11-21 [skip ci]", 21 November 2026 06:54 Europe/London). The last non-continuity commit on `approved` within the fetched history is `6095800490427e16949124831cbd0e7d01759def` ("Merge pull request #1 from ProjectCheck-Raffers/review", 20 November 2026 17:07 Europe/London).
+
+Commits on `approved` in the 24 hours before this run:
+
+- `e8a0d22d6d0142ccf72f76f707be6b6fa97d9181` ("docs(continuity): nightly continuity record – 2026-11-21 [skip ci]", github-actions[bot])
+
+Pull requests closed or merged in the same 24 hours:
+
+- None.
+
+This run has no access to private chats, so any Project Check work outside GitHub cannot be determined from the repository.
+
+### Live-verified approved HEAD
+
+`e8a0d22d6d0142ccf72f76f707be6b6fa97d9181` on `approved` ("docs(continuity): nightly continuity record – 2026-11-21 [skip ci]", 21 November 2026 06:54 Europe/London), read live from GitHub immediately before this entry was written.
+
+### Open PRs
+
+Read live: 1 open PR(s); none touched by this record. Check-run results were not read by this run.
+
+PR #3, "Continuity index: 19 Nov 2026 Grok-to-Claude handover", head `continuity-2026-11-19` (`aa04353f9f90d5c5b31ee07052e4e8f5758596a0`), base `approved` (`fdd6487b430eb41d7b896b90c49e69a93ac6f02e`); created 20 November 2026 11:47 Europe/London, last updated 20 November 2026 17:00 Europe/London; open, not draft, unmerged; not touched.
+
+### Unresolved blockers
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+- None recorded in the previous nightly record.
+
+### Note
+
+This is an automated GitHub-state record, not a full transcript. It was generated without an AI model and has no access to private chats. It changes only this file.
+
+## Nightly continuity record – 2026-11-23
+
+### Date and stopping point
+
+23 November 2026, recorded by the GitHub Actions workflow `nightly-continuity.yml` (run 45130438572). The current stopping point visible in the repository is as follows.
+
+Live `approved` HEAD when this run read the branch is `626a00d44b7e91bbc3483e75a3be6398487bc151` ("docs(continuity): nightly continuity record – 2026-11-22 [skip ci]", 22 November 2026 06:30 Europe/London). The last non-continuity commit on `approved` within the fetched history is `6095800490427e16949124831cbd0e7d01759def` ("Merge pull request #1 from ProjectCheck-Raffers/review", 20 November 2026 17:07 Europe/London).
+
+Commits on `approved` in the 24 hours before this run:
+
+- None.
+
+Pull requests closed or merged in the same 24 hours:
+
+- None.
+
+This run has no access to private chats, so any Project Check work outside GitHub cannot be determined from the repository.
+
+### Live-verified approved HEAD
+
+`626a00d44b7e91bbc3483e75a3be6398487bc151` on `approved` ("docs(continuity): nightly continuity record – 2026-11-22 [skip ci]", 22 November 2026 06:30 Europe/London), read live from GitHub immediately before this entry was written.
+
+### Open PRs
+
+Read live: 1 open PR(s); none touched by this record. Check-run results were not read by this run.
+
+PR #3, "Continuity index: 19 Nov 2026 Grok-to-Claude handover", head `continuity-2026-11-19` (`aa04353f9f90d5c5b31ee07052e4e8f5758596a0`), base `approved` (`fdd6487b430eb41d7b896b90c49e69a93ac6f02e`); created 20 November 2026 11:47 Europe/London, last updated 20 November 2026 17:00 Europe/London; open, not draft, unmerged; not touched.
+
+### Unresolved blockers
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+- None recorded in the previous nightly record.
+
+### Note
+
+This is an automated GitHub-state record, not a full transcript. It was generated without an AI model and has no access to private chats. It changes only this file.
+
+## Nightly continuity record – 2026-11-24
+
+### Date and stopping point
+
+24 November 2026, recorded by the GitHub Actions workflow `nightly-continuity.yml` (run 45367604074). The current stopping point visible in the repository is as follows.
+
+Live `approved` HEAD when this run read the branch is `910a16d4acd2e0dde523b409c8111d4ffc50bf83` ("docs(continuity): nightly continuity record – 2026-11-23 [skip ci]", 23 November 2026 07:21 Europe/London). The last non-continuity commit on `approved` within the fetched history is `6095800490427e16949124831cbd0e7d01759def` ("Merge pull request #1 from ProjectCheck-Raffers/review", 20 November 2026 17:07 Europe/London).
+
+Commits on `approved` in the 24 hours before this run:
+
+- None.
+
+Pull requests closed or merged in the same 24 hours:
+
+- None.
+
+This run has no access to private chats, so any Project Check work outside GitHub cannot be determined from the repository.
+
+### Live-verified approved HEAD
+
+`910a16d4acd2e0dde523b409c8111d4ffc50bf83` on `approved` ("docs(continuity): nightly continuity record – 2026-11-23 [skip ci]", 23 November 2026 07:21 Europe/London), read live from GitHub immediately before this entry was written.
+
+### Open PRs
+
+Read live: 3 open PR(s); none touched by this record. Check-run results were not read by this run.
+
+PR #5, "Stage 1 Potential issues checker (regs-checker)", head `review` (`9d7557e1e9252bd8131dc9c89b33fbd82d287f50`), base `approved` (`910a16d4acd2e0dde523b409c8111d4ffc50bf83`); created 23 November 2026 15:57 Europe/London, last updated 23 November 2026 20:17 Europe/London; open, not draft, unmerged; not touched.
+
+PR #4, "Continuity index: 23 Nov 2026 Grok-to-Claude handover – regs checker", head `handover-regs-checker-2026-11-23` (`93b087a6c285d70634e193b0723d2b8896aa19fe`), base `approved` (`910a16d4acd2e0dde523b409c8111d4ffc50bf83`); created 23 November 2026 15:49 Europe/London, last updated 23 November 2026 15:49 Europe/London; open, not draft, unmerged; not touched.
+
+PR #3, "Continuity index: 19 Nov 2026 Grok-to-Claude handover", head `continuity-2026-11-19` (`aa04353f9f90d5c5b31ee07052e4e8f5758596a0`), base `approved` (`fdd6487b430eb41d7b896b90c49e69a93ac6f02e`); created 20 November 2026 11:47 Europe/London, last updated 20 November 2026 17:00 Europe/London; open, not draft, unmerged; not touched.
+
+### Unresolved blockers
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+- None recorded in the previous nightly record.
+
+### Note
+
+This is an automated GitHub-state record, not a full transcript. It was generated without an AI model and has no access to private chats. It changes only this file.
+
+## Nightly continuity record – 2026-11-25
+
+### Date and stopping point
+
+25 November 2026, recorded by the GitHub Actions workflow `nightly-continuity.yml` (run 45574609716). The current stopping point visible in the repository is as follows.
+
+Live `approved` HEAD when this run read the branch is `ffde3a8cff60a4eca18725fa867e74b0d56001b7` ("docs(continuity): nightly continuity record – 2026-11-24 [skip ci]", 24 November 2026 09:41 Europe/London). The last non-continuity commit on `approved` within the fetched history is `6095800490427e16949124831cbd0e7d01759def` ("Merge pull request #1 from ProjectCheck-Raffers/review", 20 November 2026 17:07 Europe/London).
+
+Commits on `approved` in the 24 hours before this run:
+
+- `ffde3a8cff60a4eca18725fa867e74b0d56001b7` ("docs(continuity): nightly continuity record – 2026-11-24 [skip ci]", github-actions[bot])
+
+Pull requests closed or merged in the same 24 hours:
+
+- None.
+
+This run has no access to private chats, so any Project Check work outside GitHub cannot be determined from the repository.
+
+### Live-verified approved HEAD
+
+`ffde3a8cff60a4eca18725fa867e74b0d56001b7` on `approved` ("docs(continuity): nightly continuity record – 2026-11-24 [skip ci]", 24 November 2026 09:41 Europe/London), read live from GitHub immediately before this entry was written.
+
+### Open PRs
+
+Read live: 3 open PR(s); none touched by this record. Check-run results were not read by this run.
+
+PR #5, "Stage 1 Potential issues checker (regs-checker)", head `review` (`9d7557e1e9252bd8131dc9c89b33fbd82d287f50`), base `approved` (`910a16d4acd2e0dde523b409c8111d4ffc50bf83`); created 23 November 2026 15:57 Europe/London, last updated 23 November 2026 20:17 Europe/London; open, not draft, unmerged; not touched.
+
+PR #4, "Continuity index: 23 Nov 2026 Grok-to-Claude handover – regs checker", head `handover-regs-checker-2026-11-23` (`93b087a6c285d70634e193b0723d2b8896aa19fe`), base `approved` (`910a16d4acd2e0dde523b409c8111d4ffc50bf83`); created 23 November 2026 15:49 Europe/London, last updated 23 November 2026 15:49 Europe/London; open, not draft, unmerged; not touched.
+
+PR #3, "Continuity index: 19 Nov 2026 Grok-to-Claude handover", head `continuity-2026-11-19` (`aa04353f9f90d5c5b31ee07052e4e8f5758596a0`), base `approved` (`fdd6487b430eb41d7b896b90c49e69a93ac6f02e`); created 20 November 2026 11:47 Europe/London, last updated 20 November 2026 17:00 Europe/London; open, not draft, unmerged; not touched.
+
+### Unresolved blockers
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+- None recorded in the previous nightly record.
+
+### Note
+
+This is an automated GitHub-state record, not a full transcript. It was generated without an AI model and has no access to private chats. It changes only this file.
+
 ## 19 Nov 2026 – handover from Grok to Claude (recorded 20 Nov 2026 by Claude)
 
 - Repo move: app code moved from ProjectCheck-Raffers/Project-Check-MVP-Master-Build (now the private archive) to ProjectCheck-Raffers/project-check-app. Vercel project project-check-app now builds from this repo. Review link: https://project-check-app-git-review-project-check.vercel.app
