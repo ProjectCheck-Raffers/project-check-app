@@ -1,0 +1,31 @@
+{
+  "rule_id": "stage1.compressed-programme-risk",
+  "domain": "stage-1",
+  "knowledge_rule": "Stage 1 risk flag when the customer answers the 'programme' question '0–3 months'",
+  "status": "LOCKED-EXISTING",
+  "provenance_status": "historical individual provenance not yet identified",
+  "migration_type": "BEHAVIOUR-PRESERVING",
+  "source": {
+    "repository": "Project-Check-MVP-Master-Build",
+    "file": "app.js",
+    "function": "runStage1Risks()",
+    "app_branch": "combined-rev2-canopy-drawing"
+  },
+  "source_baseline": {
+    "commit": "5a0e0d5556d31adf3acc3ea35cfd8aa6581b4029",
+    "commit_message": "Initial Project Check master build",
+    "date": "2026-08-19",
+    "contains": "the trigger (programme === '0–3 months'), the exact customer-facing text, the category ('programme') and the discipline ('general') exactly as migrated — traced via git log -S, no committed-vs-working-tree provenance split unlike Migration Slice 2"
+  },
+  "live_migration_baseline": {
+    "commit": "6dbd6fdcdb86a389a0af0376a87f81b2dc02d607",
+    "note": "Application HEAD at the time of this migration. The 'programme' question, its five fixed answer options, and this risk's trigger/text/category/discipline were confirmed identical to the 5a0e0d5 baseline by direct inspection. The App Baseline Normalisation task's own CHANGELOG.md entry ('Stage 1 Map Control Layout + 17-Question Workflow') separately records: 'Q17 (programme) genuinely unchanged, as instructed.'"
+  },
+  "governance_source": "Architect + SPA authorised Migration Slice 3 instruction (2026-08-28): recorded LOCKED-EXISTING — an existing live Project Check rule whose current behaviour is protected; migration does not reopen, reinterpret, improve, broaden, narrow or reword it. Not relabelled CONFIRMED merely because this migration is authorised. Neither MASTER-SPEC.md nor EVIDENCE-INTELLIGENCE-SPEC.md individually records this rule's specific trigger/text/category/discipline mapping (the 'programme' Stage 1 question itself is separately governed and unaffected) — that absence is the recorded provenance gap, pending any future controlled provenance/governance review.",
+  "brain_version": "0.3.0",
+  "contract_version": "1.0.0",
+  "contract_schema": "schemas/compressed-programme-risk.schema.json",
+  "migrated_at": "2026-08-28",
+  "regression_test": "tests/stage-1/compressed-programme-risk.test.js",
+  "notes": "Comparison is case-sensitive exact string match ('0–3 months' only, en dash U+2013 — matches the exact character used in the application's stage1Questions[] option list, verified byte-for-byte, not a hyphen). Exhaustive practical input space: '0–3 months' produces the risk; '3–6 months', '6–12 months', '12+ months', 'Not decided', empty, null, undefined and an unrecognised/legacy value all produce no risk (null). No committed-vs-live-working-tree provenance split was needed for this slice, unlike Migration Slice 2 — the source_baseline commit already contains every element exactly as migrated."
+}

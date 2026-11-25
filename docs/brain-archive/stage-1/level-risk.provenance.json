@@ -1,0 +1,30 @@
+{
+  "rule_id": "stage1.level-risk",
+  "domain": "stage-1",
+  "knowledge_rule": "Stage 1 risk flag when the customer's 'level' answer is 'No' or 'Not sure'",
+  "status": "LOCKED-EXISTING",
+  "provenance_status": "historical individual provenance not yet identified",
+  "migration_type": "BEHAVIOUR-PRESERVING",
+  "source": { "repository": "Project-Check-MVP-Master-Build", "file": "app.js", "function": "runStage1Risks()", "app_branch": "combined-rev2-canopy-drawing" },
+  "original_baseline": {
+    "commit": "5a0e0d5556d31adf3acc3ea35cfd8aa6581b4029",
+    "commit_message": "Initial Project Check master build",
+    "contains": "risk text and rule intent, matching the question's original option 'No / gradient present'."
+  },
+  "value_rename": {
+    "commit": "998ef610b3bbc91071cbeac2651c919520a08119",
+    "commit_message": "Stage 1 Map Control Layout + 17-Question Workflow",
+    "date": "2026-08-27",
+    "note": "The 'level' question's option was reworded 'No / gradient present' -> 'No'; this rule's trigger literal was updated to match. This is the commit producing the CURRENT exact trigger line — a genuine value rename, not merely a text/comment change. Do not conflate with original_baseline above."
+  },
+  "known_behavioural_nuance": "No back-compatibility matching exists for the legacy value 'No / gradient present' (unlike stage1MissingInfo()'s uncertain() helper, which does retain legacy 'Unknown'). A pre-27-Aug project with level='No / gradient present' will NOT trigger this risk today. This is disclosed, pre-existing, already-live application behaviour — this migration carries it forward exactly as-is and does NOT add legacy-value matching, since doing so would broaden the rule's current live behaviour beyond what this migration is authorised to do.",
+  "live_migration_baseline": { "commit": "0d511a3e1274c109d1d2e76831e53b3b0c93ac74", "note": "Application HEAD at the time of this migration. Trigger/text/category/discipline confirmed identical by direct inspection." },
+  "governance_source": "Architect + SPA authorised Stage 1 Brain Completion Batch instruction (2026-08-28): recorded LOCKED-EXISTING, not CONFIRMED and not PROPOSED. Explicit instruction: do not silently normalise existing wording/value asymmetries — the legacy-value gap above is disclosed, not fixed. Neither MASTER-SPEC.md nor EVIDENCE-INTELLIGENCE-SPEC.md individually records this rule's specific mapping — recorded as a provenance gap.",
+  "brain_version": "0.6.0",
+  "contract_version": "1.0.0",
+  "contract_schema": "schemas/level-risk.schema.json",
+  "migrated_at": "2026-08-28",
+  "regression_test": "tests/stage-1/level-risk.test.js",
+  "scope_note": "This migration covers ONLY this runStage1Risks() risk-rule copy. stage1MissingInfo()'s own SEPARATELY-CODED level==='No' check and the actions builder's DIFFERENT condition (level!=='Yes') are NOT migrated and remain App-side, unchanged — these are not shared logic with this rule and were never touched.",
+  "notes": "Exhaustive practical input space: 'No' and 'Not sure' both produce the risk; 'Yes', the legacy 'No / gradient present' string, empty string, null, undefined and any other unrecognised value all produce no risk."
+}

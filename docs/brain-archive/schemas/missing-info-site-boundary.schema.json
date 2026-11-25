@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://project-check-brain/schemas/missing-info-site-boundary.schema.json",
+  "title": "MissingInfoSiteBoundary",
+  "description": "Contract for the Stage 1 Brain Completion Batch, Phase 2 — the site-boundary missing-information rule. Output is a plain string|null, not the {text,category,discipline} object shape used by runStage1Risks() rules. Contract version 1.0.0.",
+  "type": "object",
+  "properties": {
+    "input": { "description": "The raw p.facts.siteBoundaryStatus value. Inequality against 'confirmed'.", "type": ["string", "null"] },
+    "output": { "description": "The fixed missing-info text, or null when siteBoundaryStatus === 'confirmed'.", "oneOf": [ { "type": "string", "const": "Site boundary not yet confirmed on a site map." }, { "type": "null" } ] }
+  },
+  "required": ["input", "output"],
+  "additionalProperties": false
+}

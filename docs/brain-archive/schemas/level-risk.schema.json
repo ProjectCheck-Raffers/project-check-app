@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://project-check-brain/schemas/level-risk.schema.json",
+  "title": "LevelRisk",
+  "description": "Contract for the Stage 1 Brain Completion Batch — level/gradient risk rule. Contract version 1.0.0, same convention as Slices 1-5. Canonical source of truth: this file, in Project-Check-Brain.",
+  "type": "object",
+  "properties": { "input": { "$ref": "#/$defs/LevelInput" }, "output": { "$ref": "#/$defs/RiskOutput" } },
+  "required": ["input", "output"],
+  "additionalProperties": false,
+  "$defs": {
+    "LevelInput": {
+      "description": "The raw p.facts.level value. Exact match against 'No' or 'Not sure' only. 'Yes', the legacy pre-27-Aug string 'No / gradient present' (deliberately NOT matched — see level-risk.js's known_behavioural_nuance comment), empty string, null, undefined, and any other unrecognised value must all produce a null output.",
+      "type": ["string", "null"]
+    },
+    "RiskOutput": {
+      "description": "The risk this rule contributes to p.risks1, or null when level is neither 'No' nor 'Not sure'.",
+      "oneOf": [
+        { "type": "object", "properties": { "text": { "type": "string", "const": "Levels may affect base design, drainage, thresholds and installation." }, "category": { "type": "string", "const": "cost" }, "discipline": { "type": "string", "const": "civils" } }, "required": ["text", "category", "discipline"], "additionalProperties": false },
+        { "type": "null" }
+      ]
+    }
+  }
+}

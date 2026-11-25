@@ -1,0 +1,132 @@
+name: CodeQL
+
+on:
+  pull_request:
+    branches: [approved]
+    paths:
+      - "Project-Check-MVP-Master-Build/**"
+      - "tests/**"
+      - ".github/workflows/**"
+  push:
+    branches: [approved]
+    paths:
+      - "Project-Check-MVP-Master-Build/**"
+      - "tests/**"
+      - ".github/workflows/**"
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: CodeQL analysis (JavaScript)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+      # "Code scanning" (the Security-tab SARIF upload) is a repository
+      # setting/plan feature that isn't available here (private repo on a
+      # personal account) — the analyze step fails outright if it can't
+      # upload. upload:false runs the exact same analysis and writes SARIF
+      # to disk instead; the next step fails the job itself if CodeQL found
+      # anything, so this still gates the PR the same way — it just can't
+      # populate the Security tab until code scanning is enabled at the repo
+      # level (see security-readiness.md).
+      - uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:javascript-typescript"
+          upload: false
+          output: sarif-results
+      - name: Fail if CodeQL found anything except the assessed PC-CONTROL-004 false positive
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const dir = 'sarif-results';
+          const files = fs.readdirSync(dir).filter(f => f.endsWith('.sarif'));
+          if (!files.length) {
+            console.log('No .sarif file found in ' + dir + ' — treating as a workflow error.');
+            process.exit(1);
+          }
+
+          // PC-CONTROL-005: exact fail-closed identity for the single
+          // PC-CONTROL-004 assessed false positive only. This does NOT
+          // whitelist the whole rule or the whole file. primaryLocationLineHash
+          // is CodeQL's stable partial fingerprint for the flagged source line;
+          // path, rule and start-column fingerprint further narrow the match.
+          const authorisedFalsePositive = {
+            ruleId: 'js/xss-through-dom',
+            uri: 'Project-Check-MVP-Master-Build/evidence.js',
+            primaryLocationLineHash: 'b167010982126208:1',
+            primaryLocationStartColumnFingerprint: '44'
+          };
+
+          let rawTotal = 0;
+          let authorisedCount = 0;
+          const blocking = [];
+
+          for (const f of files) {
+            const sarif = JSON.parse(fs.readFileSync(dir + '/' + f, 'utf8'));
+            const results = sarif.runs.flatMap(r => r.results || []);
+            rawTotal += results.length;
+
+            for (const r of results) {
+              const loc = r.locations?.[0]?.physicalLocation;
+              const uri = loc?.artifactLocation?.uri || '';
+              const pf = r.partialFingerprints || {};
+              const isAuthorised =
+                r.ruleId === authorisedFalsePositive.ruleId &&
+                uri === authorisedFalsePositive.uri &&
+                pf.primaryLocationLineHash === authorisedFalsePositive.primaryLocationLineHash &&
+                pf.primaryLocationStartColumnFingerprint === authorisedFalsePositive.primaryLocationStartColumnFingerprint;
+
+              if (isAuthorised) {
+                authorisedCount += 1;
+                console.log(
+                  'AUTHORISED ASSESSED FALSE POSITIVE: ' + r.ruleId +
+                  ' @ ' + uri +
+                  ' [primaryLocationLineHash=' + pf.primaryLocationLineHash +
+                  ', startColumnFingerprint=' + pf.primaryLocationStartColumnFingerprint + ']'
+                );
+              } else {
+                blocking.push({
+                  ruleId: r.ruleId,
+                  uri,
+                  line: loc?.region?.startLine,
+                  message: r.message?.text || ''
+                });
+              }
+            }
+          }
+
+          console.log('CodeQL raw result count: ' + rawTotal);
+          console.log('Recognised authorised false-positive count: ' + authorisedCount);
+          console.log('Remaining blocking result count: ' + blocking.length);
+
+          // Fail closed if the exact authorised identity somehow appears more
+          // than once. A zero-result CodeQL run is allowed; if the known finding
+          // merely changes identity, it lands in `blocking` and fails normally.
+          if (authorisedCount > 1) {
+            console.error('Expected at most one exact authorised false-positive result; found ' + authorisedCount + '. Failing closed.');
+            process.exit(1);
+          }
+
+          for (const r of blocking) {
+            console.error('- BLOCKING ' + r.ruleId + ' @ ' + r.uri + ':' + (r.line || '?') + ': ' + r.message);
+          }
+
+          if (blocking.length) process.exit(1);
+          NODE
+      - name: Upload SARIF as a build artifact (Security tab unavailable on this repo)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: codeql-sarif
+          path: sarif-results/
+          retention-days: 14

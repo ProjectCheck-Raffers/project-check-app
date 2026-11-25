@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://project-check-brain/schemas/close-boundary-risk.schema.json",
+  "title": "CloseBoundaryRisk",
+  "description": "Contract for the Stage 1 Brain Completion Batch — close-boundary risk rule. Contract version 1.0.0, same convention as Slices 1-5. discipline='planning' is a presentation-only grouping tag, not a Planning Intelligence dependency — see close-boundary-risk.js's own comment. Canonical source of truth: this file, in Project-Check-Brain.",
+  "type": "object",
+  "properties": { "input": { "$ref": "#/$defs/CloseBoundaryInput" }, "output": { "$ref": "#/$defs/RiskOutput" } },
+  "required": ["input", "output"],
+  "additionalProperties": false,
+  "$defs": {
+    "CloseBoundaryInput": {
+      "description": "The raw p.facts.closeBoundary value. Inequality against the single literal 'No' — every other value ('Yes', 'Not sure', empty string, null, undefined, or an unrecognised value) must produce the risk.",
+      "type": ["string", "null"]
+    },
+    "RiskOutput": {
+      "description": "The risk this rule contributes to p.risks1, or null when closeBoundary === 'No'.",
+      "oneOf": [
+        { "type": "object", "properties": { "text": { "type": "string", "const": "Nearby boundaries/buildings may affect design, fire strategy, access or approvals." }, "category": { "type": "string", "const": "programme" }, "discipline": { "type": "string", "const": "planning" } }, "required": ["text", "category", "discipline"], "additionalProperties": false },
+        { "type": "null" }
+      ]
+    }
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "rule_id": "stage1.missing-info.level-no",
+  "domain": "stage-1",
+  "knowledge_rule": "Stage 1 missing-information flag when the customer's 'level' answer is exactly 'No'",
+  "status": "LOCKED-EXISTING",
+  "provenance_status": "historical individual provenance not yet identified",
+  "migration_type": "BEHAVIOUR-PRESERVING",
+  "source": { "repository": "Project-Check-MVP-Master-Build", "file": "app.js", "function": "stage1MissingInfo()", "app_branch": "combined-rev2-canopy-drawing" },
+  "source_baseline": {
+    "commit": "998ef610b3bbc91071cbeac2651c919520a08119",
+    "commit_message": "Stage 1 Map Control Layout + 17-Question Workflow",
+    "date": "2026-08-27",
+    "note": "Clean, single-point addition — git log -S confirms no earlier baseline exists for this exact line. Added because the same commit's level-option rename ('No / gradient present' -> 'No') meant a bare 'No' could no longer rely on the shared uncertain() list."
+  },
+  "output_shape_note": "Unlike every runStage1Risks() rule migrated so far (which return {text,category,discipline}|null), this stage1MissingInfo() rule returns a plain string|null — stage1MissingInfo()'s own output array is an array of strings, not risk objects. Recorded here so the contract difference is explicit, not assumed identical to the risk-rule schemas.",
+  "live_migration_baseline": { "commit": "0d511a3e1274c109d1d2e76831e53b3b0c93ac74" },
+  "governance_source": "Architect + SPA authorised Stage 1 Brain Completion Batch instruction (2026-08-28), Phase 2: recorded LOCKED-EXISTING, not CONFIRMED and not PROPOSED.",
+  "brain_version": "0.6.0",
+  "contract_version": "1.0.0",
+  "contract_schema": "schemas/missing-info-level-no.schema.json",
+  "migrated_at": "2026-08-28",
+  "regression_test": "tests/stage-1/missing-info-level-no.test.js",
+  "scope_note": "This migration covers ONLY this single static-text stage1MissingInfo() line. The shared uncertain()/check() helper (level/services/closeBoundary/base/clearSpan, dynamic interpolated text) is explicitly NOT migrated — see the Stage 1 Brain Completion Batch report, Phase 2 section, for why.",
+  "notes": "Exhaustive practical input space: 'No' produces the missing-info text; 'Not sure', 'Yes', the legacy 'No / gradient present' string, empty string, null, undefined and any unrecognised value all produce null (no flag from this specific rule — note 'Not sure' is separately flagged by the shared uncertain()/check() helper, which remains App-side)."
+}

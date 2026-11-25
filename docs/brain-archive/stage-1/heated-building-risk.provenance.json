@@ -1,0 +1,32 @@
+{
+  "rule_id": "stage1.heated-building-risk",
+  "domain": "stage-1",
+  "knowledge_rule": "Stage 1 risk flag when the customer answers the 'heated' question 'Yes'",
+  "status": "LOCKED-EXISTING",
+  "provenance_status": "historical individual provenance not yet identified",
+  "migration_type": "BEHAVIOUR-PRESERVING",
+  "source": {
+    "repository": "Project-Check-MVP-Master-Build",
+    "file": "app.js",
+    "function": "runStage1Risks()",
+    "app_branch": "combined-rev2-canopy-drawing"
+  },
+  "provenance_correction_note": "SPA correction, recorded 2026-08-28, applied to the original migration commit's provenance record. Two distinct provenance points must never be conflated:",
+  "committed_source_baseline": {
+    "commit": "90c1c94ba63cf18f9d21bbe7ee1a18094cb90432",
+    "contains": "the trigger (heated === 'Yes'), the exact customer-facing text, and the category ('cost') exactly as migrated",
+    "does_not_contain": "the 'engineering' discipline argument — that commit's call site passes only 2 arguments (text, category); discipline there defaults to 'general'"
+  },
+  "live_migration_source_state": {
+    "description": "commit 90c1c94ba63cf18f9d21bbe7ee1a18094cb90432 PLUS the authorised, pre-existing application working-tree baseline at migration start",
+    "context": "the 27 August Stage 1 discipline/report-restructuring work, uncommitted at the time of this migration — this is where the 'engineering' discipline value actually existed and is what was actually running when this migration was performed"
+  },
+  "discipline_provenance_status": "pre-existing working-tree baseline at migration start; individual committed provenance not yet established. NOT relabelled CONFIRMED.",
+  "governance_source": "SPA governance decision, Migration Slice 2 (2026-08-28): recorded LOCKED-EXISTING — an existing live Project Check rule whose current behaviour is protected; migration does not reopen, reinterpret, improve, broaden, narrow or reword it. Not relabelled CONFIRMED merely because this migration is authorised, and not relabelled PROPOSED merely because it is already live existing behaviour. Neither MASTER-SPEC.md nor EVIDENCE-INTELLIGENCE-SPEC.md individually records this rule's specific trigger/text/category/discipline mapping ('heated' the Stage 1 question itself is separately governed and unaffected) — that absence is the recorded provenance gap, pending any future controlled provenance/governance review.",
+  "brain_version": "0.2.0",
+  "contract_version": "1.0.0",
+  "contract_schema": "schemas/heated-building-risk.schema.json",
+  "migrated_at": "2026-08-28",
+  "regression_test": "tests/stage-1/heated-building-risk.test.js",
+  "notes": "Comparison is case-sensitive exact string match ('Yes' only), unchanged from the original implementation. Exhaustive practical input space: 'Yes' produces the risk; 'No', 'Not sure', empty, null, undefined and case/whitespace variants all produce no risk (null). This provenance record was corrected after the original migration commit (d8dd7a2) — see Project-Check-Brain's CHANGELOG.md for the corrective commit and full explanation; git history was not rewritten."
+}

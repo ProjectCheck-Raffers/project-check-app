@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://project-check-brain/schemas/missing-info-level-no.schema.json",
+  "title": "MissingInfoLevelNo",
+  "description": "Contract for the Stage 1 Brain Completion Batch, Phase 2 — the level='No' missing-information rule. Output is a plain string|null, NOT the {text,category,discipline} object shape used by every runStage1Risks() rule — stage1MissingInfo()'s output array is an array of strings. Contract version 1.0.0.",
+  "type": "object",
+  "properties": {
+    "input": { "description": "The raw p.facts.level value. Exact match against 'No' only.", "type": ["string", "null"] },
+    "output": { "description": "The fixed missing-info text, or null when level !== 'No'.", "oneOf": [ { "type": "string", "const": "Site level/gradient: recorded as \"No\" (not level) — treat as unconfirmed." }, { "type": "null" } ] }
+  },
+  "required": ["input", "output"],
+  "additionalProperties": false
+}

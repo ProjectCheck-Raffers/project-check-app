@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://project-check-brain/schemas/base-surface-risk.schema.json",
+  "title": "BaseSurfaceRisk",
+  "description": "Contract for the Stage 1 Brain Completion Batch — base/substrate non-concrete surface risk rule (5-way OR). Contract version 1.0.0, same convention as Slices 1-5. Sibling schema: base-uncertain-risk.schema.json. Canonical source of truth: this file, in Project-Check-Brain.",
+  "type": "object",
+  "properties": { "input": { "$ref": "#/$defs/BaseInput" }, "output": { "$ref": "#/$defs/RiskOutput" } },
+  "required": ["input", "output"],
+  "additionalProperties": false,
+  "$defs": {
+    "BaseInput": {
+      "description": "The raw p.facts.base value. Matches exactly one of: 'Tarmac / asphalt', 'Hardcore / stone', 'Soil / grass', 'Existing building / structure', 'Mixed'. The legacy pre-27-Aug strings 'Stone / hardcore'/'Grass / soil' (renamed, deliberately NOT matched), 'Concrete slab', 'Not sure', empty string, null, undefined, and any other unrecognised value must all produce a null output.",
+      "type": ["string", "null"]
+    },
+    "RiskOutput": {
+      "description": "The risk this rule contributes to p.risks1, or null when base does not match one of the 5 trigger values.",
+      "oneOf": [
+        { "type": "object", "properties": { "text": { "type": "string", "const": "The visible surface does not by itself confirm a suitable structural foundation or slab." }, "category": { "type": "string", "const": "cost" }, "discipline": { "type": "string", "const": "civils" } }, "required": ["text", "category", "discipline"], "additionalProperties": false },
+        { "type": "null" }
+      ]
+    }
+  }
+}

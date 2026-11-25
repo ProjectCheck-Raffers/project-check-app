@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://project-check-brain/schemas/building-position-status-risk.schema.json",
+  "title": "BuildingPositionStatusRisk",
+  "description": "Contract for Brain Migration Slice 5 — Stage 1 building-position status risk rule. Contract version 1.0.0 (same overall JSON Schema contract convention as the Slices 1-4 schemas; no breaking change, so no contract-version bump). Canonical source of truth: this file, in Project-Check-Brain. Any copy elsewhere (e.g. vendored into the application repository) is a mechanically identical mirror, never independently edited.",
+  "type": "object",
+  "properties": {
+    "input": { "$ref": "#/$defs/BuildingPositionStatusInput" },
+    "output": { "$ref": "#/$defs/RiskOutput" }
+  },
+  "required": ["input", "output"],
+  "additionalProperties": false,
+  "$defs": {
+    "BuildingPositionStatusInput": {
+      "description": "The raw p.facts.buildingPositionStatus value. This is an EXACT-EQUALITY rule against the single literal 'skipped' — every other value ('confirmed', an empty string, null, undefined, or an unrecognised/legacy value) must produce a null output. Deliberately not broadened to treat missing/unrecognised values as 'skipped'.",
+      "type": ["string", "null"]
+    },
+    "RiskOutput": {
+      "description": "The risk this rule contributes to p.risks1, or null when the rule does not fire (buildingPositionStatus !== 'skipped').",
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "text": { "type": "string", "const": "The proposed building position has not yet been pinpointed on a site map, so orientation and clearances are not yet confirmed." },
+            "category": { "type": "string", "const": "issue" },
+            "discipline": { "type": "string", "const": "site" }
+          },
+          "required": ["text", "category", "discipline"],
+          "additionalProperties": false
+        },
+        { "type": "null" }
+      ]
+    }
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://project-check-brain/schemas/services-drainage-risk.schema.json",
+  "title": "ServicesDrainageRisk",
+  "description": "Contract for Brain Migration Slice 4 — Stage 1 services/drainage risk rule. Contract version 1.0.0 (same overall JSON Schema contract convention as the Slices 1-3 schemas; no breaking change, so no contract-version bump). Canonical source of truth: this file, in Project-Check-Brain. Any copy elsewhere (e.g. vendored into the application repository) is a mechanically identical mirror, never independently edited.",
+  "type": "object",
+  "properties": {
+    "input": { "$ref": "#/$defs/ServicesInput" },
+    "output": { "$ref": "#/$defs/RiskOutput" }
+  },
+  "required": ["input", "output"],
+  "additionalProperties": false,
+  "$defs": {
+    "ServicesInput": {
+      "description": "The raw Stage 1 'services' answer. The rule is an inequality against the single literal 'No' — every other value (including 'Yes', 'Not sure', an empty string, null, undefined, or an unrecognised/legacy value) triggers the risk. This is the original application's deliberate default (not-yet-confirmed-clear), not an allowlist, and must not be narrowed.",
+      "type": ["string", "null"]
+    },
+    "RiskOutput": {
+      "description": "The risk this rule contributes to p.risks1, or null when the rule does not fire (services === 'No' exactly).",
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "text": { "type": "string", "const": "Services or drainage within the footprint may affect the building position, foundations or programme." },
+            "category": { "type": "string", "const": "cost" },
+            "discipline": { "type": "string", "const": "civils" }
+          },
+          "required": ["text", "category", "discipline"],
+          "additionalProperties": false
+        },
+        { "type": "null" }
+      ]
+    }
+  }
+}

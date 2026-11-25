@@ -1,0 +1,26 @@
+{
+  "rule_id": "stage1.close-boundary-risk",
+  "domain": "stage-1",
+  "knowledge_rule": "Stage 1 risk flag when the customer's 'closeBoundary' answer is anything other than exactly 'No'",
+  "status": "LOCKED-EXISTING",
+  "provenance_status": "historical individual provenance not yet identified",
+  "migration_type": "BEHAVIOUR-PRESERVING",
+  "source": { "repository": "Project-Check-MVP-Master-Build", "file": "app.js", "function": "runStage1Risks()", "app_branch": "combined-rev2-canopy-drawing" },
+  "source_baseline": {
+    "commit": "5a0e0d5556d31adf3acc3ea35cfd8aa6581b4029",
+    "commit_message": "Initial Project Check master build",
+    "contains": "the trigger (closeBoundary !== 'No'), the exact customer-facing text, the category ('programme') and the discipline ('planning') exactly as migrated. Same source baseline commit as Migration Slices 3/4."
+  },
+  "question_wording_provenance_note": "The Stage 1 'closeBoundary' question wording and position were reworded 27 August 2026 (Stage 1 Map Control Layout + 17-Question Workflow task, application commit 998ef610b3bbc91071cbeac2651c919520a08119) — this did NOT change the fact key, the three answer values, this rule's trigger, its text, its category or its discipline.",
+  "discipline_label_note": "discipline='planning' is a presentation-only grouping tag (see runStage1Risks()'s own governing comment: 'planning' = boundary/neighbour/approvals-adjacent). It is NOT a dependency on, or reference to, the separate, heavily-governed Planning Intelligence subsystem (evidence.js Planning Batches 1-5, LOCKED/PROTECTED per DECISION-LOG.md). This rule reads only p.facts.closeBoundary, a plain Stage 1 Yes/No/Not-sure answer, with zero code-level or data-level connection to Planning Intelligence. The shared word is a naming coincidence, not an architectural dependency.",
+  "inequality_behaviour_note": "closeBoundary !== 'No' is an inequality against a single literal, not an allowlist. 'Yes', 'Not sure', empty string, null, undefined and any unrecognised value all trigger the risk — deliberately preserved.",
+  "live_migration_baseline": { "commit": "0d511a3e1274c109d1d2e76831e53b3b0c93ac74", "note": "Application HEAD at the time of this migration. Trigger/text/category/discipline confirmed identical to the 5a0e0d5 baseline by direct inspection." },
+  "governance_source": "Architect + SPA authorised Stage 1 Brain Completion Batch instruction (2026-08-28): recorded LOCKED-EXISTING, not CONFIRMED and not PROPOSED. Neither MASTER-SPEC.md nor EVIDENCE-INTELLIGENCE-SPEC.md individually records this rule's specific trigger/text/category/discipline mapping — recorded as a provenance gap, not resolved by this migration.",
+  "brain_version": "0.6.0",
+  "contract_version": "1.0.0",
+  "contract_schema": "schemas/close-boundary-risk.schema.json",
+  "migrated_at": "2026-08-28",
+  "regression_test": "tests/stage-1/close-boundary-risk.test.js",
+  "scope_note": "This migration covers ONLY this runStage1Risks() risk-rule copy. stage1MissingInfo()'s independent closeBoundary check and the actions builder's independent closeBoundary read are NOT migrated and remain App-side, unchanged.",
+  "notes": "Exhaustive practical input space: 'No' produces no risk; 'Yes', 'Not sure', empty string, null, undefined and an unrecognised/legacy value all produce the risk."
+}
