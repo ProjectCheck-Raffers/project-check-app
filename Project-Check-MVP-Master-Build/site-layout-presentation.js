@@ -19,7 +19,7 @@
   const ALL_PAGE_CLASSES = [
     'dc-page-question', 'dc-page-map', 'dc-page-client',
     'dc-page-report', 'dc-page-doorsreview', 'dc-page-workspace',
-    'dc-page-pricing', 'dc-page-myprojects', 'dc-page-projectworkspace',
+    'dc-page-myprojects', 'dc-page-projectworkspace',
     'dc-page-quotations', 'dc-page-stage3', 'dc-page-terms', 'dc-page-privacy',
   ];
 
@@ -183,9 +183,7 @@
 
   function setNavActive(eyebrowText) {
     document.querySelectorAll('.nav .dc-nav-active-item').forEach(el => el.classList.remove('dc-nav-active-item'));
-    const target = eyebrowText === 'Business & pricing'
-      ? document.querySelector('.nav button[data-route="pricing"]')
-      : document.querySelector('.nav #projectsBtn');
+    const target = document.querySelector('.nav #projectsBtn');
     if (target) target.classList.add('dc-nav-active-item');
   }
 
