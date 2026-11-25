@@ -499,6 +499,7 @@ function pcFireExitRefresh(p) {
       personnelDoorsAsFireExits: rollerAdjacent, rollerAdjacentCount: placement.rollerAdjacentCount || 0
     };
   }
+  const keepRegsChecker = p.backgroundChecks && p.backgroundChecks.regsChecker;
   p.backgroundChecks = {
     version: PC_BG_CHECKS_VERSION,
     sourceFingerprint: pcBgSourceFingerprint(p),
@@ -510,6 +511,7 @@ function pcFireExitRefresh(p) {
     rackingNote: PC_BG_RACKING_NOTE
   };
   p.backgroundChecks.buildingRegs = pcBuildingRegsCompute(p, fireExits);
+  if (keepRegsChecker) p.backgroundChecks.regsChecker = keepRegsChecker;
   if (p.buildingDesign) delete p.buildingDesign.autoFireExits;
   return p.backgroundChecks;
 }

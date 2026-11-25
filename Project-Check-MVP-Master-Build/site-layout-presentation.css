@@ -2529,3 +2529,19 @@ body[data-page="siteLayout"] .stage1-workspace{width:100%;max-width:760px;margin
   .site-layout-boundary-controls{display:flex;gap:8px;flex-wrap:wrap}
   .site-layout-boundary-controls .btn{flex:1;min-width:120px}
 }
+
+/* Stage 1 Free Report header fix: classify() adds dc-active + dc-page-report
+   + dc-stage1-screen once the report renders, which pulled in the obsolete
+   Direction C 858px / display:block / absolute-logo header. On this page only,
+   cancel those so the review-shell header (same as Building Design) wins:
+   full width, flex, static logo left, actions right, sticky. Stage 2 report
+   and other dc-active pages are untouched. */
+body[data-review-shell].dc-page-report.dc-stage1-screen .topbar{position:sticky;top:0;width:auto;max-width:none;margin:0;display:flex;flex-wrap:nowrap;justify-content:space-between;align-items:center;box-sizing:border-box}
+body[data-review-shell].dc-page-report.dc-stage1-screen .topbar .brand{position:static;left:auto;top:auto;flex:0 1 auto;width:auto;height:auto;margin:0}
+body[data-review-shell].dc-page-report.dc-stage1-screen .topbar .brand-logo{width:270px;height:58px}
+@media(max-width:768px){
+ body[data-review-shell].dc-page-report.dc-stage1-screen .topbar .brand-logo{width:190px;height:53px}
+}
+@media(max-width:389px){
+ body[data-review-shell].dc-page-report.dc-stage1-screen .topbar .brand-logo{width:clamp(135px,44vw,170px)}
+}
