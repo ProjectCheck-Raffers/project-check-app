@@ -10,7 +10,8 @@
       "stage1Problem": "A fire-rated wall may be needed on elevation {elevation} – the building supplier to confirm.",
       "stage1WhyItMatters": "Walls close to a boundary are limited in how much fire can spread to the neighbouring site.",
       "stage2Solution": "Stuart to write",
-      "approved": false
+      "approved": false,
+      "needInfo": "Boundary on elevation {elevation} not marked (mark every site boundary in Site Layout)"
     },
     {
       "id": "B_BOUNDARY_1M",
@@ -20,7 +21,8 @@
       "stage1Problem": "Elevation {elevation} is under 1 m from the boundary – strict fire rules apply to this wall.",
       "stage1WhyItMatters": "Very close walls face the tightest fire limits, which can affect the wall and any openings in it.",
       "stage2Solution": "Stuart to write",
-      "approved": false
+      "approved": false,
+      "needInfo": "Boundary on elevation {elevation} not marked (mark every site boundary in Site Layout)"
     },
     {
       "id": "B_HEIGHT_10M",
@@ -30,7 +32,8 @@
       "stage1Problem": "Your building height may need a specialist fire assessment.",
       "stage1WhyItMatters": "Taller buildings are treated differently for fire spread and may need a specialist assessment.",
       "stage2Solution": "Stuart to write",
-      "approved": false
+      "approved": false,
+      "needInfo": "The building height"
     },
     {
       "id": "B_RIDGE_18M",
@@ -40,7 +43,8 @@
       "stage1Problem": "Your building height (measured to mid-roof) is over 18 m - stricter external wall rules may apply.",
       "stage1WhyItMatters": "Taller buildings face tighter fire safety requirements.",
       "stage2Solution": "Stuart to write",
-      "approved": false
+      "approved": false,
+      "needInfo": "The building height"
     },
     {
       "id": "B_FIRE_ACCESS_11M",
@@ -62,7 +66,8 @@
       "stage1Problem": "The frame and foundations near the boundary may need extra design checks.",
       "stage1WhyItMatters": "A tall wall close to a boundary can affect how the frame and foundations are designed.",
       "stage2Solution": "Stuart to write",
-      "approved": false
+      "approved": false,
+      "needInfo": "Boundary distances and the building height"
     },
     {
       "id": "B_TRAVEL",
@@ -83,7 +88,8 @@
       "stage1Problem": "The furthest point is about {travel} m from an exit – this may be over the limit.",
       "stage1WhyItMatters": "People inside need to reach an exit within a set distance if there is a fire.",
       "stage2Solution": "Stuart to write",
-      "approved": false
+      "approved": false,
+      "needInfo": "Personnel exits in Building Design, and what will be stored"
     },
     {
       "id": "B_EXITS",
@@ -98,7 +104,8 @@
       "stage1Problem": "Your building may need more fire exits.",
       "stage1WhyItMatters": "A building this size can hold more people than a single exit is allowed to serve.",
       "stage2Solution": "Stuart to write",
-      "approved": false
+      "approved": false,
+      "needInfo": "The building use, width and length"
     },
     {
       "id": "L_ENERGY",
@@ -110,7 +117,8 @@
       "stage2Solution": "Stuart to write",
       "approved": false,
       "scope": "customer",
-      "stage1Note": "With heating, toilets, offices or other services, an energy calculation for Building Control may be needed. Get professional support."
+      "stage1Note": "With heating, toilets, offices or other services, an energy calculation for Building Control may be needed. Get professional support.",
+      "needInfo": "Whether the building will have heating, toilets, offices or any services"
     },
     {
       "id": "PLAN_PD",
@@ -145,9 +153,10 @@
       "scope": "customer",
       "stage1Problem": "",
       "stage1WhyItMatters": "",
-      "stage1Note": "This building may be exempt from building regs.",
+      "stage1Note": "This building may be exempt from building regs. Get professional support to confirm.",
       "stage2Solution": "Stuart to write",
-      "approved": false
+      "approved": false,
+      "needInfo": "Whether the building is detached, has sleeping accommodation, or is temporary"
     },
     {
       "id": "A_LOADS_QUOTE",
@@ -157,7 +166,8 @@
       "stage1Problem": "",
       "stage1WhyItMatters": "",
       "stage2Solution": "Stuart to write",
-      "approved": false
+      "approved": false,
+      "needInfo": "Site altitude, site exposure and whether roof solar is planned"
     },
     {
       "id": "B_BOUNDARY_FIRERATED_QUOTE",
@@ -170,7 +180,8 @@
       "stage1Problem": "",
       "stage1WhyItMatters": "",
       "stage2Solution": "Stuart to write",
-      "approved": false
+      "approved": false,
+      "needInfo": "Boundary on elevation {elevation} not marked (mark every site boundary in Site Layout)"
     },
     {
       "id": "B_DOORS_QUOTE",
@@ -183,7 +194,8 @@
       "stage1Problem": "",
       "stage1WhyItMatters": "",
       "stage2Solution": "Stuart to write",
-      "approved": false
+      "approved": false,
+      "needInfo": "The building width and length"
     },
     {
       "id": "B_ROOFLIGHTS",
@@ -196,7 +208,8 @@
       "stage1Problem": "Rooflights near a boundary or fire wall are limited.",
       "stage1WhyItMatters": "Rooflights close to a boundary or fire wall face limits on size and position.",
       "stage2Solution": "Stuart to write",
-      "approved": false
+      "approved": false,
+      "needInfo": "Whether there are rooflights, and the boundary or fire wall details"
     },
     {
       "id": "L_ROOFLIGHT_U_QUOTE",
@@ -206,7 +219,8 @@
       "stage1Problem": "",
       "stage1WhyItMatters": "",
       "stage2Solution": "Stuart to write",
-      "approved": false
+      "approved": false,
+      "needInfo": "Whether there are rooflights, and whether the building is heated"
     },
     {
       "id": "M_ACCESS",
@@ -216,7 +230,8 @@
       "stage1Problem": "Accessible access rules (Part M) apply to this building.",
       "stage1WhyItMatters": "Buildings with staff facilities must be reachable and usable by disabled people.",
       "stage2Solution": "A level threshold and an accessible door are needed.",
-      "approved": false
+      "approved": false,
+      "needInfo": "Whether the building will have heating, toilets, offices or any services"
     },
     {
       "id": "F_CONDENSATION",
@@ -227,7 +242,8 @@
       "stage1WhyItMatters": "",
       "stage1Note": "",
       "stage2Solution": "Consider anti-condensation roof sheets or vents.",
-      "approved": false
+      "approved": false,
+      "needInfo": "Whether the building is heated, and whether vehicles or wet goods are used"
     },
     {
       "id": "H_DRAINAGE_QUOTE",
@@ -237,7 +253,7 @@
       "scope": "customer",
       "stage1Problem": "",
       "stage1WhyItMatters": "",
-      "stage1Note": "Surface water connection to drainage: get professional support.",
+      "stage1Note": "Surface water drainage connection – get professional support.",
       "stage2Solution": "Stuart to write",
       "approved": false
     },
@@ -257,7 +273,8 @@
       "stage2Solution": "Personnel doors at U 1.6. Energy calculation favours low-carbon heating.",
       "approved": false,
       "scope": "customer",
-      "stage1Note": "Heated building – the 2027 energy rules may apply. Get professional support."
+      "stage1Note": "Heated building – the 2027 energy rules may apply. Get professional support.",
+      "needInfo": "Whether the building is heated"
     }
   ]
 }

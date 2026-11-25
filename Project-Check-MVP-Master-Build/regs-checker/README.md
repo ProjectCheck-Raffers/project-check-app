@@ -60,3 +60,7 @@ The Building Design page now asks (card "Building Regulations and planning"): `r
 `PLAN_PD` was rewritten (still `approved:false`). Its saved result carries `measured.status` (`not-pd`, `unknown`, `likely-pd`) with `reasons` (figures) and `missing`. `describePermittedDevelopment(savedRegsChecker)` turns that into the three allowed sentences for the Stage 1 report and PDF; the saved record also carries `pdApproved` so an unapproved rule reads "We can't yet say ... not approved yet" instead of a conclusion. It never says "no planning needed".
 A boundary side with no marked boundary line facing it (Site Layout) has no distance and is need info; `pcBgBoundaryDistances` in background-checks.js returns null for that side.
 **Not coded / UNKNOWN:** article 2(3) land and SSSI lower limits; the tallest building on site for a free-standing building (needs `regsExistingHeight`, which the Building Design card only asks when the building links to an existing one, so a free-standing building reads need info until that is answered); existing floor area is compared with the footprint (single storey assumed).
+
+### Report honesty (2026-11-25)
+
+Each rule can carry `needInfo` (plain words for what is missing). The Stage 1 report and PDF list `need info` items under "Need info" and never print "No potential issues found" while any is listed. Customer-scope items (`scope:"customer"`) are listed under "Get professional support". `PLAN_PD` has its own Permitted development section and is left out of this list.

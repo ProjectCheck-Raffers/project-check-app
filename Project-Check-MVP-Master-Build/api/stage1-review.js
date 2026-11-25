@@ -52,7 +52,7 @@ module.exports=function stage1Review(request,response){
     },
     buildingDesign:{status:'draft',lastView:'plan'},
     stage2:{}, evidence:[], quotes:[], history:[], risks1:[], actions1:[], risks2:[], actions2:[],
-    downloads:{s1:0,s2:0}, stage1Complete:false, stage2Complete:false, stage1SummaryConfirmed:true
+    stage1Complete:false, stage2Complete:false, stage1SummaryConfirmed:true
   };
   return response.status(200).json({user,project});
 };

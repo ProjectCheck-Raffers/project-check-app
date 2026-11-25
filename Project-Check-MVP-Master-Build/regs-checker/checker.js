@@ -79,7 +79,8 @@
       scope: rule.scope || 'building',
       stage1Problem: problem ? fill(rule.stage1Problem, vars) : '',
       stage1WhyItMatters: problem ? rule.stage1WhyItMatters : '',
-      stage1Note: note ? fill(rule.stage1Note || '', vars) : ''
+      stage1Note: note ? fill(rule.stage1Note || '', vars) : '',
+      needInfo: result === NEED ? fill(rule.needInfo || '', vars || (measured && typeof measured === 'object' ? measured : null)) : ''
     };
   }
 

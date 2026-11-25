@@ -65,22 +65,16 @@ let users=Array.isArray(clean.users)?cleanArr(clean.users).map(cleanUser).filter
 // read straight out of stored project data, not the URL, so render()'s own
 // UUID guard never sees it; a tampered id could break out of that
 // attribute the same way the route id and door ids could before their
-// equivalent fixes. p.downloads is also read as a plain {s1,s2} number
-// pair everywhere the two-free-download limit is shown or enforced, with
-// no guard of its own — and a malformed value throws while rendering the
-// *whole* dashboard project list (not just this one project), since that
-// happens inside the same Array.map() template literal. p.name is passed
+// equivalent fixes. p.name is passed
 // through esc() everywhere it's *displayed* (esc() coerces safely via
 // String(s??'')), but downloadReport()'s PDF filename does
 // p.name.replace(/\W+/g,'-') directly with no such coercion — a
-// non-string name throws there and aborts the download. All three are
+// non-string name throws there and aborts the download. Both are
 // normalized here, healing rather than crashing.
 let cleanProject=p=>{
 let id=typeof p.id==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(p.id)?p.id:crypto.randomUUID();
-let d=p.downloads&&typeof p.downloads==='object'?p.downloads:{};
-// Download counts are informational only (no cap) — kept as whole, non-negative numbers.
+// Whole, non-negative numbers.
 let clampDl=v=>Number.isFinite(v)?Math.max(0,Math.trunc(v)):0;
-let downloads={s1:clampDl(d.s1),s2:clampDl(d.s2)};
 // Uploads are counted per stage per project (limit 2 each) and never decrease,
 // so removing a file does not free a slot. Existing projects are seeded from the
 // evidence already on record so the limit applies fairly to them too.
@@ -89,7 +83,7 @@ let ev=Array.isArray(p.evidence)?p.evidence:[];
 let evKey=e=>{let t=e&&e.stage;return t==='Stage 1'?'s1':(typeof t==='string'&&/^Stage (1 complete|2)/.test(t))?'s2':null};
 let uploads={s1:Math.max(clampDl(u.s1),ev.filter(e=>evKey(e)==='s1').length),s2:Math.max(clampDl(u.s2),ev.filter(e=>evKey(e)==='s2').length)};
 let name=typeof p.name==='string'&&p.name?p.name:'Untitled project';
-return {...p,id,name,downloads,uploads};
+return {...p,id,name,uploads};
 };
 let projects=Array.isArray(clean.projects)?cleanArr(clean.projects).map(cleanProject):defaultState.projects;
 // `typeof x==='object'` alone also admits arrays and objects missing the
@@ -735,7 +729,7 @@ d.innerHTML=`<div class="card project-flow-modal"><div class="project-flow-head"
 const close=()=>{if(embedded)route('dashboard');else d.remove()};d.querySelector('#npClose').onclick=close;d.querySelector('#npCancel').onclick=close;
 const updateSiteAddressChoice=()=>{const choice=d.querySelector('input[name="npSiteSame"]:checked')?.value;d.querySelector('#npAddressField').hidden=choice!=="no"};
 d.querySelectorAll('input[name="npSiteSame"]').forEach(input=>input.onchange=updateSiteAddressChoice);
-d.querySelector('#npCreate').onclick=()=>{let name=d.querySelector('#npName').value.trim(),role=d.querySelector('#npRole').value.trim(),use=d.querySelector('#npUse').value,type=d.querySelector('#npType').value,siteChoice=d.querySelector('input[name="npSiteSame"]:checked')?.value;if(!name||!role||!use||!type||!siteChoice)return alert('Enter the project name, your role in this project, building use, building type and whether the site is your company address.');let address=siteChoice==='yes'?String(account.companyAddress||'').trim():d.querySelector('#npAddress').value.trim();if(siteChoice==='yes'&&!address)return alert('Your company address is not yet added. Choose "No" and enter the proposed building site address, or update your Profile first.');if(!address)return alert('Enter the proposed building site address.');let postcode=extractProjectPostcode(address);if(['npLength','npWidth','npHeight'].some(id=>{const v=d.querySelector('#'+id).value;return v!==''&&(!Number.isFinite(Number(v))||Number(v)<=0)}))return alert('Enter positive building dimensions, or leave unknown dimensions blank.');let p={id:crypto.randomUUID(),owner:state.user.id,name,address,postcode,status:'Active',stage:'Stage 1',created:now(),facts:{role,buildingUse:use,buildingType:type,length:d.querySelector('#npLength').value,width:d.querySelector('#npWidth').value,height:d.querySelector('#npHeight').value,roofPitch:String(PROJECT_ROOF_PITCH_DEFAULT)},stage2:{},evidence:[],quotes:[],supplierRequest:null,risks1:[],actions1:[],risks2:[],actions2:[],history:[{at:now(),text:'Project created'}],downloads:{s1:0,s2:0},stage1Complete:false,stage2Complete:false,plan:null};state.projects.push(p);save();close();route('stage1Workspace',p.id)};
+d.querySelector('#npCreate').onclick=()=>{let name=d.querySelector('#npName').value.trim(),role=d.querySelector('#npRole').value.trim(),use=d.querySelector('#npUse').value,type=d.querySelector('#npType').value,siteChoice=d.querySelector('input[name="npSiteSame"]:checked')?.value;if(!name||!role||!use||!type||!siteChoice)return alert('Enter the project name, your role in this project, building use, building type and whether the site is your company address.');let address=siteChoice==='yes'?String(account.companyAddress||'').trim():d.querySelector('#npAddress').value.trim();if(siteChoice==='yes'&&!address)return alert('Your company address is not yet added. Choose "No" and enter the proposed building site address, or update your Profile first.');if(!address)return alert('Enter the proposed building site address.');let postcode=extractProjectPostcode(address);if(['npLength','npWidth','npHeight'].some(id=>{const v=d.querySelector('#'+id).value;return v!==''&&(!Number.isFinite(Number(v))||Number(v)<=0)}))return alert('Enter positive building dimensions, or leave unknown dimensions blank.');let p={id:crypto.randomUUID(),owner:state.user.id,name,address,postcode,status:'Active',stage:'Stage 1',created:now(),facts:{role,buildingUse:use,buildingType:type,length:d.querySelector('#npLength').value,width:d.querySelector('#npWidth').value,height:d.querySelector('#npHeight').value,roofPitch:String(PROJECT_ROOF_PITCH_DEFAULT)},stage2:{},evidence:[],quotes:[],supplierRequest:null,risks1:[],actions1:[],risks2:[],actions2:[],history:[{at:now(),text:'Project created'}],stage1Complete:false,stage2Complete:false,plan:null};state.projects.push(p);save();close();route('stage1Workspace',p.id)};
 }
 function newProject(){route('createProject')}
 function uploadDrawings(id){route('projectDocuments',id)}
@@ -849,7 +843,7 @@ app.innerHTML=`<div class="container project-page"><div class="pagehead"><div cl
 <div class="card"><span class="pill warn">Suppliers</span><h3>Quotations</h3><p>${p.quotes.length} quotation(s) recorded. ${p.supplierRequest?"Three-supplier request recorded.":"Request three suitable quotations after Stage 2."}</p><button class="btn" ${p.stage2Complete?"":"disabled"} onclick="route('quotes','${p.id}')">Supplier quotations</button></div>
 </div>
 <div class="grid3" style="margin-top:18px">
-<div class="card"><h3>Reports</h3><p>Stage 1: ${p.downloads.s1}<br>Stage 2: ${p.downloads.s2}</p><div class="actions"><button class="btn" ${p.stage1Complete?"":"disabled"} onclick="downloadReport('${p.id}','s1')">Stage 1 PDF</button><button class="btn" ${p.stage2Complete?"":"disabled"} onclick="downloadReport('${p.id}','s2')">Stage 2 PDF</button></div></div>
+<div class="card"><h3>Reports</h3><div class="actions"><button class="btn" ${p.stage1Complete?"":"disabled"} onclick="downloadReport('${p.id}','s1')">Stage 1 PDF</button><button class="btn" ${p.stage2Complete?"":"disabled"} onclick="downloadReport('${p.id}','s2')">Stage 2 PDF</button></div></div>
 <div class="card"><h3>Project Documents</h3><p class="meta">${(p.evidence||[]).length} document(s) recorded. Upload drawings, check revisions and keep the project document register together.</p><button class="btn secondary" onclick="route('projectDocuments','${p.id}')">Open Project Documents</button></div>
 <div class="card"><h3>Paid support</h3><p>${p.plan?`Selected: ${esc(p.plan)}`:"No paid support selected."}</p><div class="actions"><button class="btn secondary" onclick="requestHumanSupport('${p.id}')">Request human support</button>${p.plan?`<button class="btn green" onclick="route('stage3','${esc(id)}')">View Stage 3 actions</button>`:""}</div></div>
 </div>
@@ -960,7 +954,7 @@ function stage1SteelEnvelope(facts){
     'Warehousing and general storage':' Check the goods’ temperature and moisture limits.'
   }[use]||'';
   if(condition==='Other temperature requirement'&&stage1HasValue(facts.requiredTemperatureC)&&Number.isFinite(Number(facts.requiredTemperatureC))){
-    if(Number(facts.requiredTemperatureC)<2)return {label:'Potential issue identified',text:'Below 2°C: specialist controlled-temperature and envelope review is needed.'+useNote};
+    if(Number(facts.requiredTemperatureC)<2)return {label:'Get professional support',text:'Below 2°C: specialist controlled-temperature and envelope review is needed.'+useNote};
     return {label:'Needs checking',text:'Check the envelope and temperature control against the specified internal temperature and building use.'+useNote};
   }
   if(condition==='Ambient working temperature — heated')return {label:'Needs checking',text:'Allow for an insulated envelope at concept stage. Check the heating and insulation requirements for the intended use.'+useNote};
@@ -1018,16 +1012,53 @@ function stage1PermittedDevelopment(p){
   if(typeof describePermittedDevelopment==='function')return describePermittedDevelopment(saved);
   return {status:'unknown',text:"We can't yet say whether this is permitted development. Missing: the permitted development check. Get professional support."}
 }
-function stage1RegsCheckerMarkup(p){
+// What the regs checker found, for the Stage 1 report and PDF. Returns null when nothing has been run.
+// Only approved rules are ever in the saved results. Customer-scope items read "get professional support",
+// missing data is listed as need info, and "no potential issues" is only said when nothing is need info.
+function stage1RegsFindings(p){
   const saved=p.backgroundChecks&&p.backgroundChecks.regsChecker;
-  if(!saved||!saved.nation)return '';
+  if(!saved)return null;
+  const results=(saved.results||[]).filter(item=>item.ruleId!=='PLAN_PD');
+  if(saved.nation==='Scotland'||saved.nation==='Wales')return {problems:[],support:[saved.nation+' has different rules. These checks cover England only \u2013 get professional support.'],needInfo:[],allClear:false};
+  if(!results.length)return null;
+  const withSupport=text=>/professional support/i.test(text)?text:text.replace(/[.\s]*$/,'')+' \u2013 get professional support.';
+  const problems=results.filter(item=>item.result==='potential problem'&&item.scope!=='customer').map(item=>({text:item.stage1Problem,why:item.stage1WhyItMatters}));
+  const support=[...new Set(results.filter(item=>item.scope==='customer'&&(item.result==='note'||item.result==='potential problem')).map(item=>withSupport(item.stage1Note||item.stage1Problem||'')).filter(Boolean))];
+  const needInfo=[...new Set(results.filter(item=>item.result==='need info'&&item.needInfo).map(item=>item.needInfo))];
+  if(!saved.nation)needInfo.unshift('The site country (set from the postcode in Site Layout)');
+  return {problems,support,needInfo,allClear:!problems.length&&!support.length&&!needInfo.length}
+}
+function stage1RegsCheckerMarkup(p){
+  const found=stage1RegsFindings(p);
+  if(!found)return '';
   const head='<h2>Potential issues to review</h2>';
-  const foot='<p class="meta">Guide only – confirm with Building Control.</p>';
-  if(saved.nation&&saved.nation!=='England')return `<section class="stage1-tech-card stage1-regs-checker" aria-label="Potential issues to review">${head}<p>Checks cover England only</p>${foot}</section>`;
-  if(!(saved.results||[]).length)return '';
-  const issues=(saved.results||[]).filter(item=>item.result==='potential problem');
-  const body=issues.length?`<ul class="stage1-regs-list">${issues.map(item=>`<li><strong>${esc(item.stage1Problem)}</strong><br>${esc(item.stage1WhyItMatters)}<br><em>Your Stage 2 report explains the solutions.</em></li>`).join('')}</ul>`:'<p>No potential issues found from the information given.</p>';
-  return `<section class="stage1-tech-card stage1-regs-checker" aria-label="Potential issues to review">${head}${body}${foot}</section>`
+  const foot='<p class="meta">Guide only \u2013 confirm with Building Control.</p>';
+  const parts=[];
+  if(found.problems.length)parts.push(`<ul class="stage1-regs-list">${found.problems.map(item=>`<li><strong>${esc(item.text)}</strong><br>${esc(item.why)}</li>`).join('')}</ul>`);
+  if(found.support.length)parts.push(`<h3>Get professional support</h3><ul class="stage1-regs-list stage1-regs-support">${found.support.map(text=>`<li>${esc(text)}</li>`).join('')}</ul>`);
+  if(found.needInfo.length)parts.push(`<h3>Need info</h3><p>We can't check these yet. Missing:</p><ul class="stage1-regs-list stage1-regs-need">${found.needInfo.map(text=>`<li>${esc(text)}</li>`).join('')}</ul>`);
+  if(found.allClear)parts.push('<p>No potential issues found from the information given.</p>');
+  return `<section class="stage1-tech-card stage1-regs-checker" aria-label="Potential issues to review">${head}${parts.join('')}${foot}</section>`
+}
+// Regs and planning answers still missing, for the Project Summary. Read from the project facts only.
+function stage1RegsMissingInfo(p){
+  const facts=projectFacts(p),missing=[];
+  if(!facts.regsNation)missing.push('Building Regulations and planning: the site country (set from the postcode in Site Layout)');
+  if(facts.siteBoundaryStatus!=='confirmed'||!(Array.isArray(facts.relevantBoundaries)&&facts.relevantBoundaries.length))missing.push('Building Regulations and planning: every site boundary marked in Site Layout');
+  if(!facts.regsStored)missing.push('Building Regulations and planning: what will be stored (Building Design)');
+  if(!facts.regsServices||facts.regsServices==='Not sure')missing.push('Building Regulations and planning: whether the building will have heating, toilets, offices or any services (Building Design)');
+  if(typeof buildingDesignLinksExisting==='function'&&buildingDesignLinksExisting(facts)){
+    if(!stage1HasValue(facts.regsExistingArea))missing.push('Building Regulations and planning: existing building floor area (Building Design)');
+    if(!stage1HasValue(facts.regsExistingHeight))missing.push('Building Regulations and planning: existing building height (Building Design)')
+  }
+  return missing
+}
+// Personnel doors come from Building Design (the saved drawing), not the retired Stage 1 question.
+function stage1PersonnelDoorsText(p){
+  const doors=Array.isArray(p.geometry&&p.geometry.doors)?p.geometry.doors.filter(Boolean):null;
+  if(!doors)return 'Not yet set in Building Design';
+  const single=doors.filter(door=>stage1SummaryDoorKind(door)==='personnel').length,double=doors.filter(door=>stage1SummaryDoorKind(door)==='double').length;
+  return `${single} single${double?`, ${double} double`:''} (from Building Design)`
 }
 function stage1AdjacentJunctionMarkup(p){
   if(!stage1AdjacentJunctionApplies(p))return '';
@@ -1716,7 +1747,7 @@ function stage1Confirm(id){
 if(!requireUser())return;const p=getP(id);if(!p)return route("dashboard");
 document.body.dataset.page="stage1Confirm";
 const facts=projectFacts(p),account=accountRecord()||state.user||{},ridge=projectRidgeHeight(p);
-const docs=(p.evidence||[]).filter(item=>item.stage==="Stage 1"),outstanding=stage1SteelReportGaps(p),evidenceNotices=stage1ConfirmationEvidenceNotices(p);
+const docs=(p.evidence||[]).filter(item=>item.stage==="Stage 1"),outstanding=[...stage1SteelReportGaps(p),...stage1RegsMissingInfo(p)],evidenceNotices=stage1ConfirmationEvidenceNotices(p);
 const tag=(label,type="customer")=>`<span class="stage1-source stage1-source--${type}"><span aria-hidden="true"></span>${esc(label)}</span>`;
 const valueOr=value=>stage1HasValue(value)?esc(value):'<span class="confirmation-missing">Still required</span>';
 const item=(label,value,sourceLabel="Customer entered",type="customer")=>`<div class="stage1-basis-item"><dt>${esc(label)}</dt><dd>${value}</dd>${tag(sourceLabel,type)}</div>`;
@@ -2326,7 +2357,7 @@ let siteBoundaryRisk=pcBrainSiteBoundaryStatusRisk(f.siteBoundaryStatus);if(site
 if(projectReuseIntention(f)==='Yes — assess it for reuse')add('The customer would like to reuse the existing surface if it proves suitable; levels, drainage, services, structural capacity and anchoring suitability remain unverified.','cost','civils');
 if(projectReuseIntention(f)==='Not sure')add('Reuse of the existing surface is undecided; evidence is needed before any saving or replacement cost can be assumed.','cost','civils');
 const steel=projectIsSteelFreeStanding(f);
-let specialistLowTemperatureFlag=steel?stage1SteelEnvelope(f).label==='Potential issue identified':Boolean(p.stage1Assessments?.specialistLowTemperatureFlag);
+let specialistLowTemperatureFlag=steel?stage1SteelEnvelope(f).label==='Get professional support':Boolean(p.stage1Assessments?.specialistLowTemperatureFlag);
 if(specialistLowTemperatureFlag)add('The stated internal temperature is below 2°C and requires specialist low-temperature envelope and temperature-control review.','cost','engineering');
 if(!risks.length)add(steel?'No immediate high-level issue was triggered by the information supplied. The project still needs competent verification before firm commitments.':'No immediate high-level issue was triggered by the information supplied, but Stage 2 evidence is still required before major commitments.','issue','general');
 let actions=[steel?'Resolve the evidence gaps and obtain competent checks before making a firm supplier commitment.':'Complete Stage 2 before relying on the project as ready for firm supplier commitment.'];
@@ -2447,7 +2478,7 @@ let p=getP(id);if(!p)return route('dashboard');
   syncAuth();
 }
 document.body.dataset.page='stage1-shell';
-let missing=stage1MissingInfo(p);
+let missing=[...stage1MissingInfo(p),...stage1RegsMissingInfo(p)];
 let resolvedFacts={...p.facts,structure:stage1KnownValue(p,"structure"),use:stage1KnownValue(p,"use")};
 let reportProject={...p,facts:resolvedFacts};
 let drawing=buildingDrawingSVG(reportProject);
@@ -2477,7 +2508,7 @@ app.innerHTML=`<div class="container"><div class="pagehead"><div class="workspac
 <div><b>Use:</b> ${esc(resolvedFacts.use||'—')}</div>
 <div><b>Dimensions:</b> ${esc(p.facts.width||'—')} m × ${esc(p.facts.length||'—')} m, clear height ${esc(p.facts.height||'—')} m</div>
 ${steelRequirementRows}
-<div><b>Personnel doors:</b> ${esc(p.facts.personnelDoors||'—')}</div>
+<div><b>Personnel doors:</b> ${esc(stage1PersonnelDoorsText(p))}</div>
 </div><p class="meta" style="margin-top:8px">These are the customer's own answers, not independently verified by Project Check.</p></div>
 ${stage1RollerOpeningListMarkup(p)}
 
@@ -2500,7 +2531,6 @@ ${stage1SteelEnvelopeMarkup(p)+stage1SteelSiteMarkup(p)+stage1BaseFoundationsMar
 
 <div class="card" style="margin-top:18px"><h3>Assumptions / information not yet established</h3>${missing.length?`<div class="action-list">${missing.map(m=>`<div class="risk">${esc(m)}</div>`).join('')}</div>`:'<p class="meta">No outstanding information gaps were identified from the answers supplied.</p>'}</div>
 
-<div class="card" style="margin-top:18px"><h3>Recommended next actions</h3><div class="action-list">${p.actions1.map(x=>`<div class="action-item">${esc(x)}</div>`).join('')}</div></div>
 
 ${drawing?`<div class="card" style="margin-top:18px"><h3>Preliminary building illustration</h3><p class="meta">Preliminary Stage 1 illustration only, based on the dimensions supplied — not a construction or fabrication drawing.</p><div class="svg-wrap">${drawing}</div></div>`:''}
 
@@ -2898,11 +2928,6 @@ save();
 renderDoorReview(id,true)
 }
 
-// p.downloads is the ONLY thing the two-free-download allowance counts. It is incremented
-// nowhere else in this file — not by positioning/rotating/confirming the building footprint,
-// marking/skipping boundaries, the distance/area measurement tool, evidence uploads, or the
-// Stage 2 door review (add/remove/reposition/regenerate). Those are required system/interactive
-// steps to complete the assessment, not customer-facing report downloads (Sprint 2, item 5).
 async function downloadReport(id,stage){
 let p=getP(id),k=stage==='s1'?'s1':'s2';
 if(!p)return;
@@ -2952,7 +2977,7 @@ heading('CUSTOMER ENTERED');
     'Visible level':facts.level, 'Known drains or services':facts.services,
     'Drawings, surveys or site information':projectSiteEvidenceAvailability(facts),
     'Vehicle doors':facts.rollerCount,
-    'Personnel doors':facts.personnelDoors, 'Close boundaries or obstructions':facts.closeBoundary, 'Programme':facts.programme
+    'Personnel doors':stage1PersonnelDoorsText(p), 'Close boundaries or obstructions':facts.closeBoundary, 'Programme':facts.programme
   };
   Object.entries(customerFacts).forEach(([name,value])=>add(`${name}: ${value||'Not supplied'}`,9,false,5));
   const openings=stage1RollerOpeningComparison(p);
@@ -2988,7 +3013,16 @@ subhead(t);
 if(items.length)items.forEach(r=>add(`• ${r.text}`,9,false,5.6));
 else add(emptyNote,9,false,5.6)
 };
-heading('POTENTIAL ISSUES IDENTIFIED');
+{
+  const found=stage1RegsFindings(p);
+  if(found){
+    heading('POTENTIAL ISSUES IDENTIFIED');
+    found.problems.forEach(item=>{add(`• ${item.text}`,9,true,5.6);if(item.why)add(item.why,9,false,5.6)});
+    if(found.support.length){subhead('Get professional support');found.support.forEach(text=>add(`• ${text}`,9,false,5.6))}
+    if(found.needInfo.length){subhead('Need info');add("We can't check these yet. Missing:",9,false,5.6);found.needInfo.forEach(text=>add(`• ${text}`,9,false,5.6))}
+    if(found.allClear)add('No potential issues found from the information given.',9,false,5.6)
+  }
+}
 heading('PERMITTED DEVELOPMENT');
 add(stage1PermittedDevelopment(p).text,9,false,5.6);
 
@@ -3004,11 +3038,8 @@ printDiscipline('site','Site/map confirmation','');
 printDiscipline('general','General/programme','');
 
 heading('ASSUMPTIONS / INFORMATION NOT YET ESTABLISHED');
-let missing=stage1MissingInfo(p);
+let missing=[...stage1MissingInfo(p),...stage1RegsMissingInfo(p)];
 if(missing.length)missing.forEach(m=>add(`• ${m}`,9,false,5.6));else add('No outstanding information gaps were identified from the answers supplied.',9,false,6);
-
-heading('RECOMMENDED NEXT ACTIONS');
-p.actions1.forEach(a=>add(`• ${a}`,9,false,6));
 
 let pdfProject={...p,facts:{...p.facts,structure:stage1KnownValue(p,"structure"),use:stage1KnownValue(p,"use")}};
 let svg=buildingDrawingSVG(pdfProject);
@@ -3033,7 +3064,7 @@ heading('RECOMMENDED ACTIONS');p.actions2.forEach(a=>add(`• ${a}`,9,false,6));
 heading('SUPPLIER POSITION');add(`${p.quotes.length} supplier quotation(s) currently recorded.`,9,false,5);add(p.supplierRequest?'A request for three suitable supplier quotations has been recorded.':'No three-supplier quotation request is currently recorded.',9,false,6)
 }
 heading('IMPORTANT');add('This is a preliminary Project Check assessment based on the information supplied. It is not structural design, statutory approval, a survey or a substitute for project-specific professional design. Figures and illustrations are indicative and subject to verification.',8,false,5);
-p.downloads[k]++;p.history.push({at:now(),text:`${stage==='s1'?'Stage 1':'Stage 2'} PDF report downloaded`});save();
+p.history.push({at:now(),text:`${stage==='s1'?'Stage 1':'Stage 2'} PDF report downloaded`});save();
 doc.save(`Project-Check-${p.name.replace(/\W+/g,'-')}-${stage==='s1'?'Stage-1':'Stage-2'}.pdf`)
 }
 // wetProcess: no longer an active question (removed 2026-08-24, see
