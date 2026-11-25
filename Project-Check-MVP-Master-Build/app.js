@@ -845,7 +845,6 @@ app.innerHTML=`<div class="container project-page"><div class="pagehead"><div cl
 <div class="grid3" style="margin-top:18px">
 <div class="card"><h3>Reports</h3><div class="actions"><button class="btn" ${p.stage1Complete?"":"disabled"} onclick="downloadReport('${p.id}','s1')">Stage 1 PDF</button><button class="btn" ${p.stage2Complete?"":"disabled"} onclick="downloadReport('${p.id}','s2')">Stage 2 PDF</button></div></div>
 <div class="card"><h3>Project Documents</h3><p class="meta">${(p.evidence||[]).length} document(s) recorded. Upload drawings, check revisions and keep the project document register together.</p><button class="btn secondary" onclick="route('projectDocuments','${p.id}')">Open Project Documents</button></div>
-<div class="card"><h3>Paid support</h3><p>${p.plan?`Selected: ${esc(p.plan)}`:"No paid support selected."}</p><div class="actions"><button class="btn secondary" onclick="requestHumanSupport('${p.id}')">Request human support</button>${p.plan?`<button class="btn green" onclick="route('stage3','${esc(id)}')">View Stage 3 actions</button>`:""}</div></div>
 </div>
 <div class="card" style="margin-top:20px"><h3>Project activity</h3><table><thead><tr><th>Date</th><th>Activity</th></tr></thead><tbody>${[...p.history].reverse().map(h=>`<tr><td>${new Date(h.at).toLocaleString()}</td><td>${esc(h.text)}</td></tr>`).join("")}</tbody></table></div></div>`;
 }
@@ -1338,7 +1337,6 @@ save();close();route('dashboard')
 }catch(e){confirm.disabled=false;confirm.textContent='Delete permanently';alert(e.message||'The project could not be deleted. Nothing else was changed.')}
 };
 }
-function requestHumanSupport(id){let p=getP(id);p.history.push({at:now(),text:'Human support requested'});save();alert('Support request recorded in this prototype.');project(id)}
 // Evidence Intelligence Batch 1 — INTERNAL/DEV REVIEW SURFACE ONLY, not a
 // customer-facing feature (see EVIDENCE-INTELLIGENCE-SPEC.md and
 // MASTER-SPEC.md § "Question, Evidence & Rule Development governance").
@@ -2717,8 +2715,7 @@ app.innerHTML=`<div class="container"><div class="pagehead"><div><div class="eye
 <div class="grid2"><div class="card"><h3>Add a quotation you already have</h3><div class="field"><label>Supplier</label><input id="qsupplier" placeholder="Supplier name"></div><div class="grid2"><div class="field"><label>Quoted price (£)</label><input id="qprice" type="number" step="1"></div><div class="field"><label>Lead time</label><input id="qlead" placeholder="e.g. 12 weeks"></div></div><div class="field"><label>What is included / excluded?</label><textarea id="qscope" placeholder="Main scope, exclusions, assumptions, optional items"></textarea></div><div class="field"><label>Quotation file</label><input id="qfile" type="file"></div><button class="btn green" onclick="addQuote('${esc(id)}')">Add quotation</button></div>
 <div class="card"><span class="pill">Three suppliers</span><h3>Request three suitable quotations</h3><p>Record a request for three quotations from three different suitable building suppliers. This prototype records the request; production will route the project through the supplier-matching workflow.</p>${p.supplierRequest?`<div class="banner green"><b>Request recorded</b><div class="meta">${new Date(p.supplierRequest.at).toLocaleString()}</div></div>`:`<button class="btn green" onclick="requestThreeSuppliers('${esc(id)}')">Request 3 quotations</button>`}</div></div>
 ${fireExitCard}
-<div class="card" style="margin-top:18px"><h3>Quotation comparison</h3>${p.quotes.length?`<table><thead><tr><th>Supplier</th><th>Price</th><th>Lead time</th><th>Scope / exclusions</th><th>File</th></tr></thead><tbody>${p.quotes.map(q=>`<tr><td>${esc(q.supplier)}</td><td>${q.price?`£${Number(q.price).toLocaleString()}`:'—'}</td><td>${esc(q.lead||'—')}</td><td>${esc(q.scope||'—')}</td><td>${esc(q.file||'—')}</td></tr>`).join('')}</tbody></table>`:`<p class="meta">No quotations recorded yet.</p>`}</div>
-<div class="card" style="margin-top:18px"><h3>Need help resolving the differences?</h3><p>Move to the £99 Solutions stage for organised actions and direct project-specific support, or the £249 one-project support route for continuing project involvement.</p><div class="actions"><button class="btn green" onclick="selectPlan('${esc(id)}','£99 Solutions')">Choose £99 Solutions</button><button class="btn dark" onclick="selectPlan('${esc(id)}','£249 One-project support')">Choose £249 support</button></div></div></div>`
+<div class="card" style="margin-top:18px"><h3>Quotation comparison</h3>${p.quotes.length?`<table><thead><tr><th>Supplier</th><th>Price</th><th>Lead time</th><th>Scope / exclusions</th><th>File</th></tr></thead><tbody>${p.quotes.map(q=>`<tr><td>${esc(q.supplier)}</td><td>${q.price?`£${Number(q.price).toLocaleString()}`:'—'}</td><td>${esc(q.lead||'—')}</td><td>${esc(q.scope||'—')}</td><td>${esc(q.file||'—')}</td></tr>`).join('')}</tbody></table>`:`<p class="meta">No quotations recorded yet.</p>`}</div></div>`
 }
 // Stage 2 design summary for quotation (#quotationSummary/<project id>). Shows the
 // confirmed Building Design with the Stage 2 background checks (background-
@@ -2738,7 +2735,6 @@ app.innerHTML=`<div class="container quotation-summary"><div class="pagehead"><d
 }
 function addQuote(id){let p=getP(id),supplier=document.querySelector('#qsupplier').value.trim(),price=document.querySelector('#qprice').value.trim(),lead=document.querySelector('#qlead').value.trim(),scope=document.querySelector('#qscope').value.trim(),file=document.querySelector('#qfile').files[0];if(!supplier)return alert('Enter the supplier name.');p.quotes.push({id:crypto.randomUUID(),supplier,price,lead,scope,file:file?.name||'',at:now()});if(file)p.evidence.push({name:file.name,size:file.size,type:file.type,at:now(),stage:'Quotation'});p.history.push({at:now(),text:`Supplier quotation added: ${supplier}`});save();quotes(id)}
 function requestThreeSuppliers(id){let p=getP(id);p.supplierRequest={at:now(),count:3,status:'Requested'};p.history.push({at:now(),text:'Requested three quotations from three suitable suppliers'});save();quotes(id)}
-function selectPlan(id,plan){let p=getP(id);p.plan=plan;p.history.push({at:now(),text:`Paid support selected in prototype: ${plan}`});save();alert(`${plan} recorded for this prototype. Payment is not active yet.`);quotes(id)}
 
 // Evidence Intelligence Batch 4 — customer-facing Stage 3 action detail. This
 // AUGMENTS the existing Stage 3 architecture (pricing() § £99/£249,
@@ -2790,68 +2786,6 @@ if(req&&req.status==='RESPONSE_SUPPLIED')return'Evidence received — under revi
 return STAGE3_STATUS_LABEL[a.action_status]||a.action_status
 }
 function stage3StatusIsClosedLike(a){return a.action_status==='RESOLVED'||a.action_status==='CLOSED'||a.action_status==='SUPERSEDED'}
-function stage3Actions(id){
-if(!requireUser())return;let p=getP(id);if(!p)return route('dashboard');
-if(!p.plan)return route('project',id);
-// Batch 5: rebuild findings first (as every other Stage 2/3-reading route
-// already does) so the ISSUE line below (sourced from each action's own
-// finding) is never stale.
-if(typeof buildStage2Findings==='function')buildStage2Findings(p);
-if(typeof buildStage3Actions==='function')buildStage3Actions(p);save();
-let actions=Object.values(p.stage3Actions||{});
-let open=actions.filter(a=>!stage3StatusIsClosedLike(a));
-let resolved=actions.filter(stage3StatusIsClosedLike);
-// Batch 4 (2026-08-26): `likely_responsible_party` on a Batch-3-derived
-// action already carries its own complete, cautious framing (see
-// describeApparentResponsibility() in evidence.js — "Likely responsible
-// party: X." / "Appears to require input from: X (assistance/information
-// only...)." / "Responsibility requires confirmation..."), so it is shown
-// as-is; an OLD action's plain party name/description keeps the existing
-// hard-coded "<b>Likely responsible party:</b> ... " wrapping unchanged.
-const respAlreadyFramed=s=>/^(Likely responsible party|Appears to require input from|Responsibility requires confirmation)/.test(s||'');
-// Batch 5: the ISSUE line — sourced from the action's OWN Stage 2 finding's
-// existing, already-restrained customer_facing_summary (never a new piece
-// of copy, never internal_detail/raw IDs). Package/scope, interface and
-// evidence-required-to-close are all NEW sections here, each individually
-// suppressed when empty — never a blank heading shown to the customer.
-const findingsById=p.stage2Findings||{};
-const actionCard=a=>{
-let finding=findingsById[a.source_finding_id];
-let issueText=finding?finding.customer_facing_summary:null;
-let pkgScopeText=(typeof customerPackageScopeText==='function')?customerPackageScopeText(a.package,a.scope):null;
-let highPriority=a.action_priority==='high'&&!stage3StatusIsClosedLike(a);
-// Planning Batch 4 (2026-08-26): plain-English "Resolve before:" wording —
-// consumes the planning gate Planning Batch 3 already derived
-// (a.planning_gate, present only on planning-context actions) via the ONE
-// existing label map (PLANNING_GATE_RESOLVE_BEFORE_LABEL, evidence.js) —
-// never a second/duplicate label map, never the raw enum shown. Absent
-// entirely on every non-planning action (unchanged).
-let resolveBeforeText=(a.planning_gate&&typeof PLANNING_GATE_RESOLVE_BEFORE_LABEL!=='undefined'&&PLANNING_GATE_RESOLVE_BEFORE_LABEL[a.planning_gate])||null;
-return `<div class="card" style="margin-top:14px"><span class="pill${stage3StatusIsClosedLike(a)?' green':(highPriority?' warn':'')}">${esc(stage3CustomerStatusLabel(a,p))}</span>`
-+(issueText&&issueText!==a.customer_facing_action?`<p class="meta"><b>Issue:</b> ${esc(issueText)}</p>`:'')
-+`<h3>${esc(a.customer_facing_action)}</h3>`
-+`<p class="meta">${esc(a.why_required)}</p>`
-+(resolveBeforeText?`<p class="meta"><b>Resolve before:</b> ${esc(resolveBeforeText)}</p>`:'')
-+(pkgScopeText?`<p class="meta"><b>Affected package/scope:</b> ${esc(pkgScopeText)}</p>`:'')
-+(a.required_information&&a.required_information.length?`<p class="meta"><b>Information required:</b> ${a.required_information.map(esc).join('; ')}</p>`:'')
-+(a.likely_responsible_party?(respAlreadyFramed(a.likely_responsible_party)?`<p class="meta">${esc(a.likely_responsible_party)} <span class="meta">(not contractually confirmed by Project Check)</span></p>`:`<p class="meta"><b>Likely responsible party:</b> ${esc(a.likely_responsible_party)} <span class="meta">(typically provided by this party — not contractually confirmed by Project Check)</span></p>`):'')
-+(a.interface_summary?`<p class="meta"><b>Interface / coordination point:</b> ${esc(a.interface_summary)}</p>`:'')
-+(a.evidence_required_to_close&&a.evidence_required_to_close.length?`<p class="meta"><b>Evidence required to close:</b> ${a.evidence_required_to_close.map(esc).join('; ')}</p>`:'')
-+`</div>`
-};
-// Planning Batch 5 (2026-08-26): a single restrained "new evidence" note —
-// never a scraper error/HTTP code/adapter name/raw URL/raw evidence ID
-// (governing brief §27). Shown only when the planning portal check has
-// actually ingested at least one document; the resulting action/status
-// changes are then simply visible through the SAME existing action cards
-// above/below — no separate portal dashboard.
-let portalNewEvidenceNote=(p.planningPortalSource&&(p.planningPortalSource.documents_ingested_evidence_names||[]).length)?'<div class="card" style="margin-top:14px"><p class="meta">New planning evidence has been identified from the public planning record. The actions below reflect the current position.</p></div>':'';
-app.innerHTML=`<div class="container"><div class="pagehead"><div><div class="eyebrow">Stage 3 · ${esc(p.plan)}</div><h1>Project actions — ${esc(p.name)}</h1><p class="meta">Practical next steps identified from your project information and uploaded documents. Project Check identifies and coordinates these — it is not the structural, fire or geotechnical engineer, Building Control, planning authority, supplier or civil/drainage engineer for your project.</p></div><button class="btn secondary" onclick="route('project','${esc(id)}')">Project workspace</button></div>
-${portalNewEvidenceNote}
-${open.length?open.map(actionCard).join(''):'<div class="card"><p class="meta">No open actions have been identified from your project information and uploaded documents yet.</p></div>'}
-${resolved.length?`<div class="card resolved-actions" style="margin-top:18px"><h3>Resolved</h3>${resolved.map(actionCard).join('')}</div>`:''}
-</div>`
-}
 
 // buildingDrawingSVG() and svgToPngDataUrl() now live in drawing.js, driven by
 // buildGeometry()/ensureGeometry() in geometry.js — the single project-geometry
@@ -3121,7 +3055,7 @@ function render(){syncAuth();let [r,id]=(location.hash.slice(1)||'home').split('
 // visible only where it was actually requested.
 document.body.dataset.page=r;
 if(SITE_SHELL_ROUTES.has(r))document.body.dataset.reviewShell='true';else delete document.body.dataset.reviewShell;
-if(['stage2','stage2Summary','stage3','quotes','doors'].includes(r)){
+if(['stage2','stage2Summary','quotes','doors'].includes(r)){
   const p=id&&getP(id);
   if(p)return route('stage1Workspace',id);
 }
@@ -3145,7 +3079,6 @@ case 'stage2':stage2(id);break;
 case 'stage2Summary':stage2Summary(id);break;
 case 'quotes':quotes(id);break;
 case 'quotationSummary':quotationSummary(id);break;
-case 'stage3':stage3Actions(id);break;
 case 'doors':doorReview(id);break;
 case 'evidenceLedger':evidenceLedgerPage(id);break;
 case 'terms':termsPage();break;
@@ -3171,7 +3104,7 @@ document.querySelectorAll(':is(.home-footer nav,.sitefooter-primary) button:is([
 // question-to-question flow, which calls stage1(id) directly and never
 // goes through render() for its own internal steps.
 window.scrollTo(0,0)}
-window.route=route;window.startStage2=startStage2;window.stage1SummaryDoorSelect=stage1SummaryDoorSelect;window.quotationSummary=quotationSummary;window.authModal=authModal;window.newProject=newProject;window.uploadDrawings=uploadDrawings;window.requestHumanSupport=requestHumanSupport;window.moveStage1=moveStage1;window.saveStage1=saveStage1;window.confirmStage1Evidence=confirmStage1Evidence;window.correctStage1Evidence=correctStage1Evidence;window.moveStage2=moveStage2;window.saveStage2=saveStage2;window.addQuote=addQuote;window.requestThreeSuppliers=requestThreeSuppliers;window.selectPlan=selectPlan;window.downloadReport=downloadReport;
+window.route=route;window.startStage2=startStage2;window.stage1SummaryDoorSelect=stage1SummaryDoorSelect;window.quotationSummary=quotationSummary;window.authModal=authModal;window.newProject=newProject;window.uploadDrawings=uploadDrawings;window.moveStage1=moveStage1;window.saveStage1=saveStage1;window.confirmStage1Evidence=confirmStage1Evidence;window.correctStage1Evidence=correctStage1Evidence;window.moveStage2=moveStage2;window.saveStage2=saveStage2;window.addQuote=addQuote;window.requestThreeSuppliers=requestThreeSuppliers;window.downloadReport=downloadReport;
 window.doorReview=doorReview;window.selectDoor=selectDoor;window.moveDoor=moveDoor;window.changeDoorWall=changeDoorWall;window.addDoor=addDoor;window.removeDoor=removeDoor;window.confirmDoors=confirmDoors;
 async function initializeStage1Review(){
   try {
