@@ -67,7 +67,16 @@
       "part": "B",
       "regsRef": "ADB Table 2.1",
       "trigger": "Furthest point in plan to nearest personnel or fire-exit door, straight line x 1.5. Limits: normal hazard 45 m (exits in 2+ directions) / 25 m (one direction); flammable storage 25 m / 12 m. Roller doors and doors into another building do not count.",
-      "limits": { "normal": { "multi": 45, "single": 25 }, "flammable": { "multi": 25, "single": 12 } },
+      "limits": {
+        "normal": {
+          "multi": 45,
+          "single": 25
+        },
+        "flammable": {
+          "multi": 25,
+          "single": 12
+        }
+      },
       "factor": 1.5,
       "stage1Problem": "The furthest point is about {travel} m from an exit – this may be over the limit.",
       "stage1WhyItMatters": "People inside need to reach an exit within a set distance if there is a fire.",
@@ -79,7 +88,11 @@
       "part": "B",
       "regsRef": "ADB 2.6",
       "trigger": "People = floor area / 30 m2 (storage) or / 5 m2 (production). Over 60 people AND fewer than 2 exits.",
-      "limits": { "storageM2PerPerson": 30, "productionM2PerPerson": 5, "maxPeopleOneExit": 60 },
+      "limits": {
+        "storageM2PerPerson": 30,
+        "productionM2PerPerson": 5,
+        "maxPeopleOneExit": 60
+      },
       "stage1Problem": "Your building may need more fire exits.",
       "stage1WhyItMatters": "A building this size can hold more people than a single exit is allowed to serve.",
       "stage2Solution": "Stuart to write",
@@ -100,10 +113,157 @@
       "part": "L",
       "regsRef": "2027 energy rule changes",
       "trigger": "Building Control application on/after 24 Mar 2027, OR start on/after 24 Mar 2028.",
-      "dates": { "application": "2027-03-24", "start": "2028-03-24" },
+      "dates": {
+        "application": "2027-03-24",
+        "start": "2028-03-24"
+      },
       "stage1Problem": "New 2027 energy rules may apply to your project.",
       "stage1WhyItMatters": "Projects submitted or started after these dates are assessed against the newer rules.",
       "stage2Solution": "Stuart to write",
+      "approved": false
+    },
+    {
+      "id": "PLAN_PD",
+      "part": "Planning",
+      "regsRef": "GPDO 2015 Sch 2 Part 7 Class H (legislation.gov.uk/uksi/2015/596)",
+      "trigger": "Floor-area, boundary and height facts: new area over 1,000 m2, or over 50% of existing floor area, or under 5 m from the boundary, or higher than the existing building. Any missing answer = need info.",
+      "limits": {
+        "maxM2": 1000,
+        "maxFractionOfExisting": 0.5,
+        "minBoundaryM": 5
+      },
+      "scope": "customer",
+      "stage1Problem": "Full planning permission is likely to be needed - get professional support.",
+      "stage1WhyItMatters": "Permitted development limits on size, boundary distance and height look to be exceeded.",
+      "stage2Solution": "Stuart to write",
+      "approved": false
+    },
+    {
+      "id": "BR_SCHED2_EXEMPT",
+      "part": "Regs",
+      "regsRef": "Building Regulations 2010 Sch 2 Class 4 (temporary) and Class 6 (small detached)",
+      "trigger": "Detached, no sleeping accommodation, floor area up to 30 m2; OR temporary building up 28 days or less.",
+      "limits": {
+        "detachedM2": 30,
+        "temporaryDays": 28
+      },
+      "scope": "customer",
+      "stage1Problem": "",
+      "stage1WhyItMatters": "",
+      "stage1Note": "This building may be exempt from building regs.",
+      "stage2Solution": "Stuart to write",
+      "approved": false
+    },
+    {
+      "id": "A_LOADS_QUOTE",
+      "part": "A",
+      "regsRef": "Part A / BS EN 1991 site loads",
+      "trigger": "Quote request carries postcode, altitude, site exposure and planned roof solar panels (added roof load). Any missing = need info.",
+      "stage1Problem": "",
+      "stage1WhyItMatters": "",
+      "stage2Solution": "Stuart to write",
+      "approved": false
+    },
+    {
+      "id": "B_BOUNDARY_FIRERATED_QUOTE",
+      "part": "B",
+      "regsRef": "ADB Vol 2 Section 13",
+      "trigger": "Per elevation: distance to boundary under closeM and cladding not stated as fire rated. Boundary = drawn boundary lines or the per-elevation answers; other buildings on the same site are not boundaries. Quote request only.",
+      "limits": {
+        "closeM": 25
+      },
+      "stage1Problem": "",
+      "stage1WhyItMatters": "",
+      "stage2Solution": "Stuart to write",
+      "approved": false
+    },
+    {
+      "id": "B_DOORS_QUOTE",
+      "part": "B",
+      "regsRef": "ADB Vol 2 Section 2 (exits)",
+      "trigger": "Quote request: roller and sectional doors are not fire exits; building over 25 m deep (longer plan dimension) = at least one personnel door per long side.",
+      "limits": {
+        "deepM": 25
+      },
+      "stage1Problem": "",
+      "stage1WhyItMatters": "",
+      "stage2Solution": "Stuart to write",
+      "approved": false
+    },
+    {
+      "id": "B_ROOFLIGHTS",
+      "part": "B",
+      "regsRef": "ADB Vol 2 Section 14 rooflights (exact table UNKNOWN - to verify)",
+      "trigger": "Rooflights = Yes AND (an elevation under boundaryM from the boundary OR a fire wall present).",
+      "limits": {
+        "boundaryM": 6
+      },
+      "stage1Problem": "Rooflights near a boundary or fire wall are limited.",
+      "stage1WhyItMatters": "Rooflights close to a boundary or fire wall face limits on size and position.",
+      "stage2Solution": "Stuart to write",
+      "approved": false
+    },
+    {
+      "id": "L_ROOFLIGHT_U_QUOTE",
+      "part": "L",
+      "regsRef": "AD L Vol 2 (limiting U-value for rooflights 2.2 - as supplied, not re-verified)",
+      "trigger": "Heated building AND rooflights = Yes. Quote request only.",
+      "stage1Problem": "",
+      "stage1WhyItMatters": "",
+      "stage2Solution": "Stuart to write",
+      "approved": false
+    },
+    {
+      "id": "M_ACCESS",
+      "part": "M",
+      "regsRef": "Approved Document M Vol 2",
+      "trigger": "Heating/toilets/offices/services = Yes (fact regsServices).",
+      "stage1Problem": "Accessible access rules (Part M) apply to this building.",
+      "stage1WhyItMatters": "Buildings with staff facilities must be reachable and usable by disabled people.",
+      "stage2Solution": "A level threshold and an accessible door are needed.",
+      "approved": false
+    },
+    {
+      "id": "F_CONDENSATION",
+      "part": "F/C",
+      "regsRef": "Approved Documents F and C",
+      "trigger": "Unheated building AND vehicles or wet goods = Yes. Advice only, never a fail.",
+      "stage1Problem": "",
+      "stage1WhyItMatters": "",
+      "stage1Note": "",
+      "stage2Solution": "Consider anti-condensation roof sheets or vents.",
+      "approved": false
+    },
+    {
+      "id": "H_DRAINAGE_QUOTE",
+      "part": "H",
+      "regsRef": "Approved Document H",
+      "trigger": "Always (England). Quote request: gutters and downpipes by the building supplier; surface water connection is customer scope.",
+      "scope": "customer",
+      "stage1Problem": "",
+      "stage1WhyItMatters": "",
+      "stage1Note": "Surface water connection to drainage: get professional support.",
+      "stage2Solution": "Stuart to write",
+      "approved": false
+    },
+    {
+      "id": "L_2027_HEATED",
+      "part": "L",
+      "regsRef": "AD L 2026 edition, applies from 24 Mar 2027 (England)",
+      "trigger": "Heated buildings only. Limiting U-values unchanged (walls 0.26, roof 0.18, floor 0.18); pedestrian doors tighten to 1.6; whole-building energy calculation pushes towards low-carbon heating. Old rules apply if BC application is before 24 Mar 2027 AND work starts before transitionEnd (UNKNOWN: exact transition period, set from the existing L_2027 start date). Otherwise flagged.",
+      "dates": {
+        "application": "2027-03-24",
+        "transitionEnd": "2028-03-24"
+      },
+      "limits": {
+        "walls": 0.26,
+        "roof": 0.18,
+        "floor": 0.18,
+        "personnelDoor": 1.6
+      },
+      "stage1Problem": "New 2027 energy rules apply to this heated building.",
+      "stage1WhyItMatters": "Heated buildings face tighter door limits and a whole-building energy calculation from 24 Mar 2027.",
+      "stage2Solution": "Personnel doors at U 1.6. Energy calculation favours low-carbon heating.",
       "approved": false
     }
   ]

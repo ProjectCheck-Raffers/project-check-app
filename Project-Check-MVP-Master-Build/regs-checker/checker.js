@@ -7,7 +7,8 @@
 // Stage 1 text never contains solutions, methods, products or costs.
 (function (root) {
   var WALLS = ['A', 'B', 'C', 'D'];
-  var NEED = 'need info', PROBLEM = 'potential problem', OK = 'ok';
+  var HEATED = 'Ambient working temperature \u2014 heated', UNHEATED = 'Ambient storage \u2014 unheated';
+  var NEED = 'need info', PROBLEM = 'potential problem', OK = 'ok', NOTE = 'note';
 
   function num(v) { if (v === '' || v === null || v === undefined) return null; var n = Number(v); return isFinite(n) ? n : null; }
   function fill(t, v) { return String(t || '').replace(/\{(\w+)\}/g, function (m, k) { return v && v[k] !== undefined ? v[k] : m; }); }
@@ -34,7 +35,11 @@
       cladding: f.regsCladding || '', bcDate: f.regsBcDate || '', startDate: f.regsStartDate || '',
       use: String(f.buildingUse || f.use || ''), W: W, L: L, eaves: eaves, ridge: ridge, doors: doors,
       fireElevations: f.regsFireAccessElevations, fireWidth: f.regsFireAccessWidth,
-      distances: regs && regs.boundaryDistances ? regs.boundaryDistances : null
+      distances: regs && regs.boundaryDistances ? regs.boundaryDistances : (f.regsBoundaryDist && typeof f.regsBoundaryDist === 'object' ? f.regsBoundaryDist : null),
+      postcode: String(p.postcode || f.postcode || ''), altitude: num(f.regsAltitude), exposure: String(f.regsExposure || ''), solar: f.regsSolar || '',
+      planNew: num(f.planNewArea), planExisting: num(f.planExistingArea), planBoundary: num(f.planBoundaryDist), planHeight: f.planHeight || '',
+      detached: f.regsDetached || '', sleeping: f.regsSleeping || '', tempDays: num(f.regsTempDays),
+      rooflights: f.regsRooflights || '', fireWall: f.regsFireWall || '', services: f.regsServices || '', vehiclesWet: f.regsVehiclesWet || ''
     };
   }
 
@@ -66,11 +71,15 @@
   }
 
   function entry(rule, result, measured, vars) {
-    var problem = result === PROBLEM;
+    var problem = result === PROBLEM, note = result === NOTE;
+    // result 'note' = the rule applies but it is not a problem (exemption flag, advice, or quote-request-only item).
+    // Customer-scope rules carry scope:'customer' and their Stage 1 text starts "Get professional support".
     return {
       ruleId: rule.id, result: result, measured: measured === undefined ? null : measured,
+      scope: rule.scope || 'building',
       stage1Problem: problem ? fill(rule.stage1Problem, vars) : '',
-      stage1WhyItMatters: problem ? rule.stage1WhyItMatters : ''
+      stage1WhyItMatters: problem ? rule.stage1WhyItMatters : '',
+      stage1Note: note ? fill(rule.stage1Note || '', vars) : ''
     };
   }
 
@@ -164,6 +173,74 @@
       if (i.heating === 'Ambient storage \u2014 unheated') return [entry(r, OK, { heating: i.heating })];
       return [entry(r, NEED)];
     },
+
+    // ---- Added rules (all approved:false). Fact keys are documented in README.md. ----
+    PLAN_PD: function (r, i) {
+      if (i.planNew === null || i.planExisting === null || i.planBoundary === null || !i.planHeight) return [entry(r, NEED)];
+      var L = r.limits, why = [];
+      if (i.planNew > L.maxM2) why.push('area');
+      if (i.planExisting > 0 && i.planNew > i.planExisting * L.maxFractionOfExisting) why.push('fraction');
+      if (i.planBoundary < L.minBoundaryM) why.push('boundary');
+      if (i.planHeight === 'higher') why.push('height');
+      return [entry(r, why.length ? PROBLEM : OK, { reasons: why, newArea: i.planNew, existingArea: i.planExisting, boundary: i.planBoundary, height: i.planHeight })];
+    },
+    BR_SCHED2_EXEMPT: function (r, i) {
+      var area = i.W && i.L ? i.W * i.L : null, lim = r.limits;
+      var small = i.detached === 'Yes' && i.sleeping === 'No' && area !== null && area <= lim.detachedM2;
+      var temp = i.tempDays !== null && i.tempDays <= lim.temporaryDays;
+      if (small || temp) return [entry(r, NOTE, { smallDetached: small, temporary: temp, floorArea: area === null ? null : r1(area) })];
+      var smallKnown = i.detached && i.sleeping && area !== null, tempKnown = i.tempDays !== null;
+      if (!smallKnown && !tempKnown) return [entry(r, NEED)];
+      return [entry(r, OK, { floorArea: area === null ? null : r1(area) })];
+    },
+    A_LOADS_QUOTE: function (r, i) {
+      if (!i.postcode || i.altitude === null || !i.exposure || !i.solar) return [entry(r, NEED, { postcode: i.postcode, altitude: i.altitude, exposure: i.exposure, solar: i.solar })];
+      return [entry(r, NOTE, { postcode: i.postcode, altitude: i.altitude, exposure: i.exposure, solar: i.solar })];
+    },
+    B_BOUNDARY_FIRERATED_QUOTE: function (r, i) {
+      // Boundary = drawn site boundary lines only (or the manual per-elevation answers); other buildings on the site are not boundaries.
+      if (i.cladding === 'rated') return WALLS.map(function (w) { return entry(r, OK, { elevation: w }); });
+      return WALLS.map(function (w) {
+        var d = i.distances ? num(i.distances[w]) : null, m = { elevation: w, distance: d };
+        if (d === null) return entry(r, NEED, m);
+        return entry(r, d < r.limits.closeM ? NOTE : OK, m);
+      });
+    },
+    B_DOORS_QUOTE: function (r, i) {
+      if (!i.W || !i.L) return [entry(r, NEED)];
+      var deep = Math.max(i.W, i.L), longSides = i.L >= i.W ? ['B', 'D'] : ['A', 'C'];
+      return [entry(r, deep > r.limits.deepM ? NOTE : OK, { depth: r1(deep), longSides: longSides })];
+    },
+    B_ROOFLIGHTS: function (r, i) {
+      if (!i.rooflights) return [entry(r, NEED)];
+      if (i.rooflights === 'No') return [entry(r, OK)];
+      var near = [];
+      WALLS.forEach(function (w) { var d = i.distances ? num(i.distances[w]) : null; if (d !== null && d < r.limits.boundaryM) near.push(w); });
+      var unknown = !i.distances || WALLS.some(function (w) { return num(i.distances[w]) === null; });
+      if (near.length || i.fireWall === 'Yes') return [entry(r, PROBLEM, { nearBoundary: near, fireWall: i.fireWall })];
+      return [entry(r, unknown || !i.fireWall ? NEED : OK, { nearBoundary: near, fireWall: i.fireWall })];
+    },
+    L_ROOFLIGHT_U_QUOTE: function (r, i) {
+      if (!i.rooflights || i.heating === 'Not sure yet' || !i.heating) return [entry(r, NEED)];
+      return [entry(r, i.rooflights === 'Yes' && i.heating === HEATED ? NOTE : OK)];
+    },
+    M_ACCESS: function (r, i) {
+      if (!i.services) return [entry(r, NEED)];
+      return [entry(r, i.services === 'Yes' ? PROBLEM : OK, { services: i.services })];
+    },
+    F_CONDENSATION: function (r, i) {
+      if (i.heating !== UNHEATED) return [entry(r, i.heating ? OK : NEED)];
+      if (!i.vehiclesWet) return [entry(r, NEED)];
+      return [entry(r, i.vehiclesWet === 'Yes' ? NOTE : OK)];
+    },
+    H_DRAINAGE_QUOTE: function (r) { return [entry(r, NOTE)]; },
+    L_2027_HEATED: function (r, i) {
+      if (!i.heating || i.heating === 'Not sure yet') return [entry(r, NEED)];
+      if (i.heating !== HEATED) return [entry(r, OK, { heating: i.heating })];
+      var app = i.bcDate ? Date.parse(i.bcDate) : NaN, st = i.startDate ? Date.parse(i.startDate) : NaN;
+      var oldRules = !isNaN(app) && !isNaN(st) && app < Date.parse(r.dates.application) && st < Date.parse(r.dates.transitionEnd);
+      return [entry(r, oldRules ? OK : PROBLEM, { oldRulesApply: oldRules, applicationDate: i.bcDate, startDate: i.startDate })];
+    },
     L_2027: function (r, i) {
       var app = i.bcDate ? Date.parse(i.bcDate) : NaN;
       if (isNaN(app)) return [entry(r, NEED)];
@@ -175,17 +252,53 @@
   };
 
   // options.includeUnapproved is for Stuart's own testing only; never use it for client output.
-  function runChecks(projectData, rules, options) {
+  function evaluate(projectData, rules, options) {
     var list = (rules && rules.rules) || (Array.isArray(rules) ? rules : null) || (root.PC_REGS_RULES && root.PC_REGS_RULES.rules) || [];
     var i = inputs(projectData);
-    if (i.nation !== 'England') return [];
-    var all = {}, out = [];
+    if (i.nation !== 'England') return { i: i, items: [] };
+    var all = {}, items = [];
     list.forEach(function (r) {
       var fn = CHECKS[r.id];
       if (!fn) return;
       var res = fn(r, i, all);
       all[r.id] = res;
-      if (r.approved === true || (options && options.includeUnapproved)) out = out.concat(res);
+      if (r.approved === true || (options && options.includeUnapproved)) items.push({ rule: r, res: res });
+    });
+    return { i: i, items: items };
+  }
+
+  function runChecks(projectData, rules, options) {
+    var out = [];
+    evaluate(projectData, rules, options).items.forEach(function (x) { out = out.concat(x.res); });
+    return out;
+  }
+
+  // Supplier quote request lines. Never names a panel product. Kept apart from runChecks so Stage 1 output stays problems only.
+  var QUOTE = {
+    A_LOADS_QUOTE: function (r, i, res) {
+      if (res[0].result !== NOTE) return [];
+      return ['Site loads (Part A): postcode ' + i.postcode + '; altitude ' + i.altitude + ' m; site exposure ' + i.exposure + '; planned roof solar panels: ' + (i.solar === 'Yes' ? 'yes - allow for the added roof load' : 'no') + '.'];
+    },
+    B_BOUNDARY_FIRERATED_QUOTE: function (r, i, res) {
+      return res.filter(function (e) { return e.result === NOTE; }).map(function (e) { return 'Fire-rated wall needed on elevation ' + e.measured.elevation + ' (close to the boundary; standard PIR has no declared fire resistance).'; });
+    },
+    B_DOORS_QUOTE: function (r, i, res) {
+      var m = res[0].measured, out = ['Roller and sectional doors do not count as fire exits.'];
+      if (res[0].result === NOTE) out.push('Building is over ' + r.limits.deepM + ' m deep: include at least one personnel door on each long side (elevations ' + m.longSides.join(' and ') + ').');
+      return out;
+    },
+    L_ROOFLIGHT_U_QUOTE: function (r, i, res) { return res[0].result === NOTE ? ['Heated building: rooflights U-value 2.2 W/m2K maximum.'] : []; },
+    H_DRAINAGE_QUOTE: function () { return ['Gutters and downpipes are by the building supplier.', 'The surface water connection is customer scope (not by the building supplier).']; },
+    L_2027_HEATED: function (r, i, res) { return res[0].result === PROBLEM ? ['Heated building, 2027 rules (AD L 2026 edition): personnel doors at U-value 1.6 W/m2K maximum.'] : []; }
+  };
+
+  function buildQuoteRequest(projectData, rules, options) {
+    var ev = evaluate(projectData, rules, options), out = [];
+    ev.items.forEach(function (x) {
+      var fn = QUOTE[x.rule.id];
+      if (!fn) return;
+      var lines = fn(x.rule, ev.i, x.res);
+      if (lines.length) out.push({ ruleId: x.rule.id, lines: lines });
     });
     return out;
   }
@@ -210,6 +323,7 @@
   }
 
   root.runChecks = runChecks;
+  root.buildQuoteRequest = buildQuoteRequest;
   root.runRegsChecker = runRegsChecker;
-  if (typeof module !== 'undefined' && module.exports) module.exports = { runChecks: runChecks };
+  if (typeof module !== 'undefined' && module.exports) module.exports = { runChecks: runChecks, buildQuoteRequest: buildQuoteRequest };
 })(typeof window !== 'undefined' ? window : globalThis);
