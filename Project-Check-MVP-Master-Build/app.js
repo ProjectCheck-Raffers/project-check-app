@@ -78,14 +78,18 @@ let users=Array.isArray(clean.users)?cleanArr(clean.users).map(cleanUser).filter
 let cleanProject=p=>{
 let id=typeof p.id==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(p.id)?p.id:crypto.randomUUID();
 let d=p.downloads&&typeof p.downloads==='object'?p.downloads:{};
-// Clamped to the meaningful [0,2] range (and to whole downloads) — the
-// 2-download soft limit is always checked as p.downloads[k]>=2, so a
-// negative or fractional value wouldn't bypass it, but it would still
-// show a confusing "-3/2"-style count on the dashboard and reports.
-let clampDl=v=>Number.isFinite(v)?Math.min(2,Math.max(0,Math.trunc(v))):0;
+// Download counts are informational only (no cap) — kept as whole, non-negative numbers.
+let clampDl=v=>Number.isFinite(v)?Math.max(0,Math.trunc(v)):0;
 let downloads={s1:clampDl(d.s1),s2:clampDl(d.s2)};
+// Uploads are counted per stage per project (limit 2 each) and never decrease,
+// so removing a file does not free a slot. Existing projects are seeded from the
+// evidence already on record so the limit applies fairly to them too.
+let u=p.uploads&&typeof p.uploads==='object'?p.uploads:{};
+let ev=Array.isArray(p.evidence)?p.evidence:[];
+let evKey=e=>{let t=e&&e.stage;return t==='Stage 1'?'s1':(typeof t==='string'&&/^Stage (1 complete|2)/.test(t))?'s2':null};
+let uploads={s1:Math.max(clampDl(u.s1),ev.filter(e=>evKey(e)==='s1').length),s2:Math.max(clampDl(u.s2),ev.filter(e=>evKey(e)==='s2').length)};
 let name=typeof p.name==='string'&&p.name?p.name:'Untitled project';
-return {...p,id,name,downloads};
+return {...p,id,name,downloads,uploads};
 };
 let projects=Array.isArray(clean.projects)?cleanArr(clean.projects).map(cleanProject):defaultState.projects;
 // `typeof x==='object'` alone also admits arrays and objects missing the
@@ -847,6 +851,13 @@ function getP(id){return state.projects.find(p=>p.id===id&&p.owner===state.user?
 // don't count against it.
 const STAGE1_UPLOAD_LIMIT=2;
 function stage1EvidenceCount(p){return (p.evidence||[]).filter(e=>e.stage==='Stage 1').length}
+// Per-stage upload allowance: 2 per stage per project, counted in p.uploads.{s1,s2}
+// (lifetime count — removing/replacing a file never frees a slot). Stage 3 and later: no limit.
+const UPLOAD_LIMIT=2;
+const UPLOAD_LIMIT_MSG='The 2-upload limit for this stage has been reached. This does not block progression to the next stage.';
+function uploadKey(stage){return stage==='Stage 1'?'s1':(typeof stage==='string'&&/^Stage (1 complete|2)/.test(stage))?'s2':null}
+function uploadsUsed(p,stage){let k=uploadKey(stage);return k?((p.uploads&&p.uploads[k])||0):0}
+function uploadsLabel(p,stage){return `Uploads (${Math.min(uploadsUsed(p,stage),UPLOAD_LIMIT)}/${UPLOAD_LIMIT})`}
 // Single shared entry point for adding project evidence — used by the
 // dashboard quick-upload, the project workspace "Project evidence" card and
 // the Stage 1 site-evidence upload, so every upload location shares one
@@ -873,10 +884,12 @@ function stage1EvidenceCount(p){return (p.evidence||[]).filter(e=>e.stage==='Sta
 // upload can never abort this loop or crash the customer journey.
 async function addEvidenceFiles(p,fileList,stage,historyPrefix){
 let files=[...fileList];if(!files.length)return;
-if(stage==='Stage 1'){
-let room=STAGE1_UPLOAD_LIMIT-stage1EvidenceCount(p);
-if(room<=0){alert(`The Stage 1 free upload allowance (${STAGE1_UPLOAD_LIMIT} files) has already been reached for this project. Further evidence can be added once Stage 2 starts.`);return}
-if(files.length>room){alert(`Only ${room} more file(s) can be added under the Stage 1 free upload allowance (${STAGE1_UPLOAD_LIMIT} files total). The first ${room} file(s) have been uploaded — remove one below to add another, or continue to Stage 2 for further uploads.`);files=files.slice(0,room)}
+const uKey=uploadKey(stage);
+if(uKey){
+if(!p.uploads)p.uploads={s1:0,s2:0};
+let room=UPLOAD_LIMIT-uploadsUsed(p,stage);
+if(room<=0){alert(UPLOAD_LIMIT_MSG);return}
+if(files.length>room){alert(UPLOAD_LIMIT_MSG+` Only the first ${room} file(s) were uploaded.`);files=files.slice(0,room)}
 }
 for(const f of files){
 let entry={name:f.name,size:f.size,type:f.type,at:now(),stage,extractedText:null,extractionStatus:'UNSUPPORTED',extractionNote:''};
@@ -884,7 +897,7 @@ if(typeof extractEvidenceText==='function'){
 let r=await extractEvidenceText(f);
 entry.extractedText=r.text;entry.extractionStatus=r.status;entry.extractionNote=r.note||''
 }
-p.evidence.push(entry)
+p.evidence.push(entry);if(uKey)p.uploads[uKey]=(p.uploads[uKey]||0)+1
 }
 p.history.push({at:now(),text:`${historyPrefix}: ${files.map(f=>f.name).join(', ')}`});
 // Rebuild the stage-independent evidence ledger from every currently
@@ -914,7 +927,7 @@ app.innerHTML=`<div class="container project-page"><div class="pagehead"><div cl
 <div class="card"><span class="pill warn">Suppliers</span><h3>Quotations</h3><p>${p.quotes.length} quotation(s) recorded. ${p.supplierRequest?"Three-supplier request recorded.":"Request three suitable quotations after Stage 2."}</p><button class="btn" ${p.stage2Complete?"":"disabled"} onclick="route('quotes','${p.id}')">Supplier quotations</button></div>
 </div>
 <div class="grid3" style="margin-top:18px">
-<div class="card"><h3>Reports</h3><p>Stage 1: ${p.downloads.s1}/2<br>Stage 2: ${p.downloads.s2}/2</p><div class="actions"><button class="btn" ${p.stage1Complete?"":"disabled"} onclick="downloadReport('${p.id}','s1')">Stage 1 PDF</button><button class="btn" ${p.stage2Complete?"":"disabled"} onclick="downloadReport('${p.id}','s2')">Stage 2 PDF</button></div></div>
+<div class="card"><h3>Reports</h3><p>Stage 1: ${p.downloads.s1}<br>Stage 2: ${p.downloads.s2}</p><div class="actions"><button class="btn" ${p.stage1Complete?"":"disabled"} onclick="downloadReport('${p.id}','s1')">Stage 1 PDF</button><button class="btn" ${p.stage2Complete?"":"disabled"} onclick="downloadReport('${p.id}','s2')">Stage 2 PDF</button></div></div>
 <div class="card"><h3>Project Documents</h3><p class="meta">${(p.evidence||[]).length} document(s) recorded. Upload drawings, check revisions and keep the project document register together.</p><button class="btn secondary" onclick="route('projectDocuments','${p.id}')">Open Project Documents</button></div>
 <div class="card"><h3>Paid support</h3><p>${p.plan?`Selected: ${esc(p.plan)}`:"No paid support selected."}</p><div class="actions"><button class="btn" data-route="pricing">View £99 / £249</button><button class="btn secondary" onclick="requestHumanSupport('${p.id}')">Request human support</button>${p.plan?`<button class="btn green" onclick="route('stage3','${esc(id)}')">View Stage 3 actions</button>`:""}</div></div>
 </div>
@@ -1301,9 +1314,9 @@ Object.assign(p,{name,address,postcode,status,facts:nextFacts,stage1Assessments:
 async function uploadProjectFiles(p,input,refresh,status){
  const stage=p.stage1Complete?p.stage:'Stage 1';
  let files=[...input.files];if(!files.length)return;
- const room=stage==='Stage 1'?Math.max(0,STAGE1_UPLOAD_LIMIT-stage1EvidenceCount(p)):files.length;
- if(!room){alert('The Stage 1 upload allowance has been reached.');input.value='';return}
- if(files.length>room){alert('Only the first '+room+' file(s) fit the remaining Stage 1 allowance.');files=files.slice(0,room)}
+ const room=uploadKey(stage)?Math.max(0,UPLOAD_LIMIT-uploadsUsed(p,stage)):files.length;
+ if(!room){alert(UPLOAD_LIMIT_MSG);input.value='';return}
+ if(files.length>room){alert(UPLOAD_LIMIT_MSG+' Only the first '+room+' file(s) will be uploaded.');files=files.slice(0,room)}
  input.disabled=true;if(status)status.textContent='Uploading documents…';
  try{
   for(const file of files){
@@ -1319,7 +1332,7 @@ async function uploadProjectFiles(p,input,refresh,status){
 function projectDocuments(id){
 if(!requireUser())return;const p=getP(id);if(!p)return route('dashboard');const docs=p.evidence||[],returnRoute=projectDocumentsReturnRoute||"stage1Workspace";
 app.innerHTML=`<div class="container customer-area project-management-page">${projectJourneyNav(p,"documents",returnRoute)}<div class="customer-heading"><div><div class="eyebrow">Project Documents</div><h1>${esc(p.name)}</h1><p class="meta">Upload and review the drawings and supporting evidence supplied for this project.</p></div></div>
-<section class="card document-upload-card"><div><h2>Upload documents</h2><p class="meta">PDF, DOCX, DWG, PNG or JPG. Upload anything you have for the proposed building area, including topographical or level surveys, utility surveys, drainage or CCTV information, slab or foundation drawings, ground investigations, or existing site/building surveys. You do not need to classify or interpret it. DWG files can be downloaded and opened in CAD software; online preview is not available.</p></div><label class="btn green" for="projectDocumentFiles">Choose files</label><input id="projectDocumentFiles" type="file" multiple accept=".pdf,.docx,.dwg,.png,.jpg,.jpeg" hidden></section>
+<section class="card document-upload-card"><div><h2>Upload documents</h2><p class="meta">PDF, DOCX, DWG, PNG or JPG. Upload anything you have for the proposed building area, including topographical or level surveys, utility surveys, drainage or CCTV information, slab or foundation drawings, ground investigations, or existing site/building surveys. You do not need to classify or interpret it. DWG files can be downloaded and opened in CAD software; online preview is not available.</p></div><label class="btn green" for="projectDocumentFiles">Choose files</label><p class="meta">${uploadsLabel(p,p.stage1Complete?p.stage:'Stage 1')}</p><input id="projectDocumentFiles" type="file" multiple accept=".pdf,.docx,.dwg,.png,.jpg,.jpeg" hidden></section>
 <section class="card management-card"><div class="document-register-heading"><div><h2>Your uploaded documents</h2><p class="meta">${docs.length} document(s) recorded</p></div><label class="field document-filter"><span>Document type</span><select id="documentDiscipline"><option>All disciplines</option><option>Architectural</option><option>Civils</option><option>Structural</option><option>Fire</option><option>Other</option></select></label></div>${docs.length?`<div class="document-table-wrap"><table class="document-register"><thead><tr><th>Document</th><th>Added</th><th>Discipline</th><th>Status</th><th>Actions</th></tr></thead><tbody>${docs.map((e,index)=>`<tr data-discipline="${esc(e.discipline||"Other")}"><td><strong>${esc(e.name)}</strong><small>Revision ${esc(e.revision||"1")}</small></td><td>${new Date(e.at).toLocaleDateString()}</td><td><select class="document-discipline" id="documentDisciplineRow${index}" aria-label="Discipline for ${esc(e.name)}">${DOCUMENT_DISCIPLINES.map(d=>`<option ${(e.discipline||"Other")===d?"selected":""}>${d}</option>`).join("")}</select></td><td><span class="pill">${esc(e.documentStatus||"Current")}</span></td><td><div class="document-actions"><button class="btn secondary" type="button" onclick="viewProjectDocument('${p.id}',${index})">${/\.dwg$/i.test(e.name||"")?"Download DWG":"View"}</button><label class="btn secondary" for="replaceDocument${index}">Replace</label><input id="replaceDocument${index}" type="file" accept=".pdf,.docx,.dwg,.png,.jpg,.jpeg" hidden></div></td></tr>`).join('')}</tbody></table><p class="meta document-filter-empty" id="documentFilterEmpty" hidden>No documents in this discipline. Change the filter or set a document's discipline in the list.</p></div>`:`<div class="document-empty"><h3>No documents uploaded yet</h3><p class="meta">Use Choose files above when drawings or supporting information are available.</p></div>`}</section>
 <div class="actions"><button class="btn secondary" onclick="returnFromProjectDocuments('${p.id}')">${returnRoute==="stage1Confirm"?"Back to Project Summary":"Back to project"}</button></div></div>`;
 const filter=document.querySelector('#documentDiscipline');
@@ -1757,7 +1770,7 @@ ${basisItem("Calculated ridge height",ridge===null?"Add width and clear height":
 ${basisItem("Project documents",`${stage1EvidenceCount(p)} file${stage1EvidenceCount(p)===1?"":"s"}`,"Document register","drawing")}
 </dl></section>
 <section class="stage1-tech-card" aria-labelledby="evidenceReceivedTitle"><div class="stage1-section-heading"><span>02</span><div><h2 id="evidenceReceivedTitle">Your documents</h2><p>Upload drawings or supporting information here. Select View to open a file.</p></div><button class="btn secondary" onclick="route('projectDocuments','${p.id}')">View all documents</button></div>
-<button type="button" class="btn secondary" onclick="document.querySelector('#workspaceDocumentFiles').click()">Upload documents here</button><input id="workspaceDocumentFiles" type="file" multiple accept=".pdf,.docx,.dwg,.png,.jpg,.jpeg" hidden><p id="workspaceUploadStatus" role="status" aria-live="polite"></p><p class="meta">PDF, DOCX, DWG, PNG or JPG. Stage 1 includes up to ${STAGE1_UPLOAD_LIMIT} files. DWG files open in CAD software after downloading.</p><div class="stage1-evidence-list">${documents.length?documents.map((document,index)=>`<article class="stage1-evidence-row"><div><strong>${esc(document.name||`Project document ${index+1}`)}</strong>${source("Drawing evidence","drawing")}</div><button class="btn secondary" onclick="viewProjectDocument('${p.id}',${p.evidence.indexOf(document)})">${/\.dwg$/i.test(document.name||"")?"Download DWG":"View"}</button></article>`).join(""):`<div class="stage1-empty-evidence"><p>No Stage 1 drawings have been uploaded yet.</p></div>`}</div></section>
+<button type="button" class="btn secondary" onclick="document.querySelector('#workspaceDocumentFiles').click()">Upload documents here</button><input id="workspaceDocumentFiles" type="file" multiple accept=".pdf,.docx,.dwg,.png,.jpg,.jpeg" hidden><p id="workspaceUploadStatus" role="status" aria-live="polite"></p><p class="meta">PDF, DOCX, DWG, PNG or JPG. ${uploadsLabel(p,p.stage1Complete?p.stage:'Stage 1')}. DWG files open in CAD software after downloading.</p><div class="stage1-evidence-list">${documents.length?documents.map((document,index)=>`<article class="stage1-evidence-row"><div><strong>${esc(document.name||`Project document ${index+1}`)}</strong>${source("Drawing evidence","drawing")}</div><button class="btn secondary" onclick="viewProjectDocument('${p.id}',${p.evidence.indexOf(document)})">${/\.dwg$/i.test(document.name||"")?"Download DWG":"View"}</button></article>`).join(""):`<div class="stage1-empty-evidence"><p>No Stage 1 drawings have been uploaded yet.</p></div>`}</div></section>
 <section class="stage1-tech-card" aria-labelledby="initialChecksTitle"><div class="stage1-section-heading"><span>03</span><div><h2 id="initialChecksTitle">Initial project checks</h2><p>Early checks based only on the information currently available.</p></div></div>
 <div class="stage1-check-list">
 <article class="stage1-check-row ${basisComplete?"is-ready":"needs-input"}"><span aria-hidden="true"></span><div><strong>Project details ${basisComplete?"ready":"need information"}</strong><p>${basisComplete?"Use, type, location and dimensions are carried forward without re-entry.":"Use the Edit buttons above to add your missing details."}</p></div></article>
@@ -2451,7 +2464,7 @@ app.innerHTML=`<div class="container"><div class="pagehead"><div><div class="eye
 <div class="map-toolbar map-edge-toolbar compact-toolbar"><strong>Boundary</strong><div class="actions"><button class="btn secondary compact" onclick="resetBoundary()">Reset boundary</button></div></div>
 <div class="map-toolbar map-edge-toolbar compact-toolbar"><strong>📏 Measurement</strong><div class="actions"><button id="measureDistanceBtn" class="btn secondary compact" onclick="toggleMeasure('distance')">📏 Distance</button><button id="measureAreaBtn" class="btn secondary compact" onclick="toggleMeasure('area')">▱ Area</button><button class="btn secondary compact" onclick="clearMeasure()">Clear</button></div></div><div id="measureStatus" class="map-status">Measurement tool off.</div>
 <div class="actions"><button class="btn secondary" onclick="skipSiteBoundary('${esc(id)}')">Continue without drawing the boundary</button><button class="btn green" onclick="saveBoundary('${esc(id)}')">Save & continue</button></div></div>
-<div class="card" style="margin-top:18px"><h3>Site evidence (optional)</h3><p id="s1evidenceStatus" class="meta">Stage 1 upload allowance: ${stage1EvidenceCount(p)} of ${STAGE1_UPLOAD_LIMIT} files uploaded${stage1EvidenceCount(p)>=STAGE1_UPLOAD_LIMIT?' — allowance reached.':'.'}</p><p class="meta">Attach photographs or documents about the site now, or add more later from the project workspace. This prototype records file metadata only and stores it locally in your browser — production will use private, secure project storage. Avoid uploading confidential or sensitive project documents to this preview environment.</p><div class="actions"><label class="btn secondary" for="s1files" style="display:inline-block">Upload files</label></div><input type="file" id="s1files" multiple style="display:none"></div></div>`;
+<div class="card" style="margin-top:18px"><h3>Site evidence (optional)</h3><p id="s1evidenceStatus" class="meta">${uploadsLabel(p,'Stage 1')}</p><p class="meta">Attach photographs or documents about the site now, or add more later from the project workspace. This prototype records file metadata only and stores it locally in your browser — production will use private, secure project storage. Avoid uploading confidential or sensitive project documents to this preview environment.</p><div class="actions"><label class="btn secondary" for="s1files" style="display:inline-block">Upload files</label></div><input type="file" id="s1files" multiple style="display:none"></div></div>`;
 const center=fp?.center?{lat:fp.center.lat,lng:fp.center.lng}:{lat:54.5,lng:-3},zoom=fp?18:6;
 activeBoundaryMap=createProjectCheckMap('boundaryMap',center,zoom,getSavedMapBearing(id));activeMeasureMap=activeBoundaryMap;
 activeBoundaryMap.on('rotateend',()=>saveMapBearing(id,activeBoundaryMap.getBearing()));
@@ -2466,7 +2479,7 @@ let s1f=document.querySelector('#s1files');
 // screen — a full siteBoundaryMap(id) re-render would tear down and
 // recreate the live map, discarding any boundary points the customer had
 // already clicked but not yet saved.
-s1f.onchange=async()=>{await addEvidenceFiles(p,s1f.files,'Stage 1','Stage 1 evidence added');let st=document.querySelector('#s1evidenceStatus');if(st)st.textContent=`Stage 1 upload allowance: ${stage1EvidenceCount(p)} of ${STAGE1_UPLOAD_LIMIT} files uploaded${stage1EvidenceCount(p)>=STAGE1_UPLOAD_LIMIT?' — allowance reached.':'.'}`}
+s1f.onchange=async()=>{await addEvidenceFiles(p,s1f.files,'Stage 1','Stage 1 evidence added');let st=document.querySelector('#s1evidenceStatus');if(st)st.textContent=uploadsLabel(p,'Stage 1')}
 }
 // --- Approximate site-planning measurement tool (distance/area). Metric only.
 // These are working/site-planning measurements, not surveyed dimensions, and never
@@ -2939,7 +2952,7 @@ ${steel?stage1SteelEnvelopeMarkup(p)+stage1SteelSiteMarkup(p)+stage1BaseFoundati
 
 ${drawing?`<div class="card" style="margin-top:18px"><h3>Preliminary building illustration</h3><p class="meta">Preliminary Stage 1 illustration only, based on the dimensions supplied — not a construction or fabrication drawing.</p><div class="svg-wrap">${drawing}</div></div>`:''}
 
-${steel?`<div class="card" style="margin-top:18px"><h3>Download your Stage 1 Free Report</h3><button class="btn" onclick="downloadReport('${esc(id)}','s1')">Download Stage 1 PDF (${p.downloads.s1}/2)</button></div>`:`<div class="card" style="margin-top:18px"><h3>What Stage 2 will investigate</h3><p>Stage 2 asks the questions that cannot be answered from the visible site alone: what is below the surface, what evidence exists, what the local planning/Building Regulations position is, and what operational requirements could change the building or civils design.</p><div class="actions"><button class="btn" onclick="downloadReport('${esc(id)}','s1')">Download Stage 1 PDF (${p.downloads.s1}/2)</button><button class="btn green" onclick="startStage2('${esc(id)}')">Start Stage 2</button></div></div>`}</div>`
+${steel?`<div class="card" style="margin-top:18px"><h3>Download your Stage 1 Free Report</h3><button class="btn" onclick="downloadReport('${esc(id)}','s1')">Download Stage 1 PDF</button></div>`:`<div class="card" style="margin-top:18px"><h3>What Stage 2 will investigate</h3><p>Stage 2 asks the questions that cannot be answered from the visible site alone: what is below the surface, what evidence exists, what the local planning/Building Regulations position is, and what operational requirements could change the building or civils design.</p><div class="actions"><button class="btn" onclick="downloadReport('${esc(id)}','s1')">Download Stage 1 PDF</button><button class="btn green" onclick="startStage2('${esc(id)}')">Start Stage 2</button></div></div>`}</div>`
 }
 
 const stage2Questions=[
@@ -2991,7 +3004,7 @@ function startStage2(id){let p=getP(id);if(!p)return;if(projectIsSteelFreeStandi
 // only counts stage==='Stage 1'). There is no separate Stage 2 upload limit
 // in the existing product — none is introduced here, per instruction.
 function stage2EvidencePanelHTML(p){
-return `<div class="actions"><label class="btn secondary" for="s2files" style="display:inline-block">Upload files</label></div><input type="file" id="s2files" multiple style="display:none"><p class="meta">${p.evidence.length?`${p.evidence.length} file(s) recorded for this project: ${p.evidence.map(e=>esc(e.name)).join(', ')}`:'No files uploaded yet for this project.'}</p>`
+return `<div class="actions"><label class="btn secondary" for="s2files" style="display:inline-block">Upload files</label></div><input type="file" id="s2files" multiple style="display:none"><p class="meta">${uploadsLabel(p,p.stage)}</p><p class="meta">${p.evidence.length?`${p.evidence.length} file(s) recorded for this project: ${p.evidence.map(e=>esc(e.name)).join(', ')}`:'No files uploaded yet for this project.'}</p>`
 }
 function wireStage2EvidenceUpload(p){
 let inp=document.querySelector('#s2files');if(!inp)return;
@@ -3109,7 +3122,7 @@ ${evidenceObservationsCard}
 ${backgroundChecksCard}
 ${planningCard}
 <div class="card" style="margin-top:18px"><span class="pill blue">Drawing review</span><h2>Review & position doors</h2><p>Check the preliminary plan and elevations, then reposition, add or remove roller and personnel doors before finalising this stage.</p><div class="actions"><button class="btn green" onclick="route('doors','${esc(id)}')">Review doors & drawing</button></div></div>
-<div class="card" style="margin-top:18px"><span class="pill warn">Next step</span><h2>Compare suppliers before you commit</h2><p>If you already have quotations, add them to this project and compare inclusions, exclusions, lead time and price. If you do not, Project Check can record a request for <b>three quotations from three suitable suppliers</b>.</p><div class="actions"><button class="btn" onclick="downloadReport('${esc(id)}','s2')">Download Stage 2 PDF (${p.downloads.s2}/2)</button><button class="btn green" onclick="route('quotes','${esc(id)}')">Supplier quotations</button></div></div></div>`
+<div class="card" style="margin-top:18px"><span class="pill warn">Next step</span><h2>Compare suppliers before you commit</h2><p>If you already have quotations, add them to this project and compare inclusions, exclusions, lead time and price. If you do not, Project Check can record a request for <b>three quotations from three suitable suppliers</b>.</p><div class="actions"><button class="btn" onclick="downloadReport('${esc(id)}','s2')">Download Stage 2 PDF</button><button class="btn green" onclick="route('quotes','${esc(id)}')">Supplier quotations</button></div></div></div>`
 }
 
 function quotes(id){
@@ -3345,7 +3358,7 @@ if(steel){
   if(stage!=='s1'||!p.stage1Complete||!p.stage1SummaryConfirmed||stage1SteelReportGaps(p).length)return;
   runStage1Risks(p);
 }
-if(p.downloads[k]>=2)return alert('The 2-download limit for this stage has been reached. This does not block progression to the next stage.');
+
 if(!window.jspdf||!window.jspdf.jsPDF)return alert('PDF generator did not load. Check the internet connection and try again.');
 const {jsPDF}=window.jspdf,doc=new jsPDF({unit:'mm',format:'a4'});let y=18;const left=18,width=174;
 const add=(text,size=10,bold=false,gap=5.4)=>{doc.setFont('helvetica',bold?'bold':'normal');doc.setFontSize(size);let lines=doc.splitTextToSize(String(text??''),width);if(y+lines.length*gap>280){doc.addPage();y=18}doc.text(lines,left,y);y+=lines.length*gap};
@@ -3470,7 +3483,7 @@ heading('RECOMMENDED ACTIONS');p.actions2.forEach(a=>add(`• ${a}`,9,false,6));
 heading('SUPPLIER POSITION');add(`${p.quotes.length} supplier quotation(s) currently recorded.`,9,false,5);add(p.supplierRequest?'A request for three suitable supplier quotations has been recorded.':'No three-supplier quotation request is currently recorded.',9,false,6)
 }
 heading('IMPORTANT');add('This is a preliminary Project Check assessment based on the information supplied. It is not structural design, statutory approval, a survey or a substitute for project-specific professional design. Figures and illustrations are indicative and subject to verification.',8,false,5);
-p.downloads[k]++;p.history.push({at:now(),text:`${stage==='s1'?'Stage 1':'Stage 2'} PDF report downloaded (${p.downloads[k]}/2)`});save();
+p.downloads[k]++;p.history.push({at:now(),text:`${stage==='s1'?'Stage 1':'Stage 2'} PDF report downloaded`});save();
 doc.save(`Project-Check-${p.name.replace(/\W+/g,'-')}-${stage==='s1'?'Stage-1':'Stage-2'}.pdf`)
 }
 // wetProcess: no longer an active question (removed 2026-08-24, see
