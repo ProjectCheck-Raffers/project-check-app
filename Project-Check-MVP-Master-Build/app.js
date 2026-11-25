@@ -242,7 +242,7 @@ journey.querySelectorAll("[data-guest-step]").forEach(button=>button.onclick=dra
 const startButton=document.querySelector("#drawerGuestStart");if(startButton)startButton.onclick=drawerGuestStart;
 return;
 }
-const facts=projectFacts(p),steel=projectIsSteelFreeStanding(facts);
+const facts=projectFacts(p);
 const questions=stage1QuestionsFor(p),answered=questions.filter(question=>stage1QuestionAnswered(p,question)).length,total=questions.length;
 const documents=stage1EvidenceCount(p);
 const detailsComplete=[facts.role,facts.buildingUse,facts.buildingType,p.address,facts.length,facts.width,facts.height].every(stage1HasValue)&&projectSteelRequirementsComplete(facts);
@@ -251,7 +251,7 @@ const questionsStatus=total>0?(questionsComplete?"Complete":`${answered} of ${to
 const siteLayoutComplete=facts.siteLayoutStatus==="confirmed";
 const buildingDesignComplete=siteLayoutComplete&&facts.buildingDesignStatus==="confirmed";
 const currentKey=currentRoute==="project"?"stage1Workspace":currentRoute;
-const summaryComplete=steel?Boolean(p.stage1SummaryConfirmed):p.stage1Complete;
+const summaryComplete=Boolean(p.stage1SummaryConfirmed);
 const reportComplete=Boolean(p.stage1Complete);
 const steps=[
   {key:"projectSettings",label:"Project Details",done:detailsComplete,hint:"Details to add"},
@@ -261,7 +261,7 @@ const steps=[
   {key:"siteLayout",label:"Site Layout",done:siteLayoutComplete,hint:"Site not laid out yet"},
   {key:"buildingLayout",label:"Building Design",done:buildingDesignComplete,hint:"Building not designed yet"}
 ];
-if(steel)steps.push({key:"stage1Summary",label:"Stage 1 Free Report",done:reportComplete,hint:"Not generated yet"});
+steps.push({key:"stage1Summary",label:"Stage 1 Free Report",done:reportComplete,hint:"Not generated yet"});
 const doneCount=steps.filter(step=>step.done).length;
 const readiness=reportComplete?100:Math.max(0,Math.min(100,Math.round(doneCount/steps.length*100)))||0;
 const nextKey=steps.find(step=>!step.done)?.key||"";
@@ -1530,48 +1530,21 @@ const stage1DetailsKeys=new Set(["address","structure","use","heated","base"]);
 const steelRemovedStage1Keys=new Set(["personnelDoors"]);
 const steelStage1Questions=stage1Questions.filter(([key])=>!stage1DetailsKeys.has(key)&&!steelRemovedStage1Keys.has(key));
 function stage1QuestionsFor(p){
-  return projectIsSteelFreeStanding(projectFacts(p))?steelStage1Questions:stage1Questions;
+  // One route for every building type: the details are collected in Project Details, Site Layout and Building Design.
+  return steelStage1Questions;
 }
 function stage1QuestionIndex(p,key){
   return stage1QuestionsFor(p).findIndex(question=>question[0]===key);
-}
-function stage1MapAfter(p,key){
-  const facts=projectFacts(p);
-  if(key==="personnelDoors"&&!stage1HasValue(facts.buildingPositionStatus))return buildingPositionMap;
-  const list=stage1QuestionsFor(p);
-  if(key===list[list.length-1][0]&&!stage1HasValue(facts.siteBoundaryStatus))return siteBoundaryMap;
-  return null;
-}
-function resumeStage1After(id,key){
-  const p=getP(id);
-  if(p)continueStage1From(id,Math.max(0,stage1QuestionIndex(p,key)));
-}
-function stage1ClientDetailsReady(p){
-const facts=projectFacts(p),account=accountRecord()||state.user||{},name=facts.name||p.customerName||account.name||"";
-return [name,facts.role,facts.width,facts.length,facts.height].every(stage1HasValue)
-}
-function continueStage1ClientDetails(id){
-const p=getP(id);if(!p)return;
-if(stage1ClientDetailsReady(p))return finalizeStage1(id);
-return stage1ClientInput(id)
 }
 function continueStage1From(id,startIdx=0){
 const p=getP(id);if(!p)return;
 const questions=stage1QuestionsFor(p);
 for(let idx=Math.max(0,startIdx);idx<questions.length;idx++){
-const question=questions[idx],key=question[0];
+const question=questions[idx];
 if(!stage1QuestionAnswered(p,question))return moveStage1(id,idx);
-const map=stage1MapAfter(p,key);
-if(map)return map(id);
 }
-if(projectIsSteelFreeStanding(projectFacts(p))){
-  // With no steel question pages left, the two Stage 1 maps run here instead.
-  const facts=projectFacts(p);
-  if(!stage1HasValue(facts.buildingPositionStatus))return buildingPositionMap(id);
-  if(!stage1HasValue(facts.siteBoundaryStatus))return siteBoundaryMap(id);
-  return route("stage1Confirm",id);
-}
-return continueStage1ClientDetails(id)
+// One route for every building type: Project Summary, then Site Layout, then Building Design.
+return route("stage1Confirm",id)
 }
 function continueStage1(id){
 const p=getP(id);if(!p)return;
@@ -1620,18 +1593,14 @@ const basisScore=Math.round((basis/basisValues.length)*45);
 const documentScore=Math.min(stage1EvidenceCount(p),2)*5;
 const questions=stage1QuestionsFor(p);
 const answered=questions.filter(question=>stage1QuestionAnswered(p,question)).length;
-if(projectIsSteelFreeStanding(facts)){
-  const checks=[
-    Boolean(p.stage1SummaryConfirmed), facts.siteLayoutStatus==='confirmed',
-    facts.siteLayoutStatus==='confirmed'&&facts.buildingDesignStatus==='confirmed'
-  ];
-  const detailsScore=Math.round(basis/basisValues.length*35);
-  const questionsScore=Math.round((questions.length?answered/questions.length:1)*40);
-  return p.stage1Complete&&stage1SteelReportGaps(p).length===0?100:
-    Math.min(99,detailsScore+questionsScore+Math.round(checks.filter(Boolean).length/3*24));
-}
-const questionScore=Math.round((questions.length?answered/questions.length:1)*45);
-return p.stage1Complete?100:Math.min(99,basisScore+documentScore+questionScore)
+const checks=[
+  Boolean(p.stage1SummaryConfirmed), facts.siteLayoutStatus==='confirmed',
+  facts.siteLayoutStatus==='confirmed'&&facts.buildingDesignStatus==='confirmed'
+];
+const detailsScore=Math.round(basis/basisValues.length*35);
+const questionsScore=Math.round((questions.length?answered/questions.length:1)*40);
+return p.stage1Complete&&stage1SteelReportGaps(p).length===0?100:
+  Math.min(99,detailsScore+questionsScore+Math.round(checks.filter(Boolean).length/3*24));
 }
 function stage1Workspace(id){
 if(!requireUser())return;let p=getP(id);if(!p)return route("dashboard");
@@ -1673,7 +1642,6 @@ ${basisItem("Project documents",`${stage1EvidenceCount(p)} file${stage1EvidenceC
 <article class="stage1-check-row ${basisComplete?"is-ready":"needs-input"}"><span aria-hidden="true"></span><div><strong>Project details ${basisComplete?"ready":"need information"}</strong><p>${basisComplete?"Use, type, location and dimensions are carried forward without re-entry.":"Use the Edit buttons above to add your missing details."}</p></div></article>
 <article class="stage1-check-row ${ridge===null?"needs-input":"is-ready"}"><span aria-hidden="true"></span><div><strong>Roof height estimate</strong><p>${ridge===null?"Add the clear span and clear height to calculate the ridge height.":`${pitch}° roof pitch produces an indicative ridge height of ${ridge.toFixed(2)} m for a ${projectMeasure(facts.width)} span.`}</p></div></article>
 </div></section>
-${projectIsSteelFreeStanding(facts)?`<section class="stage1-tech-card"><h2>Initial Questions</h2><p>${stage1QuestionsFor(p).filter(question=>stage1QuestionAnswered(p,question)).length} of ${stage1QuestionsFor(p).length} answered</p><button class="btn secondary" data-route="stage1" data-id="${esc(p.id)}">Open Initial Questions</button></section>`:""}
 <section class="stage1-workspace-action"><div><div class="eyebrow">Ready for the next step?</div><h2>Next: Project Summary</h2><p>Review everything Project Check already holds before you place the proposed building on the site.</p></div><button class="btn green" onclick="route('stage1Confirm','${p.id}')">Continue to Project Summary</button></section>
 </main>`;
 const upload=document.querySelector('#workspaceDocumentFiles');
@@ -1711,9 +1679,7 @@ return missing
 function stage1SteelReportGaps(p){
   const gaps=stage1ConfirmationOutstanding(p);
   const facts=projectFacts(p);
-  if(stage1QuestionsFor(p).some(question=>!stage1QuestionAnswered(p,question)))gaps.push('Initial Questions');
-  if(!facts.buildingPositionStatus)gaps.push('Building position step');
-  if(!facts.siteBoundaryStatus)gaps.push('Site boundary step');
+  if(!facts.buildingPositionStatus||!facts.siteBoundaryStatus)gaps.push('Site Layout');
   return gaps;
 }
 function confirmSteelStage1Summary(id,next){
@@ -1744,8 +1710,7 @@ function stage1Confirm(id){
 if(!requireUser())return;const p=getP(id);if(!p)return route("dashboard");
 document.body.dataset.page="stage1Confirm";
 const facts=projectFacts(p),account=accountRecord()||state.user||{},ridge=projectRidgeHeight(p);
-const steel=projectIsSteelFreeStanding(facts);
-const docs=(p.evidence||[]).filter(item=>item.stage==="Stage 1"),outstanding=steel?stage1SteelReportGaps(p):stage1ConfirmationOutstanding(p),evidenceNotices=stage1ConfirmationEvidenceNotices(p);
+const docs=(p.evidence||[]).filter(item=>item.stage==="Stage 1"),outstanding=stage1SteelReportGaps(p),evidenceNotices=stage1ConfirmationEvidenceNotices(p);
 const tag=(label,type="customer")=>`<span class="stage1-source stage1-source--${type}"><span aria-hidden="true"></span>${esc(label)}</span>`;
 const valueOr=value=>stage1HasValue(value)?esc(value):'<span class="confirmation-missing">Still required</span>';
 const item=(label,value,sourceLabel="Customer entered",type="customer")=>`<div class="stage1-basis-item"><dt>${esc(label)}</dt><dd>${value}</dd>${tag(sourceLabel,type)}</div>`;
@@ -1794,7 +1759,7 @@ ${outstanding.length?`<ul>${outstanding.map(text=>`<li>${esc(text)}</li>`).join(
 
 <section class="stage1-workspace-action confirmation-actions"><div><div class="eyebrow">Ready for the site?</div><h2>Continue to Site Layout</h2><p>Next, place the building on the site using the dimensions already saved in this project.</p></div><div class="confirmation-action-buttons"><button class="btn secondary" onclick="route('stage1Workspace','${p.id}')">Back to Project Overview</button><button class="btn green" onclick="route('siteLayout','${p.id}')">Continue to Site Layout</button></div></section>
 </main>`;
-if(steel){
+{
   const actions=app.querySelector('.confirmation-action-buttons');
   actions.querySelector('.btn.green').onclick=()=>confirmSteelStage1Summary(id,'siteLayout');
   // "Open Stage 1 Free Report" lives on the Building Design page (buildingDesignFreeReportMarkup).
@@ -1817,7 +1782,7 @@ const questions=stage1QuestionsFor(p),savedQuestion=sessionStorage.getItem('s1q_
 if(!questions.length)return continueStage1From(id,0);
 const savedIndex=stage1QuestionIndex(p,savedQuestion);
 const legacyKey=savedQuestion!==null&&/^\d+$/.test(savedQuestion)?stage1Questions[Number(savedQuestion)]?.[0]:null;
-const firstUnanswered=questions.findIndex(question=>!stage1QuestionAnswered(p,question)||stage1MapAfter(p,question[0]));
+const firstUnanswered=questions.findIndex(question=>!stage1QuestionAnswered(p,question));
 const idx=[savedIndex,stage1QuestionIndex(p,legacyKey),firstUnanswered,0].find(index=>index>=0);
 const q=questions[idx],val=stage1KnownValue(p,q[0]);
 let hint='';
@@ -1931,22 +1896,7 @@ advanceStage1(id,idx,p)
 // file reads stage1Questions[idx][0] by fact key or stage1Questions.length
 // generically, so it already adapts automatically).
 function advanceStage1(id,idx,p){
-const key=stage1QuestionsFor(p)[idx]?.[0];
-const map=stage1MapAfter(p,key);
-if(map)return map(id);
 return continueStage1From(id,idx+1)
-}
-// Extracted from advanceStage1() (2026-09-02, Consolidated Client Input
-// Page) — identical logic, just now callable from the new page's save
-// handler (saveStage1ClientInput() below) instead of firing the instant
-// the last sequential question is answered.
-function finalizeStage1(id){
-let p=getP(id);if(!p)return;
-sessionStorage.removeItem('s1q_'+id);
-p.stage1Complete=true;p.stage='Stage 2 available';runStage1Risks(p);
-p.history.push({at:now(),text:'Stage 1 assessment completed'});
-save();
-return stage1Summary(id)
 }
 // Geometry/data-continuity fix (2026-08-27, Customer Journey Completion —
 // Stage 1 completion repair), extracted into its own function 2026-09-02
@@ -1989,74 +1939,6 @@ p.history.push({at:now(),text:`Building footprint re-derived on Map 1 after a di
 }
 // Building-regs calculation re-runs after any building size change.
 if(typeof pcBuildingRegsRun==='function')pcBuildingRegsRun(p);
-}
-// Consolidated Client Input Page (2026-09-02 — see MASTER-SPEC.md/
-// CHANGELOG.md § "Consolidated Client Input Page"): the ONE page
-// collecting the five facts retired from the sequential Stage 1
-// questionnaire (name, role, width, length, height — see § "Stage 1
-// question reduction (17 -> 12)"). Reached only via advanceStage1()
-// immediately after the last sequential question (programme) is saved —
-// never a URL/hash route of its own, exactly like buildingPositionMap()/
-// siteBoundaryMap() above. Deliberately has NO "Question X of Y"
-// counter, is NOT added to stage1Questions[], and does not appear in
-// the left question navigator or the 12-question progress bar — it is
-// explicitly not a 13th question. Field wording is the exact original
-// question wording these facts had before their removal from the
-// sequential array (not reworded, not reinvented). Every field is
-// required, same as the original sequential questions were, and the
-// exact same p.facts.name/role/width/length/height keys are read/
-// written — no duplicate keys, no second storage location, no invented
-// defaults.
-// Apply Locked Application Shell to Remaining Pages (2026-09-02): this
-// page (and stage1Summary() below) now use the locked Project Workspace
-// shell (pale-green nav-only banner + complete logo beside the heading)
-// instead of the compact Stage 1 question-page header — that header
-// stays exactly as locked for Q1-12 only (data-page="stage1", untouched
-// here). Since this page is reached by direct function call (never a
-// hash change), data-page is explicitly set to "stage1-shell" here so
-// the correct banner treatment applies regardless of inherited state.
-function stage1ClientInput(id){
-let p=getP(id);if(!p)return;
-document.body.dataset.page='stage1-shell';
-let roleOptions=['Business owner / director','Facilities / operations','Property / estates','Project / construction'];
-let accountName=(accountRecord()||state.user||{}).name||'';
-let roleVal=p.facts.role||'';
-let roleIsOther=roleVal&&!roleOptions.includes(roleVal);
-app.innerHTML=`<div class="container"><div class="pagehead"><div class="workspace-identity"><img class="workspace-logo" src="assets/project-check-logo.png" alt="Project Check — Know before you build."><div><div class="eyebrow">Stage 1 · Client details</div><h1>${esc(p.name)}</h1><p class="meta">A few final details to complete your Project Check assessment.</p></div></div><button class="btn secondary" onclick="route('project','${esc(id)}')">Save & exit</button></div>
-<div class="card">
-<div class="field"><label>What is your name?</label><input id="ciName" type="text" placeholder="Your full name" value="${esc(p.facts.name||p.customerName||accountName||'')}"></div>
-<div class="field"><label>What is your role in this project?</label><select id="ciRole" onchange="document.querySelector('#ciRoleOtherWrap').style.display=this.value==='__other__'?'block':'none'"><option value="">Choose…</option>${roleOptions.map(x=>`<option ${roleVal===x?'selected':''}>${esc(x)}</option>`).join('')}<option value="__other__" ${roleIsOther?'selected':''}>Other</option></select><div id="ciRoleOtherWrap" style="margin-top:8px;${roleIsOther?'':'display:none'}"><input id="ciRoleOther" type="text" placeholder="Please specify" value="${esc(roleIsOther?roleVal:'')}"></div></div>
-<div class="field"><label>Approximately how wide does the building need to be (metres)?</label><input id="ciWidth" type="number" value="${esc(p.facts.width||'')}"></div>
-<div class="field"><label>Approximately how long does the building need to be (metres)?</label><input id="ciLength" type="number" value="${esc(p.facts.length||'')}"></div>
-<div class="field"><label>What clear internal height do you need (metres)?</label><input id="ciHeight" type="number" value="${esc(p.facts.height||'')}"></div>
-<div class="actions"><button class="btn secondary" onclick="moveStage1('${esc(id)}',${stage1QuestionsFor(p).length-1})">Back</button><button class="btn green" onclick="saveStage1ClientInput('${esc(id)}')">Save & continue</button></div>
-</div></div>`;
-window.scrollTo(0,0)
-}
-function saveStage1ClientInput(id){
-let p=getP(id);if(!p)return;
-let name=document.querySelector('#ciName').value.trim();
-let roleSel=document.querySelector('#ciRole').value;
-let role=roleSel==='__other__'?(document.querySelector('#ciRoleOther')?.value||'').trim():roleSel;
-let width=document.querySelector('#ciWidth').value.trim();
-let length=document.querySelector('#ciLength').value.trim();
-let height=document.querySelector('#ciHeight').value.trim();
-if(!name||!role||!width||!length||!height)return alert('Please complete all fields before continuing.');
-// Exact same fact keys/side-effects saveStage1() already used for these —
-// no new keys, no new storage.
-p.facts.name=name;p.customerName=name;
-p.facts.role=role;
-p.facts.width=width;
-p.facts.length=length;
-p.facts.height=height;
-p.history.push({at:now(),text:'Client details added (name, role, width, length, height)'});
-// Always safe to call — reconcileFootprintWithCurrentDimensions() already
-// no-ops internally when the footprint is unconfirmed/absent or already
-// matches the current dimensions; no separate "did width/length change"
-// check needed here.
-reconcileFootprintWithCurrentDimensions(p);
-save();
-finalizeStage1(id)
 }
 function saveStage1(id,idx){
 let p=getP(id),q=p&&stage1QuestionsFor(p)[idx],v;
@@ -2201,24 +2083,6 @@ let el=document.querySelector('#mapBearingReadout');if(!el||!map)return;
 let b=Math.round(((map.getBearing()%360)+360)%360);
 el.textContent=b===0?'Map view: facing North':`Map view: facing ${b}°`
 }
-// Explicit MAP-VIEW rotation controls (Stage 1 Map Architecture task) — deliberately
-// separate function names/labels/buttons from rotateBuilding()/rotateBoundaryBuilding()
-// below, so a customer (and this code) can never confuse "rotate what I'm looking at"
-// with "rotate the building itself". Operates on activeMeasureMap — whichever of
-// activeBuildingMap/activeBoundaryMap is currently on screen (see comment above).
-// jumpTo() (instant, no animation) rather than rotateTo()/easeTo() — a discrete
-// button click is a deliberate, immediate step, not a drag gesture, and an eased
-// transition would let a fast second click read getBearing() mid-flight (still
-// animating from the first click) instead of the settled value, drifting bearing
-// off the expected 15° steps under rapid input.
-function rotateMapView(delta){
-if(!activeMeasureMap)return;
-activeMeasureMap.jumpTo({bearing:(activeMeasureMap.getBearing()+delta+360)%360})
-}
-function resetMapNorth(){
-if(!activeMeasureMap)return;
-activeMeasureMap.jumpTo({bearing:0})
-}
 // Shared MapLibre map factory for both Stage 1 map screens. pitch is hard-locked to 0
 // three separate ways (maxPitch/minPitch/pitchWithRotate) — this task is map BEARING,
 // not 3D/tilt. touchZoomRotate (pinch-zoom + two-finger rotate together) is left at
@@ -2265,220 +2129,7 @@ map.addLayer({id:srcId+'-line',type:'line',source:srcId,paint:{'line-color':colo
 if(map.isStyleLoaded())apply();else map.once('load',apply);
 return corners
 }
-function buildingPositionMap(id){
-let p=getP(id),d=buildingDims(p),saved=p.facts.buildingFootprint;activeFootprintAngle=Number(saved?.angle)||0;
-measureMode=null;measurePoints=[];
-// Reset stale references from a previous visit to this screen (e.g. a
-// different project's building map) — the click handler below now treats
-// "activeBuildingMarker already set" as "don't place a new one", so a
-// leftover marker bound to an already-destroyed map would silently block
-// placement on this one.
-activeBuildingMarker=null;
-// Control-layout redesign (2026-08-27, Stage 1 Map Control Layout task):
-// mobile review showed rotate/reset-north/building/measurement controls sitting
-// far above the map, forcing a scroll away from the map to operate them. The
-// address search + layer toggle stay above (one-time setup, not repeatedly
-// operated while looking at the map); MAP VIEW controls now sit immediately
-// above the map, BUILDING orientation immediately below it, and measurement is
-// a collapsible <details> directly below that — so the map, its bearing
-// controls and its building controls are all visible/reachable together
-// without a large scroll. Map view vs building controls stay visually and
-// functionally distinct: separate toolbar rows, separate group headings
-// ("Map view" / "Building orientation"), separate icon sets (⟲/⟳/🧭 vs ↺/↻).
-app.innerHTML=`<div class="container"><div class="pagehead"><div><div class="eyebrow">Stage 1 · Building position</div><h1>${esc(p.name)}</h1></div><button class="btn secondary" onclick="route('project','${esc(id)}')">Save & exit</button></div><div class="card"><h2>Show the proposed building position</h2><p class="map-help">Search the address, then click the centre of the proposed building — Project Check draws a ${d.width} m × ${d.length} m footprint and you can rotate it to match. No live mapping available? Continue without it — this will not block Stage 1.</p><div class="map-search"><input id="buildingAddressSearch" value="${esc(p.address||'')}" placeholder="Site address or postcode"><button class="btn secondary" onclick="searchBuildingAddress('${esc(id)}')">Search address</button></div><div id="buildingSearchStatus" class="meta"></div><div class="map-toolbar layer-toggle-row"><label class="layer-toggle"><input type="radio" name="mapLayer" id="mapLayerSatellite" checked onclick="setBaseLayer(activeMeasureMap,'satellite')"> Satellite</label><label class="layer-toggle"><input type="radio" name="mapLayer" id="mapLayerStreet" onclick="setBaseLayer(activeMeasureMap,'street')"> Street map</label></div>
-<div class="map-toolbar map-view-toolbar map-edge-toolbar compact-toolbar"><strong>Map view <span id="mapBearingReadout" class="bearing-readout">facing North</span></strong><div class="actions"><button class="btn secondary compact" onclick="rotateMapView(-15)">⟲ Rotate map left</button><button class="btn secondary compact" onclick="rotateMapView(15)">Rotate map right ⟳</button><button class="btn secondary compact" onclick="resetMapNorth()">🧭 Reset north</button></div></div>
-<div id="buildingMap" class="mapbox"></div><div id="buildingStatus" class="map-status">${saved?'Building footprint saved.':'No building position selected yet.'}</div>
-<div class="map-toolbar map-edge-toolbar compact-toolbar"><strong>Building orientation: ${d.width} m × ${d.length} m</strong><div class="actions"><button class="btn secondary compact" onclick="rotateBuilding('${esc(id)}',-15)">↺ Rotate building 15°</button><button class="btn secondary compact" onclick="rotateBuilding('${esc(id)}',15)">Rotate building 15° ↻</button></div></div>
-<div class="map-toolbar map-edge-toolbar compact-toolbar"><strong>📏 Measurement</strong><div class="actions"><button id="measureDistanceBtn" class="btn secondary compact" onclick="toggleMeasure('distance')">📏 Distance</button><button id="measureAreaBtn" class="btn secondary compact" onclick="toggleMeasure('area')">▱ Area</button><button class="btn secondary compact" onclick="clearMeasure()">Clear</button></div></div><div id="measureStatus" class="map-status">Measurement tool off.</div>
-<div class="actions"><button class="btn secondary" onclick="skipBuildingPosition('${esc(id)}')">Continue without pinpointing on the map</button><button class="btn green" onclick="saveBuildingPosition('${esc(id)}')">Save & continue</button></div></div></div>`;
-const center=saved?.center?{lat:saved.center.lat,lng:saved.center.lng}:{lat:54.5,lng:-3},zoom=saved?18:6;
-activeBuildingMap=createProjectCheckMap('buildingMap',center,zoom,getSavedMapBearing(id));activeMeasureMap=activeBuildingMap;
-activeBuildingMap.on('rotateend',()=>saveMapBearing(id,activeBuildingMap.getBearing()));
-if(saved?.center)placeBuildingMarker(p,center);
-activeBuildingMap.on('click',e=>{
-if(measureMode){measurePoints.push([e.lngLat.lat,e.lngLat.lng]);redrawMeasure();return}
-// Only the first click places the building. Once it exists, repositioning
-// is by dragging the marker itself (see placeBuildingMarker) — keeping
-// map-panning and building-placement on separate gestures means an
-// imprecise drag over empty map area always pans (MapLibre's own map
-// dragging), and can never be misread as "move the building" instead.
-if(activeBuildingMarker)return;
-placeBuildingMarker(p,{lat:e.lngLat.lat,lng:e.lngLat.lng});
-document.querySelector('#buildingStatus').textContent=`Building centre selected. Rotation: ${activeFootprintAngle}°.`
-})
-}
-// Creates the draggable building-position marker on first placement, or just
-// moves it (and the footprint layer) on every later placement/search/drag —
-// used by the map click handler, searchBuildingAddress() and the saved-state
-// reload above, so there's exactly one place marker dragging is wired up.
-// ll is always the app's plain {lat,lng} shape — the MapLibre [lng,lat] array
-// conversion happens only right here, at the marker API boundary.
-function placeBuildingMarker(p,ll){
-if(activeBuildingMarker)activeBuildingMarker.setLngLat([ll.lng,ll.lat]);
-else{
-activeBuildingMarker=new maplibregl.Marker({draggable:true}).setLngLat([ll.lng,ll.lat]).addTo(activeBuildingMap);
-activeBuildingMarker.on('drag',()=>{let c=activeBuildingMarker.getLngLat();updateBuildingLayer(p,activeBuildingMap,{lat:c.lat,lng:c.lng},activeFootprintAngle,'building')});
-activeBuildingMarker.on('dragend',()=>{document.querySelector('#buildingStatus').textContent=`Building centre selected. Rotation: ${activeFootprintAngle}°.`})
-}
-updateBuildingLayer(p,activeBuildingMap,ll,activeFootprintAngle,'building')
-}
 async function geocode(q){let res=await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&addressdetails=1&q=${encodeURIComponent(q)}`,{headers:{Accept:'application/json'}});if(!res.ok)throw new Error('search unavailable');let x=await res.json();return x[0]||null}
-async function searchBuildingAddress(id){
-let p=getP(id),q=document.querySelector('#buildingAddressSearch').value.trim(),status=document.querySelector('#buildingSearchStatus');if(!q)return alert('Enter the site address or postcode.');status.textContent='Searching address…';
-try{let best=await geocode(q);if(!best){status.textContent='Address not found.';return}let c={lat:parseFloat(best.lat),lng:parseFloat(best.lon)};activeBuildingMap.jumpTo({center:[c.lng,c.lat],zoom:19});placeBuildingMarker(p,c);document.querySelector('#buildingStatus').textContent='Address located. Drag the pin onto the exact proposed building centre and rotate if required.';status.textContent=best.display_name}catch(e){status.textContent='Address search could not connect. Pan/zoom manually, or continue without pinpointing on the map.'}
-}
-function rotateBuilding(id,delta){let p=getP(id);if(!activeBuildingMarker)return alert('Place the building first.');let c=activeBuildingMarker.getLngLat(),ll={lat:c.lat,lng:c.lng};activeFootprintAngle=(activeFootprintAngle+delta+360)%360;updateBuildingLayer(p,activeBuildingMap,ll,activeFootprintAngle,'building');document.querySelector('#buildingStatus').textContent=`Building centre selected. Rotation: ${activeFootprintAngle}°.`}
-// 2026-08-27 (revised 17-question workflow): Map 1 sits mid-flow (after
-// personnelDoors, before base), not immediately before Map 2 — both confirm
-// and skip resume the question flow at 'base's index (moveStage1) instead
-// of jumping straight to siteBoundaryMap(). Map 2 is reached only once
-// base/level/services are answered (see advanceStage1()).
-// Index recomputed 2026-09-01 (Stage 1 Question Reduction, 17 -> 12 — see
-// MASTER-SPEC.md/CHANGELOG.md): was 12 ('base's old position), now 7
-// ('base's new position) — this was a hardcoded array position, not a
-// fact-key lookup, so it had to be updated alongside stage1Questions[]
-// itself; missing this exact spot was caught by a genuine end-to-end test
-// failure (skipping Map 1 landed on the wrong, much-later question) before
-// being fixed here.
-function saveBuildingPosition(id){
-let p=getP(id);if(!activeBuildingMarker)return alert('Search the address or click the map to select the proposed building position, or choose "Continue without pinpointing on the map".');let c=activeBuildingMarker.getLngLat(),d=buildingDims(p),center={lat:c.lat,lng:c.lng},corners=metresToFootprintCorners(center,d.width,d.length,activeFootprintAngle).map(x=>({lat:x[0],lng:x[1]}));p.facts.buildingPosition=center;p.facts.buildingFootprint={center,width:d.width,length:d.length,angle:activeFootprintAngle,corners};p.facts.buildingPositionStatus='confirmed';p.facts.addressConfirmedOnly=false;p.history.push({at:now(),text:`Proposed building footprint confirmed (${d.width} m × ${d.length} m, ${activeFootprintAngle}°)`});if(typeof pcBuildingRegsRun==='function')pcBuildingRegsRun(p);save();resumeStage1After(id,"personnelDoors")
-}
-function skipBuildingPosition(id){
-let p=getP(id);p.facts.buildingPositionStatus='skipped';p.facts.addressConfirmedOnly=true;p.history.push({at:now(),text:'Building position not pinpointed on a map — continuing with the typed address only'});if(typeof pcBuildingRegsRun==='function')pcBuildingRegsRun(p);save();resumeStage1After(id,"personnelDoors")
-}
-function siteBoundaryMap(id){
-let p=getP(id),fp=p.facts.buildingFootprint,d=buildingDims(p);activeBoundaryFootprintAngle=Number(fp?.angle)||0;
-measureMode=null;measurePoints=[];
-// Control-layout redesign (2026-08-27, Stage 1 Map Control Layout task) —
-// same sandwich principle as Map 1: map view controls immediately above the
-// map, boundary/building controls and a collapsible measurement tool
-// immediately below it. See buildingPositionMap()'s comment for the full
-// rationale.
-app.innerHTML=`<div class="container"><div class="pagehead"><div><div class="eyebrow">Stage 1 · Site boundary</div><h1>${esc(p.name)}</h1></div><button class="btn secondary" onclick="route('project','${esc(id)}')">Save & exit</button></div><div class="card"><h2>Show the relevant site boundary</h2><p class="map-help">Your building footprint is shown if saved. Click around the site boundary to draw it (at least three points). No live mapping available? Continue without it — this will not block Stage 1.</p><div class="map-search"><input id="boundaryAddressSearch" value="${esc(p.address||'')}" placeholder="Site address or postcode"><button class="btn secondary" onclick="searchBoundaryAddress('${esc(id)}')">Search address</button></div><div id="boundarySearchStatus" class="meta"></div><div class="map-toolbar layer-toggle-row"><label class="layer-toggle"><input type="radio" name="mapLayer" id="mapLayerSatellite" checked onclick="setBaseLayer(activeMeasureMap,'satellite')"> Satellite</label><label class="layer-toggle"><input type="radio" name="mapLayer" id="mapLayerStreet" onclick="setBaseLayer(activeMeasureMap,'street')"> Street map</label></div>
-<div class="map-toolbar map-view-toolbar map-edge-toolbar compact-toolbar"><strong>Map view <span id="mapBearingReadout" class="bearing-readout">facing North</span></strong><div class="actions"><button class="btn secondary compact" onclick="rotateMapView(-15)">⟲ Rotate map left</button><button class="btn secondary compact" onclick="rotateMapView(15)">Rotate map right ⟳</button><button class="btn secondary compact" onclick="resetMapNorth()">🧭 Reset north</button></div></div>
-<div id="boundaryMap" class="mapbox"></div><div id="boundaryStatus" class="map-status">${p.facts.siteBoundary?.length>=3?'Site boundary saved.':'No site boundary drawn yet.'}</div>
-<div class="map-toolbar map-edge-toolbar compact-toolbar"><strong>Building orientation: ${d.width} m × ${d.length} m</strong><div class="actions"><button class="btn secondary compact" onclick="rotateBoundaryBuilding('${esc(id)}',-15)">↺ Rotate building 15°</button><button class="btn secondary compact" onclick="rotateBoundaryBuilding('${esc(id)}',15)">Rotate building 15° ↻</button></div></div>
-<div class="map-toolbar map-edge-toolbar compact-toolbar"><strong>Boundary</strong><div class="actions"><button class="btn secondary compact" onclick="resetBoundary()">Reset boundary</button></div></div>
-<div class="map-toolbar map-edge-toolbar compact-toolbar"><strong>📏 Measurement</strong><div class="actions"><button id="measureDistanceBtn" class="btn secondary compact" onclick="toggleMeasure('distance')">📏 Distance</button><button id="measureAreaBtn" class="btn secondary compact" onclick="toggleMeasure('area')">▱ Area</button><button class="btn secondary compact" onclick="clearMeasure()">Clear</button></div></div><div id="measureStatus" class="map-status">Measurement tool off.</div>
-<div class="actions"><button class="btn secondary" onclick="skipSiteBoundary('${esc(id)}')">Continue without drawing the boundary</button><button class="btn green" onclick="saveBoundary('${esc(id)}')">Save & continue</button></div></div>
-<div class="card" style="margin-top:18px"><h3>Site evidence (optional)</h3><p id="s1evidenceStatus" class="meta">${uploadsLabel(p,'Stage 1')}</p><p class="meta">Attach photographs or documents about the site now, or add more later from the project workspace. This prototype records file metadata only and stores it locally in your browser — production will use private, secure project storage. Avoid uploading confidential or sensitive project documents to this preview environment.</p><div class="actions"><label class="btn secondary" for="s1files" style="display:inline-block">Upload files</label></div><input type="file" id="s1files" multiple style="display:none"></div></div>`;
-const center=fp?.center?{lat:fp.center.lat,lng:fp.center.lng}:{lat:54.5,lng:-3},zoom=fp?18:6;
-activeBoundaryMap=createProjectCheckMap('boundaryMap',center,zoom,getSavedMapBearing(id));activeMeasureMap=activeBoundaryMap;
-activeBoundaryMap.on('rotateend',()=>saveMapBearing(id,activeBoundaryMap.getBearing()));
-if(fp?.center)updateBuildingLayer(p,activeBoundaryMap,fp.center,activeBoundaryFootprintAngle,'boundary');
-activeBoundaryPoints=Array.isArray(p.facts.siteBoundary)?p.facts.siteBoundary.map(x=>[x.lat,x.lng]):[];redrawBoundary();
-activeBoundaryMap.on('click',e=>{
-if(measureMode){measurePoints.push([e.lngLat.lat,e.lngLat.lng]);redrawMeasure();return}
-activeBoundaryPoints.push([e.lngLat.lat,e.lngLat.lng]);redrawBoundary();document.querySelector('#boundaryStatus').textContent=`Boundary points: ${activeBoundaryPoints.length}`
-});
-let s1f=document.querySelector('#s1files');
-// Updates the allowance line in place rather than re-rendering the whole
-// screen — a full siteBoundaryMap(id) re-render would tear down and
-// recreate the live map, discarding any boundary points the customer had
-// already clicked but not yet saved.
-s1f.onchange=async()=>{await addEvidenceFiles(p,s1f.files,'Stage 1','Stage 1 evidence added');let st=document.querySelector('#s1evidenceStatus');if(st)st.textContent=uploadsLabel(p,'Stage 1')}
-}
-// --- Approximate site-planning measurement tool (distance/area). Metric only.
-// These are working/site-planning measurements, not surveyed dimensions, and never
-// touch the customer's report-download allowance (see downloadReport()). Purely
-// geographic (haversineMetres/approxAreaM2 operate on real lat/lng), so — like every
-// other geometry function in this file — camera/map bearing has zero effect on them. ---
-function toggleMeasure(mode){measureMode=(measureMode===mode)?null:mode;measurePoints=[];redrawMeasure();updateMeasureUI()}
-function clearMeasure(){measureMode=null;measurePoints=[];redrawMeasure();updateMeasureUI()}
-function updateMeasureUI(){
-let db=document.querySelector('#measureDistanceBtn'),ab=document.querySelector('#measureAreaBtn');
-if(db)db.classList.toggle('active',measureMode==='distance');
-if(ab)ab.classList.toggle('active',measureMode==='area');
-let st=document.querySelector('#measureStatus');if(!st)return;
-if(!measureMode){st.textContent='Measurement tool off.';return}
-st.textContent=measureMode==='distance'?'Click points on the map to measure distance.':'Click at least 3 points to measure an approximate area.'
-}
-function approxAreaM2(points){
-const lat0=points[0][0]*Math.PI/180,mPerDegLat=111320,mPerDegLng=Math.max(1,111320*Math.cos(lat0));
-const xy=points.map(([lat,lng])=>[(lng-points[0][1])*mPerDegLng,(lat-points[0][0])*mPerDegLat]);
-let sum=0;for(let i=0;i<xy.length;i++){const [x1,y1]=xy[i],[x2,y2]=xy[(i+1)%xy.length];sum+=x1*y2-x2*y1}
-return Math.abs(sum)/2
-}
-// Replaces Leaflet's L.latLng().distanceTo() — plain haversine great-circle distance,
-// same formula family or that method used internally, purely geographic (lat/lng in,
-// metres out), never touched by map bearing.
-function haversineMetres(a,b){
-const R=6371000,toRad=x=>x*Math.PI/180,dLat=toRad(b[0]-a[0]),dLng=toRad(b[1]-a[1]);
-const s=Math.sin(dLat/2)**2+Math.cos(toRad(a[0]))*Math.cos(toRad(b[0]))*Math.sin(dLng/2)**2;
-return 2*R*Math.asin(Math.sqrt(s))
-}
-function redrawMeasure(){
-if(!activeMeasureMap)return;
-const srcId='measure-draw';
-let st=document.querySelector('#measureStatus');
-const clearLayer=()=>{let src=activeMeasureMap.getSource(srcId);if(src)src.setData({type:'FeatureCollection',features:[]})};
-const apply=()=>{
-if(!measureMode||measurePoints.length<1){clearLayer();return}
-let geojson;
-if(measureMode==='distance')geojson={type:'Feature',geometry:{type:'LineString',coordinates:measurePoints.map(([lat,lng])=>[lng,lat])},properties:{}};
-else{let ring=measurePoints.map(([lat,lng])=>[lng,lat]);geojson=ring.length>=3?{type:'Feature',geometry:{type:'Polygon',coordinates:[[...ring,ring[0]]]},properties:{}}:{type:'Feature',geometry:{type:'LineString',coordinates:ring},properties:{}}}
-let src=activeMeasureMap.getSource(srcId);
-if(src)src.setData(geojson);
-else{
-activeMeasureMap.addSource(srcId,{type:'geojson',data:geojson});
-activeMeasureMap.addLayer({id:srcId+'-fill',type:'fill',source:srcId,filter:['==',['geometry-type'],'Polygon'],paint:{'fill-color':'#a15c00','fill-opacity':.12}});
-activeMeasureMap.addLayer({id:srcId+'-line',type:'line',source:srcId,paint:{'line-color':'#a15c00','line-width':3,'line-dasharray':[2,1.3]}})
-}
-};
-if(activeMeasureMap.isStyleLoaded())apply();else activeMeasureMap.once('load',apply);
-if(!measureMode)return;
-if(measurePoints.length<1){if(st)st.textContent=measureMode==='distance'?'Click points on the map to measure distance.':'Click at least 3 points to measure an approximate area.';return}
-if(measureMode==='distance'){
-let total=0;for(let i=1;i<measurePoints.length;i++)total+=haversineMetres(measurePoints[i-1],measurePoints[i]);
-if(st)st.textContent=`Approximate working measurement — not a surveyed dimension. Distance: ${total.toFixed(1)} m over ${measurePoints.length} point(s).`
-}else if(measureMode==='area'){
-if(measurePoints.length>=3){let area=approxAreaM2(measurePoints);if(st)st.textContent=`Approximate working measurement — not a surveyed dimension. Area: ${Math.round(area).toLocaleString()} m².`}
-else if(st)st.textContent=`Click at least 3 points to measure an approximate area (${measurePoints.length} so far).`
-}
-}
-async function searchBoundaryAddress(id){let q=document.querySelector('#boundaryAddressSearch').value.trim(),s=document.querySelector('#boundarySearchStatus');if(!q)return alert('Enter the site address or postcode.');s.textContent='Searching address…';try{let b=await geocode(q);if(!b){s.textContent='Address not found.';return}activeBoundaryMap.jumpTo({center:[parseFloat(b.lon),parseFloat(b.lat)],zoom:19});s.textContent=b.display_name}catch(e){s.textContent='Address search could not connect. Pan/zoom manually, or continue without drawing the boundary.'}}
-function rotateBoundaryBuilding(id,delta){let p=getP(id),fp=p.facts.buildingFootprint;if(!fp?.center)return alert('No saved building footprint.');activeBoundaryFootprintAngle=(activeBoundaryFootprintAngle+delta+360)%360;updateBuildingLayer(p,activeBoundaryMap,fp.center,activeBoundaryFootprintAngle,'boundary');document.querySelector('#boundaryStatus').textContent=`Building rotation: ${activeBoundaryFootprintAngle}°. Continue drawing the boundary.`}
-// Draws the boundary-in-progress as a GeoJSON source with three geometry-type-filtered
-// layers (point/line/fill) sharing one source — MapLibre's 'geometry-type' filter
-// expression lets exactly one layer match at a time as the point count grows from 1 to
-// 2 to 3+, without needing three separate sources.
-function redrawBoundary(){
-if(!activeBoundaryMap)return;
-const srcId='boundary-draw';
-let geojson=null;
-if(activeBoundaryPoints.length===1){const [lat,lng]=activeBoundaryPoints[0];geojson={type:'Feature',geometry:{type:'Point',coordinates:[lng,lat]},properties:{}}}
-else if(activeBoundaryPoints.length===2)geojson={type:'Feature',geometry:{type:'LineString',coordinates:activeBoundaryPoints.map(([lat,lng])=>[lng,lat])},properties:{}};
-else if(activeBoundaryPoints.length>=3){let ring=activeBoundaryPoints.map(([lat,lng])=>[lng,lat]);geojson={type:'Feature',geometry:{type:'Polygon',coordinates:[[...ring,ring[0]]]},properties:{}}}
-const apply=()=>{
-let src=activeBoundaryMap.getSource(srcId);
-if(!geojson){if(src)src.setData({type:'FeatureCollection',features:[]});return}
-if(src)src.setData(geojson);
-else{
-activeBoundaryMap.addSource(srcId,{type:'geojson',data:geojson});
-activeBoundaryMap.addLayer({id:srcId+'-fill',type:'fill',source:srcId,filter:['==',['geometry-type'],'Polygon'],paint:{'fill-color':'#a15c00','fill-opacity':.1}});
-activeBoundaryMap.addLayer({id:srcId+'-line',type:'line',source:srcId,filter:['in',['geometry-type'],['literal',['LineString','Polygon']]],paint:{'line-color':'#a15c00','line-width':3}});
-activeBoundaryMap.addLayer({id:srcId+'-point',type:'circle',source:srcId,filter:['==',['geometry-type'],'Point'],paint:{'circle-radius':6,'circle-color':'#a15c00'}})
-}
-};
-if(activeBoundaryMap.isStyleLoaded())apply();else activeBoundaryMap.once('load',apply)
-}
-function resetBoundary(){activeBoundaryPoints=[];redrawBoundary();document.querySelector('#boundaryStatus').textContent='Boundary reset. Click the map to redraw it.'}
-// 2026-08-27 (revised 17-question workflow): Map 2 sits mid-flow (after
-// services, before closeBoundary) — it no longer completes Stage 1 itself.
-// Both confirm and skip resume the question flow at 'closeBoundary's index
-// (moveStage1); Stage 1 finalisation (stage1Complete/runStage1Risks/
-// history/routing to the report) happens only once the last question
-// (programme) is answered — see advanceStage1().
-// Index recomputed 2026-09-01 (Stage 1 Question Reduction, 17 -> 12): was
-// 15 ('closeBoundary's old position), now 10 (new position) — same
-// hardcoded-array-position issue as saveBuildingPosition()/
-// skipBuildingPosition() above; fixed alongside them.
-function saveBoundary(id){
-if(activeBoundaryPoints.length<3)return alert('Please add at least three points to define the site boundary, or choose "Continue without drawing the boundary".');let p=getP(id);p.facts.siteBoundary=activeBoundaryPoints.map(x=>({lat:x[0],lng:x[1]}));p.facts.siteBoundaryStatus='confirmed';if(p.facts.buildingFootprint?.center){let d=buildingDims(p),center=p.facts.buildingFootprint.center,corners=metresToFootprintCorners(center,d.width,d.length,activeBoundaryFootprintAngle).map(x=>({lat:x[0],lng:x[1]}));p.facts.buildingFootprint={center,width:d.width,length:d.length,angle:activeBoundaryFootprintAngle,corners}}p.history.push({at:now(),text:'Relevant site boundary confirmed on map'});if(typeof pcBuildingRegsRun==='function')pcBuildingRegsRun(p);save();resumeStage1After(id,"personnelDoors")
-}
-function skipSiteBoundary(id){
-let p=getP(id);p.facts.siteBoundaryStatus='skipped';p.history.push({at:now(),text:'Site boundary not drawn on a map — continuing without a mapped boundary'});if(typeof pcBuildingRegsRun==='function')pcBuildingRegsRun(p);save();resumeStage1After(id,"personnelDoors")
-}
 
 // PRESERVED, NOT AUTHORITATIVE — the original app-native heated-building
 // Stage 1 risk trigger, kept unaltered per Project-Check-Brain's
@@ -2774,8 +2425,7 @@ return `<div class="subhead">${esc(title)}</div><div class="risk-list">${items.m
 function stage1Summary(id){
 if(!requireUser())return;
 let p=getP(id);if(!p)return route('dashboard');
-const steel=projectIsSteelFreeStanding(projectFacts(p));
-if(steel){
+{
   const gaps=stage1SteelReportGaps(p);
   if(gaps.length||!p.stage1SummaryConfirmed){
     app.innerHTML=`<main class="container stage1-workspace"><section class="stage1-tech-card"><h1>Stage 1 Free Report</h1><p>Complete the outstanding information and review the Project Summary first.</p><ul>${gaps.map(gap=>`<li>${esc(gap)}</li>`).join('')}</ul><button class="btn green" data-route="stage1Confirm" data-id="${esc(id)}">Open Project Summary</button></section></main>`;
@@ -2821,17 +2471,16 @@ app.innerHTML=`<div class="container"><div class="pagehead"><div class="workspac
 <div><b>Use:</b> ${esc(resolvedFacts.use||'—')}</div>
 <div><b>Dimensions:</b> ${esc(p.facts.width||'—')} m × ${esc(p.facts.length||'—')} m, clear height ${esc(p.facts.height||'—')} m</div>
 ${steelRequirementRows}
-${steel?'':`<div><b>Roller doors:</b> ${(p.facts.rollerDoors||[]).length}</div>`}
 <div><b>Personnel doors:</b> ${esc(p.facts.personnelDoors||'—')}</div>
 </div><p class="meta" style="margin-top:8px">These are the customer's own answers, not independently verified by Project Check.</p></div>
 ${stage1RollerOpeningListMarkup(p)}
 
 <div class="card" style="margin-top:18px"><h3>Site &amp; footprint information</h3><div class="grid2 small-list">
- ${steel?`<div><b>Visible level:</b> ${esc(p.facts.level||'Not known')}</div><div><b>Known drains or services:</b> ${esc(p.facts.services||'Not known')}</div><div><b>Calculated indicative ridge:</b> ${projectRidgeHeight(p)?.toFixed(2)??'Not calculated'} m</div>`:''}
+ <div><b>Visible level:</b> ${esc(p.facts.level||'Not known')}</div><div><b>Known drains or services:</b> ${esc(p.facts.services||'Not known')}</div><div><b>Calculated indicative ridge:</b> ${projectRidgeHeight(p)?.toFixed(2)??'Not calculated'} m</div>
 <div><b>Building position:</b> ${p.facts.buildingPositionStatus==='confirmed'?'Confirmed on map (customer-placed)':'Not yet confirmed on a map — typed address only'}</div>
 <div><b>Site boundary:</b> ${p.facts.siteBoundaryStatus==='confirmed'?'Confirmed on map (customer-drawn)':'Not yet confirmed on a map'}</div>
 </div><p class="meta" style="margin-top:8px">Map-drawn positions/boundaries reflect the customer's own placement on a satellite map at typical residential/commercial accuracy — they are not a professional survey.</p></div>
-${steel?stage1SteelEnvelopeMarkup(p)+stage1SteelSiteMarkup(p)+stage1BaseFoundationsMarkup(p)+stage1AdjacentJunctionMarkup(p)+stage1RegsCheckerMarkup(p):''}
+${stage1SteelEnvelopeMarkup(p)+stage1SteelSiteMarkup(p)+stage1BaseFoundationsMarkup(p)+stage1AdjacentJunctionMarkup(p)+stage1RegsCheckerMarkup(p)}
 
 <div class="card" style="margin-top:18px"><h3>Industrial building reference visual</h3><p class="meta">Illustrative reference image of a modern industrial/warehouse-style building, shown for general context only — this is not a depiction of your specific proposed building. Your project-specific preliminary illustration, based on the dimensions you supplied, is shown separately below.</p><img class="report-building" src="assets/project-check-building-reports.png" alt="Illustrative modern industrial building, shown for general reference only"></div>
 
@@ -2849,7 +2498,7 @@ ${steel?stage1SteelEnvelopeMarkup(p)+stage1SteelSiteMarkup(p)+stage1BaseFoundati
 
 ${drawing?`<div class="card" style="margin-top:18px"><h3>Preliminary building illustration</h3><p class="meta">Preliminary Stage 1 illustration only, based on the dimensions supplied — not a construction or fabrication drawing.</p><div class="svg-wrap">${drawing}</div></div>`:''}
 
-${steel?`<div class="card" style="margin-top:18px"><h3>Download your Stage 1 Free Report</h3><button class="btn" onclick="downloadReport('${esc(id)}','s1')">Download Stage 1 PDF</button></div>`:`<div class="card" style="margin-top:18px"><h3>What Stage 2 will investigate</h3><p>Stage 2 asks the questions that cannot be answered from the visible site alone: what is below the surface, what evidence exists, what the local planning/Building Regulations position is, and what operational requirements could change the building or civils design.</p><div class="actions"><button class="btn" onclick="downloadReport('${esc(id)}','s1')">Download Stage 1 PDF</button><button class="btn green" onclick="startStage2('${esc(id)}')">Start Stage 2</button></div></div>`}</div>`
+<div class="card" style="margin-top:18px"><h3>Download your Stage 1 Free Report</h3><button class="btn" onclick="downloadReport('${esc(id)}','s1')">Download Stage 1 PDF</button></div></div>`
 }
 
 const stage2Questions=[
@@ -2882,7 +2531,6 @@ const stage2Questions=[
 ['ev','Is EV charging planned inside or immediately around the building?','select',['Yes','No','Not sure']],
 ['supplierQuotes','Do you already have supplier quotations for this project?','select',['Yes — one','Yes — two','Yes — three or more','No','Not yet']]
 ];
-function startStage2(id){let p=getP(id);if(!p)return;if(projectIsSteelFreeStanding(projectFacts(p)))return;if(!p.stage1Complete)return alert('Complete Stage 1 first.');p.stage='Stage 2';p.history.push({at:now(),text:'Stage 2 opened'});save();route('stage2',id)}
 // Shared "evidence can be added at any time" panel rendered on every Stage 2
 // question — this is the one place that panel is templated, so adding the
 // upload control here covers all Stage 2 questions uniformly, not just the
@@ -2900,6 +2548,8 @@ function startStage2(id){let p=getP(id);if(!p)return;if(projectIsSteelFreeStandi
 // correctly excluded from the Stage 1 two-file allowance (stage1EvidenceCount
 // only counts stage==='Stage 1'). There is no separate Stage 2 upload limit
 // in the existing product — none is introduced here, per instruction.
+// Stage 2 is not open yet: every building type stays on the one Stage 1 route.
+function startStage2(id){route('stage1Workspace',id)}
 function stage2EvidencePanelHTML(p){
 return `<div class="actions"><label class="btn secondary" for="s2files" style="display:inline-block">Upload files</label></div><input type="file" id="s2files" multiple style="display:none"><p class="meta">${uploadsLabel(p,p.stage)}</p><p class="meta">${p.evidence.length?`${p.evidence.length} file(s) recorded for this project: ${p.evidence.map(e=>esc(e.name)).join(', ')}`:'No files uploaded yet for this project.'}</p>`
 }
@@ -3250,8 +2900,7 @@ renderDoorReview(id,true)
 async function downloadReport(id,stage){
 let p=getP(id),k=stage==='s1'?'s1':'s2';
 if(!p)return;
-const steel=projectIsSteelFreeStanding(projectFacts(p));
-if(steel){
+{
   if(stage!=='s1'||!p.stage1Complete||!p.stage1SummaryConfirmed||stage1SteelReportGaps(p).length)return;
   runStage1Risks(p);
 }
@@ -3286,8 +2935,8 @@ doc.addImage(PC_BUILDING_REPORT_DATA_URL,'PNG',left,y,refW,refH);y+=refH+8
 }
 const excludeKeys=['buildingPosition','buildingFootprint','siteBoundary','rollerDoors','buildingPositionStatus','siteBoundaryStatus','addressConfirmedOnly'];
 if(stage==='s1'){
-heading(steel?'CUSTOMER ENTERED':'FACTS SUPPLIED');
-if(steel){
+heading('CUSTOMER ENTERED');
+{
   const facts=projectFacts(p),envelope=stage1SteelEnvelope(facts);
   const customerFacts={
     'Building use':stage1KnownValue(p,'use'), 'Building type':facts.buildingType||'Free-standing building',
@@ -3318,8 +2967,7 @@ if(steel){
     heading(STAGE1_ADJACENT_JUNCTION_HEADING.toUpperCase());
     STAGE1_ADJACENT_JUNCTION_NOTES.forEach(item=>add(`• ${item}`,9,false,5.6));
   }
-}else Object.entries(p.facts).forEach(([key,val])=>{if(excludeKeys.includes(key)||val===''||val==null||(key==='heated'&&p.facts.temperatureCondition))return;let shown=Array.isArray(val)?val.join(', '):val;add(`${label(key)}: ${shown}`,9,false,5)});
-if(!steel&&p.facts.rollerDoors?.length){subhead('Roller doors:');p.facts.rollerDoors.forEach((d,i)=>add(`Door ${i+1}: ${d.width} m wide${d.widthSource==='suggested-default'?' (preliminary default)':''} × ${d.height} m high${d.heightSource==='suggested-default'?' (preliminary default)':''} — ${d.access||'access type not set'}`,9,false,5))}
+}
 add(`Building position: ${p.facts.buildingPositionStatus==='confirmed'?`confirmed on map (${p.facts.buildingFootprint?.width} m × ${p.facts.buildingFootprint?.length} m, rotation ${p.facts.buildingFootprint?.angle}°)`:'not yet confirmed on a map — typed address only'}`,9,false,6);
 add(`Site boundary: ${p.facts.siteBoundaryStatus==='confirmed'?'confirmed on map':'not yet confirmed on a map'}`,9,false,6);
 add(`Evidence supplied: ${p.evidence.length} file reference(s).`,9,false,6);
@@ -3334,7 +2982,7 @@ subhead(t);
 if(items.length)items.forEach(r=>add(`• ${r.text}`,9,false,5.6));
 else add(emptyNote,9,false,5.6)
 };
-if(steel)heading('POTENTIAL ISSUES IDENTIFIED');
+heading('POTENTIAL ISSUES IDENTIFIED');
 heading('PLANNING POSITION — AT STAGE 1 LEVEL');
 add('Stage 1 does not check local planning records or nearby planning history — that is a Stage 2 investigation.',8,false,5);
 printDiscipline('planning','Preliminary planning-adjacent flag','No boundary/neighbour-related flag was identified from the answers supplied.');
@@ -3439,7 +3087,7 @@ document.body.dataset.page=r;
 if(SITE_SHELL_ROUTES.has(r))document.body.dataset.reviewShell='true';else delete document.body.dataset.reviewShell;
 if(['stage2','stage2Summary','stage3','quotes','doors'].includes(r)){
   const p=id&&getP(id);
-  if(p&&projectIsSteelFreeStanding(projectFacts(p)))return route('stage1Workspace',id);
+  if(p)return route('stage1Workspace',id);
 }
 switch(r){
 case 'signin':authModal('signin',true);break;
@@ -3487,8 +3135,8 @@ document.querySelectorAll(':is(.home-footer nav,.sitefooter-primary) button:is([
 // question-to-question flow, which calls stage1(id) directly and never
 // goes through render() for its own internal steps.
 window.scrollTo(0,0)}
-window.route=route;window.stage1SummaryDoorSelect=stage1SummaryDoorSelect;window.quotationSummary=quotationSummary;window.authModal=authModal;window.newProject=newProject;window.uploadDrawings=uploadDrawings;window.requestHumanSupport=requestHumanSupport;window.moveStage1=moveStage1;window.saveStage1=saveStage1;window.confirmStage1Evidence=confirmStage1Evidence;window.correctStage1Evidence=correctStage1Evidence;window.searchBuildingAddress=searchBuildingAddress;window.rotateBuilding=rotateBuilding;window.saveBuildingPosition=saveBuildingPosition;window.skipBuildingPosition=skipBuildingPosition;window.searchBoundaryAddress=searchBoundaryAddress;window.rotateBoundaryBuilding=rotateBoundaryBuilding;window.resetBoundary=resetBoundary;window.saveBoundary=saveBoundary;window.skipSiteBoundary=skipSiteBoundary;window.startStage2=startStage2;window.moveStage2=moveStage2;window.saveStage2=saveStage2;window.addQuote=addQuote;window.requestThreeSuppliers=requestThreeSuppliers;window.selectPlan=selectPlan;window.downloadReport=downloadReport;
-window.doorReview=doorReview;window.selectDoor=selectDoor;window.moveDoor=moveDoor;window.changeDoorWall=changeDoorWall;window.addDoor=addDoor;window.removeDoor=removeDoor;window.confirmDoors=confirmDoors;window.toggleMeasure=toggleMeasure;window.clearMeasure=clearMeasure;
+window.route=route;window.startStage2=startStage2;window.stage1SummaryDoorSelect=stage1SummaryDoorSelect;window.quotationSummary=quotationSummary;window.authModal=authModal;window.newProject=newProject;window.uploadDrawings=uploadDrawings;window.requestHumanSupport=requestHumanSupport;window.moveStage1=moveStage1;window.saveStage1=saveStage1;window.confirmStage1Evidence=confirmStage1Evidence;window.correctStage1Evidence=correctStage1Evidence;window.moveStage2=moveStage2;window.saveStage2=saveStage2;window.addQuote=addQuote;window.requestThreeSuppliers=requestThreeSuppliers;window.selectPlan=selectPlan;window.downloadReport=downloadReport;
+window.doorReview=doorReview;window.selectDoor=selectDoor;window.moveDoor=moveDoor;window.changeDoorWall=changeDoorWall;window.addDoor=addDoor;window.removeDoor=removeDoor;window.confirmDoors=confirmDoors;
 async function initializeStage1Review(){
   try {
     const response=await fetch('/api/stage1-review',{cache:'no-store',credentials:'omit'});
