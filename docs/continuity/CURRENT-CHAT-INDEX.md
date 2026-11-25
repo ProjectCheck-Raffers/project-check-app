@@ -177,6 +177,119 @@ Carried forward unchanged from the previous nightly record and not re-checked by
 
 This is an automated GitHub-state record, not a full transcript. It was generated without an AI model and has no access to private chats. It changes only this file.
 
+## Nightly continuity record – 2026-11-24
+
+### Date and stopping point
+
+24 November 2026, recorded by the GitHub Actions workflow `nightly-continuity.yml` (run 45367604074). The current stopping point visible in the repository is as follows.
+
+Live `approved` HEAD when this run read the branch is `910a16d4acd2e0dde523b409c8111d4ffc50bf83` ("docs(continuity): nightly continuity record – 2026-11-23 [skip ci]", 23 November 2026 07:21 Europe/London). The last non-continuity commit on `approved` within the fetched history is `6095800490427e16949124831cbd0e7d01759def` ("Merge pull request #1 from ProjectCheck-Raffers/review", 20 November 2026 17:07 Europe/London).
+
+Commits on `approved` in the 24 hours before this run:
+
+- None.
+
+Pull requests closed or merged in the same 24 hours:
+
+- None.
+
+This run has no access to private chats, so any Project Check work outside GitHub cannot be determined from the repository.
+
+### Live-verified approved HEAD
+
+`910a16d4acd2e0dde523b409c8111d4ffc50bf83` on `approved` ("docs(continuity): nightly continuity record – 2026-11-23 [skip ci]", 23 November 2026 07:21 Europe/London), read live from GitHub immediately before this entry was written.
+
+### Open PRs
+
+Read live: 3 open PR(s); none touched by this record. Check-run results were not read by this run.
+
+PR #5, "Stage 1 Potential issues checker (regs-checker)", head `review` (`9d7557e1e9252bd8131dc9c89b33fbd82d287f50`), base `approved` (`910a16d4acd2e0dde523b409c8111d4ffc50bf83`); created 23 November 2026 15:57 Europe/London, last updated 23 November 2026 20:17 Europe/London; open, not draft, unmerged; not touched.
+
+PR #4, "Continuity index: 23 Nov 2026 Grok-to-Claude handover – regs checker", head `handover-regs-checker-2026-11-23` (`93b087a6c285d70634e193b0723d2b8896aa19fe`), base `approved` (`910a16d4acd2e0dde523b409c8111d4ffc50bf83`); created 23 November 2026 15:49 Europe/London, last updated 23 November 2026 15:49 Europe/London; open, not draft, unmerged; not touched.
+
+PR #3, "Continuity index: 19 Nov 2026 Grok-to-Claude handover", head `continuity-2026-11-19` (`aa04353f9f90d5c5b31ee07052e4e8f5758596a0`), base `approved` (`fdd6487b430eb41d7b896b90c49e69a93ac6f02e`); created 20 November 2026 11:47 Europe/London, last updated 20 November 2026 17:00 Europe/London; open, not draft, unmerged; not touched.
+
+### Unresolved blockers
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+- None recorded in the previous nightly record.
+
+### Note
+
+This is an automated GitHub-state record, not a full transcript. It was generated without an AI model and has no access to private chats. It changes only this file.
+
+## Nightly continuity record – 2026-11-25
+
+### Date and stopping point
+
+25 November 2026, recorded by the GitHub Actions workflow `nightly-continuity.yml` (run 45574609716). The current stopping point visible in the repository is as follows.
+
+Live `approved` HEAD when this run read the branch is `ffde3a8cff60a4eca18725fa867e74b0d56001b7` ("docs(continuity): nightly continuity record – 2026-11-24 [skip ci]", 24 November 2026 09:41 Europe/London). The last non-continuity commit on `approved` within the fetched history is `6095800490427e16949124831cbd0e7d01759def` ("Merge pull request #1 from ProjectCheck-Raffers/review", 20 November 2026 17:07 Europe/London).
+
+Commits on `approved` in the 24 hours before this run:
+
+- `ffde3a8cff60a4eca18725fa867e74b0d56001b7` ("docs(continuity): nightly continuity record – 2026-11-24 [skip ci]", github-actions[bot])
+
+Pull requests closed or merged in the same 24 hours:
+
+- None.
+
+This run has no access to private chats, so any Project Check work outside GitHub cannot be determined from the repository.
+
+### Live-verified approved HEAD
+
+`ffde3a8cff60a4eca18725fa867e74b0d56001b7` on `approved` ("docs(continuity): nightly continuity record – 2026-11-24 [skip ci]", 24 November 2026 09:41 Europe/London), read live from GitHub immediately before this entry was written.
+
+### Open PRs
+
+Read live: 3 open PR(s); none touched by this record. Check-run results were not read by this run.
+
+PR #5, "Stage 1 Potential issues checker (regs-checker)", head `review` (`9d7557e1e9252bd8131dc9c89b33fbd82d287f50`), base `approved` (`910a16d4acd2e0dde523b409c8111d4ffc50bf83`); created 23 November 2026 15:57 Europe/London, last updated 23 November 2026 20:17 Europe/London; open, not draft, unmerged; not touched.
+
+PR #4, "Continuity index: 23 Nov 2026 Grok-to-Claude handover – regs checker", head `handover-regs-checker-2026-11-23` (`93b087a6c285d70634e193b0723d2b8896aa19fe`), base `approved` (`910a16d4acd2e0dde523b409c8111d4ffc50bf83`); created 23 November 2026 15:49 Europe/London, last updated 23 November 2026 15:49 Europe/London; open, not draft, unmerged; not touched.
+
+PR #3, "Continuity index: 19 Nov 2026 Grok-to-Claude handover", head `continuity-2026-11-19` (`aa04353f9f90d5c5b31ee07052e4e8f5758596a0`), base `approved` (`fdd6487b430eb41d7b896b90c49e69a93ac6f02e`); created 20 November 2026 11:47 Europe/London, last updated 20 November 2026 17:00 Europe/London; open, not draft, unmerged; not touched.
+
+### Unresolved blockers
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+- None recorded in the previous nightly record.
+
+### Note
+
+This is an automated GitHub-state record, not a full transcript. It was generated without an AI model and has no access to private chats. It changes only this file.
+
+## 19 Nov 2026 – handover from Grok to Claude (recorded 20 Nov 2026 by Claude)
+
+- Repo move: app code moved from ProjectCheck-Raffers/Project-Check-MVP-Master-Build (now the private archive) to ProjectCheck-Raffers/project-check-app. Vercel project project-check-app now builds from this repo. Review link: https://project-check-app-git-review-project-check.vercel.app
+- PR #2 merged by Grok on Stuart's instruction (cb3ef08): CLAUDE.md standing rules (including the "tweak" and "creative" rules), this append-only index, and the nightly continuity workflow (00:05 London, no AI).
+- Old repo: nightly continuity workflow disabled; old PR #95 (deletes that workflow file) and old PR #94 (move internal docs out of the publicly served app folder) still open, not merged.
+- PR #1 (review -> approved), fire-exit toggle in the Add an opening panel plus a compact bottom bar, took about 2.5 hours to go wrong. Grok changed things that weren't asked for: in f1729c6 it moved the checkbox below Delete opening, and Delete opening stretched into a large red pill or circle because the ⓘ text shared its grid row.
+- PR #1 fix: 2d7c454 on review (from Claude's patch). Checkbox under Casement window and above Delete opening; Delete opening keeps its original size (align-self:start); ⓘ text beside Delete on laptop and phone (below it only at 390px or narrower, where the panel has one column). Merged into approved on 20 Nov 2026 at 17:07 London (corrected 25 Nov 2026).
+- Target design: Figma https://www.figma.com/design/3GrNpyBjviaCaSpuqHdr6d?node-id=2-2 (node 1:2 = ⓘ closed, node 2:2 = ⓘ open).
+- Still open for Stuart's yes: possible iPhone Safari issue (checkbox text disappearing when ticked) now that the panel redraws on tick; gitleaks allowlist for the publishable Supabase key in platform-config.js (Quick check fails without it).
+- Access: Claude GitHub App now has access to project-check-app (added 20 Nov 2026).
+
 ---
 
 ## 23 November 2026 – Grok-to-Claude handover: Building Regulations "Potential Issues" checker
@@ -215,3 +328,19 @@ PURPOSE: Stage 1 (free) = the hook. It shows POTENTIAL PROBLEMS only, using the 
 5. PR SUMMARY: every file changed, every rule added, and anything you think is needed but did not do.
 
 After Claude opens the PR, Grok checks the PR and the review link against this handover before Stuart merges.
+
+### Updated 25 Nov 2026 (Grok) – what changed after this handover
+
+The handover above is kept as written. Since then, in PR #5 (review -> approved, not merged):
+- Empty result: the "No potential issues found" message was replaced by hiding the section when no rules are approved (fixes a false all-clear) – 735e5d9.
+- Heating: the duplicate heating question was removed; L_ENERGY uses the existing temperatureCondition (heated -> potential problem, unheated -> ok, other/not sure -> need info) – b2e033d.
+- Added B_RIDGE_18M: height measured to mean roof (eaves+ridge)/2 over 18 m (ADB Table 12.1 / Diagram D4) – 787d965.
+- Added B_FIRE_ACCESS_11M (ADB Tables 15.1/15.2) with elevation access and road width questions – 9d7557e.
+
+Findings not yet built (awaiting Stuart's go):
+- L_ENERGY "no fixed U-value rule" is out of date: heated buildings must meet limiting U-values. England (AD L 2021, from 15 Jun 2022) and Wales (from 29 Mar 2023): walls 0.26, roof 0.18 W/m2K. Scotland (Section 6, from 1 Feb 2023): walls 0.21, roof 0.16. Standard 60/80 mm PIR (about 0.36/0.27) misses these if heated.
+- Checks are England only; Wales and Scotland limits above are now known.
+- Building use question needed: sports/assembly halls (purpose group 5) use 18 m / 45 m travel and real headcount, not storage figures.
+- Scope of supply tags: THORSPAN supplies the building and fire exits. Lighting, heating, ECB court, fire access roads, foundations, M&E and Building Control applications are the customer's – show "get professional support", not "potential problem".
+- A panel brand (e.g. Balex PIR) is not a fire rating; a building on the same site is not automatically a relevant boundary.
+- Stage 2 boundary solution text (cheapest first: move the building, fire-rated panels on that elevation only, fewer openings, confirm same-site with Building Control, rated panels all round).
