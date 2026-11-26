@@ -1,0 +1,19 @@
+# Low-noise setup: monthly checks, and a limit of 0 open version-update PRs,
+# so only security updates (if enabled in repo settings) open PRs.
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/tests/playwright"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 0
+  - package-ecosystem: "npm"
+    directory: "/tools/project-check-architect-mcp"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 0
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 0

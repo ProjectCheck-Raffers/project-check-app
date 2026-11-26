@@ -1,0 +1,3 @@
+# Gitleaks ignore list (fingerprints only).
+# Intentionally empty: do not add real keys here. Only add the fingerprint of a
+# synthetic, non-functional test value, with a comment saying what it is.
