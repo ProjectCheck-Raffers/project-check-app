@@ -51,8 +51,9 @@ test.describe('Stage 1 report — discipline-segregated sections', () => {
     await h.skipMapsToStage1Summary(page);
 
     const planningSection = page.locator('h3:has-text("Planning position — at Stage 1 level")').locator('xpath=ancestor::div[contains(@class,"card")][1]');
-    // closeBoundary is no longer asked (removed 2026-11-14), so the unchanged risk rule treats it as not supplied and flags it.
-    await expect(planningSection).toContainText('Nearby boundaries/buildings may affect design, fire strategy, access or approvals');
+    // The old close-boundary flag was dropped (2026-11-26): boundaries are covered by the regs-checker rules
+    // (B_BOUNDARY, B_BOUNDARY_1M, B_BOUNDARY_FIRERATED_QUOTE, A_FRAME_BOUNDARY), so it must not be repeated here.
+    await expect(planningSection).not.toContainText('Nearby boundaries/buildings may affect design, fire strategy, access or approvals');
 
     const buildingSpec = page.locator('h3:has-text("Building specification")').locator('xpath=ancestor::div[contains(@class,"card")][1]');
     await expect(buildingSpec).toContainText('Free-standing building');

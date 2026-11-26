@@ -4,6 +4,16 @@
 // planning or Building Regulations claims.
 
 const BUILDING_DESIGN_UI_VERSION='figma-page-15b-2026-11-03';
+// Default roller door size (metres) by vehicle access type. Used by doorRuleFor() in app.js.
+const PC_DOOR_SIZE_DEFAULTS=[
+  {access:'HGV',width:4.6,height:5.0},
+  {access:'Van',width:4.6,height:4.0},
+  {access:'Forklift',width:4.6,height:4.0}
+];
+function pcDoorSizeDefault(access){
+  const match=PC_DOOR_SIZE_DEFAULTS.find(row=>row.access===access);
+  return match?{width:match.width,height:match.height}:null;
+}
 const BUILDING_DESIGN_VIEWS={
   plan:{label:'Plan',short:'Plan',wall:null,side:'Building plan'},
   a:{label:'Elevation A',short:'A',wall:'front',side:'Front elevation'},

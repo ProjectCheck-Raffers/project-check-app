@@ -277,6 +277,45 @@
     return out;
   }
 
+  // Stage 1 answer checks (rules with reportSection "stage1-answers"). These read the customer's own
+  // Stage 1 answers and map status, run for every nation, and feed the Stage 1 report's flag sections
+  // and "missing information" list (not "Potential issues to review"). runChecks ignores them because
+  // they have no CHECKS function. Wording lives in rules.json. Only approved rules are returned.
+  var ANSWER_CHECKS = {
+    FOUNDATION_BASE: function (r, f) {
+      var base = f.base === 'Existing building' ? 'Existing building / structure' : f.base;
+      if (base === 'Not sure') return { risks: [r.stage1ProblemNotSure] };
+      if ((r.triggerValues || []).indexOf(base) !== -1) return { risks: [r.stage1Problem] };
+      return {};
+    },
+    SITE_LEVELS: function (r, f) {
+      if (f.level !== 'No' && f.level !== 'Not sure') return {};
+      return { risks: [r.stage1Problem], needInfo: f.level === 'No' ? [r.needInfo] : [] };
+    },
+    PROGRAMME: function (r, f) { return f.programme === '0\u20133 months' ? { risks: [r.stage1Problem] } : {}; },
+    MAP_NOT_CONFIRMED: function (r, f) {
+      var out = [];
+      if (f.buildingPositionStatus !== 'confirmed') out.push(r.needInfoPosition);
+      if (f.siteBoundaryStatus !== 'confirmed') out.push(r.needInfoBoundary);
+      return { needInfo: out };
+    }
+  };
+
+  // Synchronous: uses the rules passed in, or the rules.json already loaded by loadRegsRules().
+  // Returns { risks: [{ruleId, text, category, discipline}], needInfo: [{ruleId, text}] }.
+  function stage1AnswerChecks(projectData, rules) {
+    var list = (rules && rules.rules) || (root.PC_REGS_RULES && root.PC_REGS_RULES.rules) || [];
+    var f = (projectData && projectData.facts) || {}, risks = [], needInfo = [];
+    list.forEach(function (r) {
+      var fn = ANSWER_CHECKS[r.id];
+      if (!fn || r.reportSection !== 'stage1-answers' || r.approved !== true) return;
+      var res = fn(r, f) || {};
+      (res.risks || []).filter(Boolean).forEach(function (t) { risks.push({ ruleId: r.id, text: t, category: r.category || 'issue', discipline: r.discipline || 'general' }); });
+      (res.needInfo || []).filter(Boolean).forEach(function (t) { needInfo.push({ ruleId: r.id, text: t }); });
+    });
+    return { risks: risks, needInfo: needInfo };
+  }
+
   // Supplier quote request lines. Never names a panel product. Kept apart from runChecks so Stage 1 output stays problems only.
   var QUOTE = {
     A_LOADS_QUOTE: function (r, i, res) {
@@ -311,7 +350,7 @@
   // project.backgroundChecks.regsChecker (all other backgroundChecks fields are kept).
   var rulesPromise = null;
   function loadRules() {
-    if (!rulesPromise) rulesPromise = fetch('regs-checker/rules.json', { cache: 'no-cache' }).then(function (r) { return r.json(); }).catch(function () { rulesPromise = null; return null; });
+    if (!rulesPromise) rulesPromise = fetch('regs-checker/rules.json', { cache: 'no-cache' }).then(function (r) { return r.json(); }).then(function (rules) { if (rules) root.PC_REGS_RULES = rules; return rules; }).catch(function () { rulesPromise = null; return null; });
     return rulesPromise;
   }
   function runRegsChecker(p) {
@@ -342,8 +381,12 @@
   }
 
   root.describePermittedDevelopment = describePermittedDevelopment;
+  root.stage1AnswerChecks = stage1AnswerChecks;
+  root.loadRegsRules = loadRules;
   root.runChecks = runChecks;
   root.buildQuoteRequest = buildQuoteRequest;
   root.runRegsChecker = runRegsChecker;
-  if (typeof module !== 'undefined' && module.exports) module.exports = { runChecks: runChecks, buildQuoteRequest: buildQuoteRequest, describePermittedDevelopment: describePermittedDevelopment };
+  if (typeof module !== 'undefined' && module.exports) module.exports = { runChecks: runChecks, buildQuoteRequest: buildQuoteRequest, describePermittedDevelopment: describePermittedDevelopment, stage1AnswerChecks: stage1AnswerChecks };
+  // Browser: load rules.json straight away so the Stage 1 report can use it synchronously.
+  if (typeof window !== 'undefined' && typeof fetch === 'function') loadRules();
 })(typeof window !== 'undefined' ? window : globalThis);

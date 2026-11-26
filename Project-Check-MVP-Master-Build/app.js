@@ -2041,29 +2041,10 @@ if(q[0]==='width'||q[0]==='length')reconcileFootprintWithCurrentDimensions(p);
 save();
 advanceStage1(id,idx,p)
 }
-// PRESERVED, NOT AUTHORITATIVE — the original app-native implementation of
-// this rule, kept unaltered per Project-Check-Brain's GOVERNANCE.md control 6
-// (an application original is never removed merely because a Brain copy
-// exists) pending full gate-pass and SPA-approved removal. doorRuleFor()
-// below no longer calls this — it now delegates to the migrated, governed
-// Brain rule (Migration Slice 1, 2026-08-28; see BRAIN-MIGRATION-REGISTER.md
-// row BRAIN-0001 in Project-Check-Brain, and brain/BRAIN-VERSION here).
-function doorRuleFor_LEGACY_PRE_BRAIN_MIGRATION(access){
-if(access==='HGV')return{width:4.6,height:5.0};
-if(access==='Van'||access==='Forklift')return{width:4.6,height:4.0};
-return null
-}
-// Migration Slice 1 (2026-08-28) — thin Brain-client seam. Delegates to the
-// vendored Brain rule (pcBrainDoorSizeDefault(), brain/stage-1/door-size-
-// defaults.js, loaded before this file — see index.html). Behaviour-
-// preserving: proven identical to doorRuleFor_LEGACY_PRE_BRAIN_MIGRATION()
-// above for every practical input (HGV/Van/Forklift/anything else) — see
-// this migration's regression tests and report. Every existing call site
-// (previously applyDoorDefault()/saveRollerDoors() on the Stage 1 roller-door
-// sizes page, removed 2026-11-14) kept calling doorRuleFor() by name; the
-// function is retained as the application's Brain integration point.
+// Default roller door size for an access type. The size table lives in
+// building-layout.js (pcDoorSizeDefault), next to the Building Design door code.
 function doorRuleFor(access){
-return pcBrainDoorSizeDefault(access)
+return typeof pcDoorSizeDefault==='function'?pcDoorSizeDefault(access):null
 }
 let activeBuildingMap=null,activeBuildingMarker=null,activeFootprintAngle=0;
 // One shared measurement implementation, reused on whichever map screen is currently
@@ -2166,113 +2147,6 @@ return corners
 }
 async function geocode(q){let res=await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&addressdetails=1&q=${encodeURIComponent(q)}`,{headers:{Accept:'application/json'}});if(!res.ok)throw new Error('search unavailable');let x=await res.json();return x[0]||null}
 
-// PRESERVED, NOT AUTHORITATIVE — the original app-native heated-building
-// Stage 1 risk trigger, kept unaltered per Project-Check-Brain's
-// GOVERNANCE.md control 6 (an application original is never removed merely
-// because a Brain copy exists) pending full gate-pass and SPA-approved
-// removal. runStage1Risks() below no longer evaluates this inline — it now
-// delegates to the migrated Brain rule (Migration Slice 2, 2026-08-28,
-// governance status LOCKED-EXISTING; see BRAIN-MIGRATION-REGISTER.md row
-// BRAIN-0002 in Project-Check-Brain, and brain/BRAIN-VERSION here). Not
-// called from anywhere live.
-function heatedBuildingRisk_LEGACY_PRE_BRAIN_MIGRATION(heated){
-if(heated==='Yes')return{text:'A heated building introduces thermal-performance and energy-compliance requirements that need to be coordinated with the building specification.',category:'cost',discipline:'engineering'};
-return null
-}
-// PRESERVED, NOT AUTHORITATIVE — the original app-native compressed-
-// programme Stage 1 risk trigger, kept unaltered per Project-Check-Brain's
-// GOVERNANCE.md control 6 (an application original is never removed merely
-// because a Brain copy exists) pending full gate-pass and SPA-approved
-// removal. runStage1Risks() below no longer evaluates this inline — it now
-// delegates to the migrated Brain rule (Migration Slice 3, 2026-08-28,
-// governance status LOCKED-EXISTING; see BRAIN-MIGRATION-REGISTER.md row
-// BRAIN-0003 in Project-Check-Brain, and brain/BRAIN-VERSION here). Not
-// called from anywhere live.
-function compressedProgrammeRisk_LEGACY_PRE_BRAIN_MIGRATION(programme){
-if(programme==='0–3 months')return{text:'The requested programme is compressed relative to the approvals, design, civils, manufacture and installation stages that may still be required.',category:'programme',discipline:'general'};
-return null
-}
-// PRESERVED, NOT AUTHORITATIVE — the original app-native services/drainage
-// Stage 1 risk trigger, kept unaltered per Project-Check-Brain's
-// GOVERNANCE.md control 6 (an application original is never removed merely
-// because a Brain copy exists) pending full gate-pass and SPA-approved
-// removal. runStage1Risks() below no longer evaluates this inline — it now
-// delegates to the migrated Brain rule (Migration Slice 4, 2026-08-28,
-// governance status LOCKED-EXISTING; see BRAIN-MIGRATION-REGISTER.md row
-// BRAIN-0004 in Project-Check-Brain, and brain/BRAIN-VERSION here). Not
-// called from anywhere live. Note: this is an inequality against the single
-// literal 'No', not an allowlist — 'Yes'/'Not sure'/empty/null/undefined
-// all trigger the risk, exactly as this function has always behaved.
-function servicesDrainageRisk_LEGACY_PRE_BRAIN_MIGRATION(services){
-if(services!=='No')return{text:'Services or drainage within the footprint may affect the building position, foundations or programme.',category:'cost',discipline:'civils'};
-return null
-}
-// PRESERVED, NOT AUTHORITATIVE — the original app-native building-position
-// status Stage 1 risk trigger, kept unaltered per Project-Check-Brain's
-// GOVERNANCE.md control 6 (an application original is never removed merely
-// because a Brain copy exists) pending full gate-pass and SPA-approved
-// removal. runStage1Risks() below no longer evaluates this inline — it now
-// delegates to the migrated Brain rule (Migration Slice 5, 2026-08-28,
-// governance status LOCKED-EXISTING; see BRAIN-MIGRATION-REGISTER.md row
-// BRAIN-0005 in Project-Check-Brain, and brain/BRAIN-VERSION here). Not
-// called from anywhere live. Note: this is an EXACT-EQUALITY rule, unlike
-// the Slice 4 services rule above — 'confirmed'/empty/null/undefined/any
-// unrecognised value all produce no risk, exactly as this function has
-// always behaved. Do not broaden to treat missing values as 'skipped'.
-function buildingPositionStatusRisk_LEGACY_PRE_BRAIN_MIGRATION(buildingPositionStatus){
-if(buildingPositionStatus==='skipped')return{text:'The proposed building position has not yet been pinpointed on a site map, so orientation and clearances are not yet confirmed.',category:'issue',discipline:'site'};
-return null
-}
-// PRESERVED, NOT AUTHORITATIVE — the original app-native site-boundary
-// status Stage 1 risk trigger, kept unaltered per Project-Check-Brain's
-// GOVERNANCE.md control 6, pending full gate-pass and SPA-approved removal.
-// runStage1Risks() below no longer evaluates this inline — it now
-// delegates to the migrated Brain rule (Stage 1 Brain Completion Batch,
-// 2026-08-28, governance status LOCKED-EXISTING; see
-// BRAIN-MIGRATION-REGISTER.md row BRAIN-0006 in Project-Check-Brain, and
-// brain/BRAIN-VERSION here). Not called from anywhere live. Inequality
-// against the single literal 'confirmed', not narrowed to a
-// 'skipped'-only check — preserved exactly.
-function siteBoundaryStatusRisk_LEGACY_PRE_BRAIN_MIGRATION(siteBoundaryStatus){
-if(siteBoundaryStatus!=='confirmed')return{text:'The relevant site boundary has not yet been confirmed on a site map, so boundary-related constraints are not yet confirmed.',category:'issue',discipline:'site'};
-return null
-}
-// PRESERVED, NOT AUTHORITATIVE — the original app-native close-boundary
-// Stage 1 risk trigger. See BRAIN-MIGRATION-REGISTER.md row BRAIN-0007 in
-// Project-Check-Brain, and brain/BRAIN-VERSION here. Not called from
-// anywhere live. discipline='planning' is a presentation-only grouping
-// tag, not a Planning Intelligence dependency — see
-// close-boundary-risk.js in brain/stage-1/ for the full note.
-function closeBoundaryRisk_LEGACY_PRE_BRAIN_MIGRATION(closeBoundary){
-if(closeBoundary!=='No')return{text:'Nearby boundaries/buildings may affect design, fire strategy, access or approvals.',category:'programme',discipline:'planning'};
-return null
-}
-// PRESERVED, NOT AUTHORITATIVE — the original app-native level/gradient
-// Stage 1 risk trigger. See BRAIN-MIGRATION-REGISTER.md row BRAIN-0008 in
-// Project-Check-Brain, and brain/BRAIN-VERSION here. Not called from
-// anywhere live. Known, disclosed, pre-existing nuance NOT fixed by this
-// migration: the legacy pre-27-Aug value 'No / gradient present' is
-// deliberately not matched — see level-risk.js in brain/stage-1/.
-function levelRisk_LEGACY_PRE_BRAIN_MIGRATION(level){
-if(level==='No'||level==='Not sure')return{text:'Levels may affect base design, drainage, thresholds and installation.',category:'cost',discipline:'civils'};
-return null
-}
-// PRESERVED, NOT AUTHORITATIVE — the original app-native base/substrate
-// 'Not sure' Stage 1 risk trigger. See BRAIN-MIGRATION-REGISTER.md row
-// BRAIN-0009 in Project-Check-Brain, and brain/BRAIN-VERSION here. Not
-// called from anywhere live.
-function baseUncertainRisk_LEGACY_PRE_BRAIN_MIGRATION(base){
-if(base==='Not sure')return{text:'Existing surface/base information is incomplete, so foundation and slab suitability cannot yet be relied upon.',category:'cost',discipline:'civils'};
-return null
-}
-// PRESERVED, NOT AUTHORITATIVE — the original app-native base/substrate
-// non-concrete-surface Stage 1 risk trigger (5-way OR). See
-// BRAIN-MIGRATION-REGISTER.md row BRAIN-0010 in Project-Check-Brain, and
-// brain/BRAIN-VERSION here. Not called from anywhere live.
-function baseSurfaceRisk_LEGACY_PRE_BRAIN_MIGRATION(base){
-if(base==='Tarmac / asphalt'||base==='Hardcore / stone'||base==='Soil / grass'||base==='Existing building / structure'||base==='Mixed')return{text:'The visible surface does not by itself confirm a suitable structural foundation or slab.',category:'cost',discipline:'civils'};
-return null
-}
 function runStage1Risks(p){
 let f=p.facts,risks=[];
 // `discipline` (2026-08-27, Stage 1 report restructuring — see MASTER-SPEC.md/
@@ -2285,73 +2159,13 @@ let f=p.facts,risks=[];
 // specification/compliance-adjacent; 'site' = the two site/map confirmation
 // flags; 'general' = programme/commercial, not discipline-specific.
 const add=(text,category,discipline)=>risks.push({text,category,discipline:discipline||'general'});
-// base/level option wording revised 2026-08-27 (17-question workflow) —
-// 'Unknown'->'Not sure', 'Stone / hardcore'->'Hardcore / stone', 'Grass / soil'
-// ->'Soil / grass', 'No / gradient present'->'No' (see stage1Questions[] above
-// and its own comments). Same rule intent, same trigger shape, just matched to
-// the new plain-English option text. Two genuinely new base options
-// ('Existing building / structure', 'Mixed') extend the same "not confirmed as
-// concrete" flag — neither confirms a suitable modern slab any more than the
-// original non-concrete options did.
-// Stage 1 Brain Completion Batch (2026-08-28, governance status
-// LOCKED-EXISTING) — thin Brain-client seam for both base rules and the
-// level rule. Delegates to the vendored Brain rules (pcBrainBaseUncertainRisk()/
-// pcBrainBaseSurfaceRisk()/pcBrainLevelRisk(), brain/stage-1/, loaded before
-// this file — see index.html). Behaviour-preserving: same trigger/text/
-// category/discipline as the *_LEGACY_PRE_BRAIN_MIGRATION() functions above.
-let baseForGovernedRisk=f.base==='Existing building'?'Existing building / structure':f.base;
-let baseUncertainRisk=pcBrainBaseUncertainRisk(baseForGovernedRisk);if(baseUncertainRisk)add(baseUncertainRisk.text,baseUncertainRisk.category,baseUncertainRisk.discipline);
-let baseSurfaceRisk=pcBrainBaseSurfaceRisk(baseForGovernedRisk);if(baseSurfaceRisk)add(baseSurfaceRisk.text,baseSurfaceRisk.category,baseSurfaceRisk.discipline);
-let levelRisk=pcBrainLevelRisk(f.level);if(levelRisk)add(levelRisk.text,levelRisk.category,levelRisk.discipline);
-// Migration Slice 4 (2026-08-28, governance status LOCKED-EXISTING) — thin
-// Brain-client seam. Delegates to the vendored Brain rule
-// (pcBrainServicesDrainageRisk(), brain/stage-1/services-drainage-risk.js,
-// loaded before this file — see index.html). Behaviour-preserving: same
-// trigger/text/category/discipline as
-// servicesDrainageRisk_LEGACY_PRE_BRAIN_MIGRATION() above. stage1MissingInfo()'s
-// own 'services' check and the actions builder's 'services' read below are
-// explicitly unchanged — this migration covers only this risk-rule copy.
-let servicesRisk=pcBrainServicesDrainageRisk(f.services);if(servicesRisk)add(servicesRisk.text,servicesRisk.category,servicesRisk.discipline);
-// Stage 1 Brain Completion Batch (2026-08-28, governance status
-// LOCKED-EXISTING) — thin Brain-client seam. Delegates to the vendored
-// Brain rule (pcBrainCloseBoundaryRisk(), brain/stage-1/close-boundary-
-// risk.js). Behaviour-preserving: same trigger/text/category/discipline as
-// closeBoundaryRisk_LEGACY_PRE_BRAIN_MIGRATION() above.
-let closeBoundaryRisk=pcBrainCloseBoundaryRisk(f.closeBoundary);if(closeBoundaryRisk)add(closeBoundaryRisk.text,closeBoundaryRisk.category,closeBoundaryRisk.discipline);
-// Migration Slice 2 (2026-08-28, governance status LOCKED-EXISTING) — thin
-// Brain-client seam. Delegates to the vendored Brain rule
-// (pcBrainHeatedBuildingRisk(), brain/stage-1/heated-building-risk.js,
-// loaded before this file — see index.html). Behaviour-preserving: same
-// trigger/text/category/discipline as
-// heatedBuildingRisk_LEGACY_PRE_BRAIN_MIGRATION() above. Every other Stage 1
-// risk rule in this function is unchanged.
-let heatedRisk=pcBrainHeatedBuildingRisk(f.heated);if(heatedRisk)add(heatedRisk.text,heatedRisk.category,heatedRisk.discipline);
-// Migration Slice 3 (2026-08-28, governance status LOCKED-EXISTING) — thin
-// Brain-client seam. Delegates to the vendored Brain rule
-// (pcBrainCompressedProgrammeRisk(), brain/stage-1/compressed-programme-
-// risk.js, loaded before this file — see index.html). Behaviour-preserving:
-// same trigger/text/category/discipline as
-// compressedProgrammeRisk_LEGACY_PRE_BRAIN_MIGRATION() above. Every other
-// Stage 1 risk rule in this function is unchanged.
-let programmeRisk=pcBrainCompressedProgrammeRisk(f.programme);if(programmeRisk)add(programmeRisk.text,programmeRisk.category,programmeRisk.discipline);
-// Migration Slice 5 (2026-08-28, governance status LOCKED-EXISTING) — thin
-// Brain-client seam. Delegates to the vendored Brain rule
-// (pcBrainBuildingPositionStatusRisk(), brain/stage-1/building-position-
-// status-risk.js, loaded before this file — see index.html). Behaviour-
-// preserving: same trigger/text/category/discipline as
-// buildingPositionStatusRisk_LEGACY_PRE_BRAIN_MIGRATION() above.
-// siteBoundaryStatus below, and the shared actions.push(...) condition
-// further down, are explicitly unchanged — this migration covers only this
-// risk-rule copy.
-let buildingPositionRisk=pcBrainBuildingPositionStatusRisk(f.buildingPositionStatus);if(buildingPositionRisk)add(buildingPositionRisk.text,buildingPositionRisk.category,buildingPositionRisk.discipline);
-// Stage 1 Brain Completion Batch (2026-08-28, governance status
-// LOCKED-EXISTING) — thin Brain-client seam. Delegates to the vendored
-// Brain rule (pcBrainSiteBoundaryStatusRisk(), brain/stage-1/site-
-// boundary-status-risk.js). Behaviour-preserving: same trigger/text/
-// category/discipline as siteBoundaryStatusRisk_LEGACY_PRE_BRAIN_MIGRATION()
-// above. The shared actions.push(...) condition further down is explicitly
-// unchanged — this migration covers only this risk-rule copy.
-let siteBoundaryRisk=pcBrainSiteBoundaryStatusRisk(f.siteBoundaryStatus);if(siteBoundaryRisk)add(siteBoundaryRisk.text,siteBoundaryRisk.category,siteBoundaryRisk.discipline);
+// Stage 1 answer checks (foundation/base, site levels, programme) come from the regs checker:
+// rules FOUNDATION_BASE, SITE_LEVELS and PROGRAMME in regs-checker/rules.json, run by
+// stage1AnswerChecks() in regs-checker/checker.js. Boundary, heating and services/drainage flags
+// are covered by the regs-checker rules (B_BOUNDARY*, A_FRAME_BOUNDARY, L_ENERGY, L_2027_HEATED,
+// H_DRAINAGE_QUOTE) and are not repeated here.
+const answerChecks=typeof stage1AnswerChecks==='function'?stage1AnswerChecks(p):{risks:[],needInfo:[]};
+answerChecks.risks.forEach(item=>add(item.text,item.category,item.discipline));
 if(projectReuseIntention(f)==='Yes — assess it for reuse')add('The customer would like to reuse the existing surface if it proves suitable; levels, drainage, services, structural capacity and anchoring suitability remain unverified.','cost','civils');
 if(projectReuseIntention(f)==='Not sure')add('Reuse of the existing surface is undecided; evidence is needed before any saving or replacement cost can be assumed.','cost','civils');
 const steel=projectIsSteelFreeStanding(f);
@@ -2366,41 +2180,6 @@ if(projectReuseIntention(f)==='Yes — assess it for reuse')actions.push('Verify
 if(specialistLowTemperatureFlag)actions.push('Obtain specialist review of the envelope, floor, doors, vapour control and temperature-control requirements.');
 p.risks1=risks;p.actions1=actions
 }
-// PRESERVED, NOT AUTHORITATIVE — the original app-native stage1MissingInfo()
-// 'level No' missing-information trigger, kept unaltered per Project-Check-
-// Brain's GOVERNANCE.md control 6, pending full gate-pass and SPA-approved
-// removal. stage1MissingInfo() below no longer evaluates this inline — it
-// now delegates to the migrated Brain rule (Stage 1 Brain Completion Batch,
-// Phase 2, 2026-08-28, governance status LOCKED-EXISTING; see
-// BRAIN-MIGRATION-REGISTER.md row BRAIN-0011 in Project-Check-Brain, and
-// brain/BRAIN-VERSION here). Not called from anywhere live. Returns a
-// plain string, not a {text,category,discipline} object — matches
-// stage1MissingInfo()'s own array-of-strings output shape, NOT the
-// runStage1Risks() risk-object shape.
-function missingInfoLevelNo_LEGACY_PRE_BRAIN_MIGRATION(level){
-if(level==='No')return'Site level/gradient: recorded as "No" (not level) — treat as unconfirmed.';
-return null
-}
-// PRESERVED, NOT AUTHORITATIVE — the original app-native stage1MissingInfo()
-// building-position missing-information trigger. NOT a duplicate of
-// buildingPositionStatusRisk_LEGACY_PRE_BRAIN_MIGRATION() above — same
-// underlying fact, independently-governed different output/consumer. See
-// BRAIN-MIGRATION-REGISTER.md row BRAIN-0012 in Project-Check-Brain, and
-// brain/BRAIN-VERSION here. Not called from anywhere live.
-function missingInfoBuildingPosition_LEGACY_PRE_BRAIN_MIGRATION(buildingPositionStatus){
-if(buildingPositionStatus!=='confirmed')return'Building position not yet confirmed on a site map.';
-return null
-}
-// PRESERVED, NOT AUTHORITATIVE — the original app-native stage1MissingInfo()
-// site-boundary missing-information trigger. NOT a duplicate of
-// siteBoundaryStatusRisk_LEGACY_PRE_BRAIN_MIGRATION() above — same
-// underlying fact, independently-governed different output/consumer. See
-// BRAIN-MIGRATION-REGISTER.md row BRAIN-0013 in Project-Check-Brain, and
-// brain/BRAIN-VERSION here. Not called from anywhere live.
-function missingInfoSiteBoundary_LEGACY_PRE_BRAIN_MIGRATION(siteBoundaryStatus){
-if(siteBoundaryStatus!=='confirmed')return'Site boundary not yet confirmed on a site map.';
-return null
-}
 function stage1MissingInfo(p){
 let f=p.facts,missing=[];
 // 'Unknown' retained here for legacy projects saved before the 2026-08-27
@@ -2414,19 +2193,9 @@ check('level','Site level/gradient');check('services','Services/drains');check('
 // list above, since a bare 'No' is a legitimate, CONFIDENT answer for other
 // keys (services='No', closeBoundary='No' both mean "no issue", not
 // "unconfirmed") and must not be flagged there.
-// Stage 1 Brain Completion Batch, Phase 2 (2026-08-28, governance status
-// LOCKED-EXISTING) — thin Brain-client seam for the three stage1MissingInfo()
-// rules that fit the established fixed-output contract. Delegates to the
-// vendored Brain rules (pcBrainMissingInfoLevelNo()/
-// pcBrainMissingInfoBuildingPosition()/pcBrainMissingInfoSiteBoundary(),
-// brain/stage-1/, loaded before this file — see index.html).
-// Behaviour-preserving: same trigger/text as the *_LEGACY_PRE_BRAIN_MIGRATION()
-// functions above. The shared uncertain()/check() helper above, and
-// !p.evidence.length below, are deliberately NOT migrated in this batch —
-// see the Stage 1 Brain Completion Batch report, Phase 2, for why.
-let missingLevelNo=pcBrainMissingInfoLevelNo(f.level);if(missingLevelNo)missing.push(missingLevelNo);
-let missingBuildingPosition=pcBrainMissingInfoBuildingPosition(f.buildingPositionStatus);if(missingBuildingPosition)missing.push(missingBuildingPosition);
-let missingSiteBoundary=pcBrainMissingInfoSiteBoundary(f.siteBoundaryStatus);if(missingSiteBoundary)missing.push(missingSiteBoundary);
+// Level "No", building position and site boundary need-info lines come from the regs checker
+// (rules SITE_LEVELS and MAP_NOT_CONFIRMED in regs-checker/rules.json).
+(typeof stage1AnswerChecks==='function'?stage1AnswerChecks(p).needInfo:[]).forEach(item=>missing.push(item.text));
 if(projectReuseIntention(f)==='Not sure')missing.push('Existing-surface reuse intention: not yet decided.');
 if(projectReuseIntention(f)==='Yes — assess it for reuse')missing.push('Existing-surface suitability, levels, drainage, services and anchoring capacity: not yet verified.');
 if(projectReuseNeedsEvidenceAnswer(f)&&projectSiteEvidenceAvailability(f)==='No')missing.push('No drawings, surveys or other site information are currently available for the proposed building area.');
@@ -3126,6 +2895,8 @@ async function initializeStage1Review(){
   }
 }
 window.addEventListener('hashchange',()=>{if(!stage1ReviewRequested||state.user)render()});
+// The Stage 1 answer checks read regs-checker/rules.json; if the report was drawn before it loaded, draw it again.
+if(typeof loadRegsRules==='function')loadRegsRules().then(rules=>{if(rules&&/^stage1Summary\//.test(location.hash.slice(1)))render()});
 if(stage1ReviewRequested)initializeStage1Review();
 else {
   render();
