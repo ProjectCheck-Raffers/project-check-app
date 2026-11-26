@@ -12,3 +12,7 @@ build/
 tests/playwright/test-results/
 tests/playwright/playwright-report/
 tests/playwright/blob-report/
+
+# Local browser config (live config is served by /api/platform-config)
+/platform-config.js
+/Project-Check-MVP-Master-Build/platform-config.js
