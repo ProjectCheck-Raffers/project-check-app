@@ -10,7 +10,7 @@
       "stage1Problem": "A fire-rated wall may be needed on elevation {elevation} – the building supplier to confirm.",
       "stage1WhyItMatters": "Walls close to a boundary are limited in how much fire can spread to the neighbouring site.",
       "stage2Solution": "Stuart to write",
-      "approved": false,
+      "approved": true,
       "needInfo": "Boundary on elevation {elevation} not marked (mark every site boundary in Site Layout)"
     },
     {
@@ -21,7 +21,7 @@
       "stage1Problem": "Elevation {elevation} is under 1 m from the boundary – strict fire rules apply to this wall.",
       "stage1WhyItMatters": "Very close walls face the tightest fire limits, which can affect the wall and any openings in it.",
       "stage2Solution": "Stuart to write",
-      "approved": false,
+      "approved": true,
       "needInfo": "Boundary on elevation {elevation} not marked (mark every site boundary in Site Layout)"
     },
     {
@@ -115,7 +115,7 @@
       "stage1Problem": "",
       "stage1WhyItMatters": "",
       "stage2Solution": "Stuart to write",
-      "approved": false,
+      "approved": true,
       "scope": "customer",
       "stage1Note": "With heating, toilets, offices or other services, an energy calculation for Building Control may be needed. Get professional support.",
       "needInfo": "Whether the building will have heating, toilets, offices or any services"
@@ -255,7 +255,7 @@
       "stage1WhyItMatters": "",
       "stage1Note": "Surface water drainage connection, and any services or drainage within the footprint (these may affect the building position, foundations or programme) – get professional support.",
       "stage2Solution": "Stuart to write",
-      "approved": false
+      "approved": true
     },
     {
       "id": "L_2027_HEATED",
