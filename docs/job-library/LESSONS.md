@@ -37,3 +37,5 @@ These come from real jobs. They are evidence of what happened, not legal advice.
    - Flag these as "get professional support".
 9. **Wales and Scotland are different.** Wales has its own guidance and separate SuDS (SAB) approval. Scotland uses building warrants and the Technical Handbook. Treat both as "need more info or get professional support".
 10. **Smoke vents and parapets** were regs-driven extras that weren't always in the supplier price.
+
+For how to read client uploads (drawings, Building Control and planning packs) and the problems between the parties, see [UPLOAD-RULES.md](UPLOAD-RULES.md).
