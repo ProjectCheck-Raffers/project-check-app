@@ -1593,3 +1593,66 @@ body:is([data-page="signin"],[data-page="create"]) .home-footer{max-width:1040px
 .simple-told div{flex-direction:row;gap:12px}
 .simple-told dt{flex:0 0 240px}
 }
+/* Second pass (simple-s1b): question cards, report header, know lists, Stage 2 sales page. Mobile first. */
+.simple-cta-main{font-size:17px;min-height:52px}
+.simple-note{margin:8px 0 0;padding:10px 12px;border-radius:10px;background:#fff8e6;border:1px solid #f0d58a;color:#5c4400;font-size:15px;line-height:1.4}
+.simple-report{max-width:880px;margin:0 auto;padding:16px 12px 32px;overflow-x:hidden}
+.simple-report-head{display:flex;flex-direction:column;align-items:flex-start;gap:12px;padding-bottom:12px;border-bottom:1px solid #e1e7e3}
+.simple-report-head .workspace-logo{width:56px;height:auto}
+.simple-report-title h1{margin:2px 0;font-size:24px;line-height:1.2;overflow-wrap:anywhere}
+.simple-report-head .btn{width:100%}
+.simple-report-intro{margin:14px 0}
+.simple-qlist{display:grid;gap:14px}
+.simple-qcard{padding:14px;border:1px solid #d9e0db;border-left:5px solid #98a2b3;border-radius:12px;background:#fff;display:grid;gap:8px;overflow-wrap:anywhere;min-width:0}
+.simple-qcard--yes,.simple-qcard--certain{border-left-color:#c2410c}
+.simple-qcard--maybe{border-left-color:#b7791f}
+.simple-qcard--unknown{border-left-color:#667085}
+.simple-qhead{display:flex;gap:10px;align-items:flex-start}
+.simple-qhead h3{margin:0;font-size:19px;line-height:1.3}
+.simple-qnum{flex:0 0 auto;width:28px;height:28px;border-radius:50%;background:var(--green2);color:var(--green);font-weight:800;display:flex;align-items:center;justify-content:center}
+.simple-chip-row{margin:0;display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.simple-chip-lead{font-size:13px;color:#667085}
+.simple-chip{display:inline-block;padding:4px 10px;border-radius:999px;font-weight:700;font-size:14px;border:1px solid transparent}
+.simple-chip--yes,.simple-chip--certain{background:#fff1e6;color:#9a3412;border-color:#f6c9a5}
+.simple-chip--maybe{background:#fff8e6;color:#7a5200;border-color:#f0d58a}
+.simple-chip--unknown{background:#f2f4f7;color:#475467;border-color:#d0d5dd}
+.simple-qanswer{margin:0;font-size:16px;line-height:1.5}
+.simple-qpoints{font-size:15px}
+.simple-list-tight{gap:6px;font-size:15px}
+.simple-qnote{margin:2px 0 0;font-style:italic}
+.simple-qblocks{display:grid;gap:10px}
+.simple-qblock{padding:10px 12px;border-radius:10px;background:#f7f9f8;border:1px solid #e6ebe8}
+.simple-qblock h4,.simple-know-block h3,.simple-know-block h4{margin:0 0 6px;font-size:16px}
+.simple-qafter{margin:0;font-weight:700}
+.simple-qwhy{margin:0;padding-top:8px;border-top:1px dashed #d9e0db;font-size:14px;color:#475467;line-height:1.4}
+.simple-know{margin-top:18px}
+.simple-know h2{margin:0 0 10px;font-size:22px}
+.simple-know-block{margin:0 0 14px}
+.simple-know-foot{margin:0}
+.simple-file-type{display:inline-block;margin-right:8px;color:#475467;font-size:14px}
+.simple-file-warn{display:block;color:#7a5200;font-size:14px;line-height:1.35}
+.simple-file-line{display:block}
+.simple-files li{overflow-wrap:anywhere}
+.simple-stage2{max-width:880px}
+.simple-stage2-hero{padding:8px 0 16px}
+.simple-stage2 .simple-section{padding-left:0;padding-right:0}
+.simple-example{padding:14px;border:2px dashed #98a2b3;border-radius:12px;background:#fcfcfd;display:grid;gap:8px;overflow-wrap:anywhere}
+.simple-example-tag{margin:0;font-weight:800;color:#b42318;font-size:14px;letter-spacing:.02em}
+.simple-example-file{margin:0}
+.simple-example-list{margin:0;display:grid;gap:8px}
+.simple-example-list dt{font-weight:700}
+.simple-example-list dd{margin:2px 0 0;line-height:1.45}
+.simple-badge{display:inline-block;margin-left:6px;padding:2px 8px;border-radius:999px;background:rgba(255,255,255,.25);border:1px dashed currentColor;font-size:12px;font-weight:700;vertical-align:middle}
+.simple-notice{margin-top:12px;padding:12px;border-radius:10px;background:#fff8e6;border:1px solid #f0d58a;color:#3d2e00}
+.simple-notice p{margin:0 0 10px}
+.simple-stage2 .simple-cta-row .btn{white-space:normal;height:auto}
+@media(min-width:768px){
+.simple-report{padding:24px 16px 40px}
+.simple-report-head{flex-direction:row;align-items:center;justify-content:space-between}
+.simple-report-head .workspace-logo{width:64px}
+.simple-report-title{flex:1 1 auto}
+.simple-report-head .btn{width:auto}
+.simple-qcard{padding:18px 20px}
+.simple-qblocks{grid-template-columns:1fr 1fr}
+.simple-know-block{margin-bottom:18px}
+}
