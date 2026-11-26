@@ -14,8 +14,17 @@ if(!row||(row.nextElementSibling&&row.nextElementSibling.classList.contains('sim
 row.insertAdjacentHTML('afterend','<p class="simple-note" role="status">Booking link coming soon. Please check back shortly.</p>')
 }
 window.bookCall=bookCall;
-// The eight questions a first-time client asks. One list, used by the landing page and the Stage 1 report so they never drift apart.
-const CLIENT_QUESTION_TITLES=['Will I need planning permission?','What groundwork will the site need?','Is my existing base OK?','Do I need a structural engineer?','Will Building Regulations affect my building?','What is CDM and does it apply to me?','Who pays the consultants?','What else do I need to provide on site?'];
+// The seven questions a first-time client asks, in the order it usually happens. One list, used by the landing page and the Stage 1 report so they never drift apart.
+const CLIENT_QUESTION_TITLES=['Will I need planning permission?','Do I need a structural engineer?','What about the base, roads, drainage, ground and services?','Will Building Regulations affect my building?','Do the CDM safety rules apply to me, and who runs the site?','What will I deal with on site, on the day?','Who pays the consultants?'];
+// iPhone HEIC/HEIF photos cannot be read yet. Every client upload path in this file calls splitUnreadablePhotos() before uploading.
+const HEIC_MESSAGE="iPhone HEIC photos can't be read yet. Please change your camera to 'Most Compatible' or send a JPEG or PDF.";
+function isHeicFile(file){return /\.(heic|heif)$/i.test((file&&file.name)||'')||/^image\/hei[cf]/i.test((file&&file.type)||'')}
+// Returns only the files that can be uploaded and tells the client plainly about any HEIC/HEIF files, which are never uploaded.
+function splitUnreadablePhotos(fileList){
+const all=[...(fileList||[])],ok=all.filter(file=>!isHeicFile(file));
+if(ok.length!==all.length)alert(HEIC_MESSAGE);
+return ok
+}
 // stage3ImpactRegister (Batch 5, 2026-08-26): a GLOBAL (not per-project),
 // INTERNAL-only governance list — see createStage3ImpactRegisterEntry()/
 // addStage3ImpactRegisterEntry() in evidence.js. Started empty at Batch 5;
@@ -245,7 +254,7 @@ journey.innerHTML=`
   <div class="drawer-stage-heading">Free check · find the problems</div>
   ${DRAWER_STAGE1_STEPS.map(label=>drawerJourneyItem(label,"To do","todo","","",false,false,false,true)).join("")}
   <div class="drawer-stage-heading">Paid stage · find the solutions</div>
-  ${drawerJourneyItem("Paid stage","Coming soon","locked","","",false,true)}
+  ${drawerJourneyItem("Paid stage","See what's included","todo","stage2","",false,false)}
 `;
 journey.querySelectorAll("[data-guest-step]").forEach(button=>button.onclick=drawerGuestStep);
 const startButton=document.querySelector("#drawerGuestStart");if(startButton)startButton.onclick=drawerGuestStart;
@@ -282,7 +291,7 @@ journey.innerHTML=`
   ${drawerJourneyItem("Your project",reportComplete?"Done":`${doneCount} of ${steps.length} steps done`,reportComplete?"complete":"pending","stage1Workspace",p.id,currentKey==="stage1Workspace")}
   ${steps.map(step=>drawerJourneyItem(step.label,step.done?(step.status||"Done"):step.hint,step.done?(step.tone||"complete"):"todo",step.key,p.id,currentKey===step.key,false,step.key===nextKey)).join("")}
   <div class="drawer-stage-heading">Paid stage · find the solutions</div>
-  ${drawerJourneyItem("Paid stage","Coming soon","locked","",p.id,false,true)}
+  ${drawerJourneyItem("Paid stage","See what's included","todo","stage2",p.id,currentKey==="stage2")}
 `;
 }
 
@@ -815,7 +824,7 @@ function uploadsLabel(p,stage){return `Uploads (${Math.min(uploadsUsed(p,stage),
 // failure becomes EXTRACTION_STATUS.EXTRACTION_FAILED), so a malformed
 // upload can never abort this loop or crash the customer journey.
 async function addEvidenceFiles(p,fileList,stage,historyPrefix){
-let files=[...fileList];if(!files.length)return;
+let files=splitUnreadablePhotos(fileList);if(!files.length)return;
 const uKey=uploadKey(stage);
 if(uKey){
 if(!p.uploads)p.uploads={s1:0,s2:0};
@@ -1243,7 +1252,7 @@ Object.assign(p,{name,address,postcode,status,facts:nextFacts,stage1Assessments:
 }
 async function uploadProjectFiles(p,input,refresh,status){
  const stage=p.stage1Complete?p.stage:'Stage 1';
- let files=[...input.files];if(!files.length)return;
+ let files=splitUnreadablePhotos(input.files);if(!files.length){input.value='';return}
  const room=uploadKey(stage)?Math.max(0,UPLOAD_LIMIT-uploadsUsed(p,stage)):files.length;
  if(!room){alert(UPLOAD_LIMIT_MSG);input.value='';return}
  if(files.length>room){alert(UPLOAD_LIMIT_MSG+' Only the first '+room+' file(s) will be uploaded.');files=files.slice(0,room)}
@@ -1289,6 +1298,7 @@ input.onchange=()=>uploadProjectFiles(p,input,()=>projectDocuments(id));
 docs.forEach((entry,index)=>{
  document.querySelector('#replaceDocument'+index).onchange=async event=>{
   const file=event.target.files[0];if(!file)return;
+  if(!splitUnreadablePhotos([file]).length){event.target.value='';return}
   event.target.disabled=true;
   try{
    if(!/\.(pdf|docx|dwg|png|jpe?g)$/i.test(file.name))throw new Error('Choose a PDF, DOCX, DWG, PNG or JPG file.');
@@ -1740,7 +1750,7 @@ function stage1Confirm(id){
 if(!requireUser())return;const p=getP(id);if(!p)return route("dashboard");
 document.body.dataset.page="stage1Confirm";
 const facts=projectFacts(p),account=accountRecord()||state.user||{},ridge=projectRidgeHeight(p);
-const docs=(p.evidence||[]).filter(item=>item.stage==="Stage 1"),outstanding=[...stage1SteelReportGaps(p),...stage1RegsMissingInfo(p)],evidenceNotices=stage1ConfirmationEvidenceNotices(p);
+const docs=(p.evidence||[]).filter(item=>item.stage==="Stage 1"),evidenceNotices=stage1ConfirmationEvidenceNotices(p);
 const tag=(label,type="customer")=>`<span class="stage1-source stage1-source--${type}"><span aria-hidden="true"></span>${esc(label)}</span>`;
 const valueOr=value=>stage1HasValue(value)?esc(value):'<span class="confirmation-missing">Still required</span>';
 const item=(label,value,sourceLabel="Customer entered",type="customer")=>`<div class="stage1-basis-item"><dt>${esc(label)}</dt><dd>${value}</dd>${tag(sourceLabel,type)}</div>`;
@@ -1752,7 +1762,7 @@ ${projectReuseNeedsEvidenceAnswer(facts)?item("Drawings, surveys or site informa
 ${item("Link to or near an existing building",esc(projectAdjacentExistingBuilding(facts)||"Not answered (optional)"),projectAdjacentExistingBuilding(facts)?"Customer entered":"Optional",projectAdjacentExistingBuilding(facts)?"customer":"pending")}`:"";
 app.innerHTML=`<main class="container stage1-workspace stage1-confirmation">
 ${projectJourneyNav(p,"confirmation","stage1Workspace")}
-<section class="stage1-technical-header confirmation-intro" aria-labelledby="stage1ConfirmTitle"><div><div class="eyebrow">Free check · Check your details</div><h1 id="stage1ConfirmTitle">Check what we already know</h1><p>This is what we hold for <strong>${esc(p.name)}</strong>. If anything is wrong, go back to your project and change it there.</p></div></section>
+<section class="stage1-technical-header confirmation-intro" aria-labelledby="stage1ConfirmTitle"><div><div class="eyebrow">Free check · Check your details</div><h1 id="stage1ConfirmTitle">Let's check what we know so far</h1><p>Before we go through what you'll probably face, here is what we have for <strong>${esc(p.name)}</strong>: what it's for, how big, where, whether there's a base already, and who will run the site. If anything is wrong, go back to your project and change it there.</p></div></section>
 <section class="stage1-source-legend confirmation-legend" aria-label="Information sources">${tag("Customer / project record")}${tag("Drawing evidence","drawing")}${tag("Calculated","calculated")}${tag("Still to confirm","pending")}</section>
 
 <section class="stage1-tech-card confirmation-section"><div class="stage1-section-heading"><span>01</span><div><h2>Project</h2><p>Account and project information already held.</p></div></div><dl class="stage1-basis-grid">
@@ -1779,13 +1789,15 @@ ${item("Roof pitch",stage1HasValue(facts.roofPitch)?esc(facts.roofPitch)+"°":'<
 ${item("Height to the top of the roof (calculated)",ridge===null?'<span class="confirmation-missing">Waiting for dimensions</span>':esc(ridge.toFixed(2))+" m","Calculated from current dimensions and roof pitch","calculated")}
 </dl></section>
 
+${stage1OptionalMarkup(p)}
+
 <section class="stage1-tech-card confirmation-section"><div class="stage1-section-heading"><span>04</span><div><h2>Your documents</h2><p>${docs.length} Stage 1 document${docs.length===1?"":"s"} currently attached. </p></div></div>
 <div class="confirmation-document-list">${docs.length?docs.map(document=>`<article class="confirmation-document"><div><strong>${esc(document.name||"Project document")}</strong><p class="meta simple-file-line">${uploadFileDetail(document.name)}</p></div><button class="btn secondary journey-edit" onclick="viewProjectDocument('${p.id}',${p.evidence.indexOf(document)})">${/\.dwg$/i.test(document.name||"")?"Download DWG":"View"}</button></article>`).join(""):'<p class="meta">No Stage 1 project documents are attached yet.</p>'}</div>
 <p class="meta">${esc(UPLOAD_NOT_REVIEWED_TEXT)}</p>
 ${evidenceNotices.length?`<div class="confirmation-evidence-notices"><h3>Evidence needing confirmation</h3>${evidenceNotices.map(notice=>`<article class="confirmation-evidence-notice"><strong>${esc(notice.label)}</strong><p>${notice.type==="conflict"?"Document evidence conflicts with information already held.":"Document evidence suggests"}${notice.value?`: <b>${esc(notice.value)}</b>`:""}</p><p class="meta">Source: ${esc(notice.source)}${notice.where?` · ${esc(notice.where)}`:""}</p>${tag(notice.type==="conflict"?"Conflict — confirmation required":"Unconfirmed document proposal","pending")}</article>`).join("")}</div>`:""}
 </section>
 
-<section class="stage1-tech-card confirmation-section confirmation-outstanding"><div class="stage1-section-heading"><span>05</span><div><h2>What we have, what's missing, what's unclear</h2><p>This is a list only. It is not an all-clear.</p></div></div>
+<section class="stage1-tech-card confirmation-section confirmation-outstanding"><div class="stage1-section-heading"><span>05</span><div><h2>Information still required</h2><p>Gaps in your answers and in your documents. This is a list only. It is not an all-clear.</p></div></div>
 ${stage1KnowledgeMarkup(p)}</section>
 
 <section class="stage1-workspace-action confirmation-actions"><div><div class="eyebrow">Next</div><h2>Place the building on your site</h2><p>Show where the building will go, using the sizes you gave us.</p></div><div class="confirmation-action-buttons"><button class="btn secondary" onclick="route('stage1Workspace','${p.id}')">Back to my project</button><button class="btn green" onclick="route('siteLayout','${p.id}')">Continue to site layout</button></div></section>
@@ -2235,6 +2247,8 @@ function uploadTypeGuess(name){
   const cad=['dwg','dxf'].includes(ext),zip=['zip','rar','7z'].includes(ext);
   const kind=/site[\s_-]*plan|block[\s_-]*plan|location[\s_-]*plan/.test(n)?'site plan'
     :/survey|topo|levels?\b/.test(n)?'survey'
+    :/decision|notice|permission|consent/.test(n)?'decision notice'
+    :/engineer|calc|structural/.test(n)?'engineer letter'
     :(image||/photo|img[_-]?\d|dsc[_-]?\d|pxl[_-]|whatsapp/.test(n))?'photo'
     :(cad||/drawing|elevation|section|layout|plan/.test(n))?'drawing'
     :/report|investigation|ground|drain|cctv/.test(n)?'report'
@@ -2253,7 +2267,9 @@ function uploadFileDetail(name){
 const KEY_DOCUMENT_REQUESTS=[
   {kind:'photo',text:'Site photos'},
   {kind:'site plan',text:'A site plan'},
-  {kind:['drawing','survey'],text:'Any existing drawings or a survey of the site'}
+  {kind:['drawing','survey'],text:'Any existing drawings or a survey of the site'},
+  {kind:'decision notice',text:'A planning decision notice, if you already have one (with its conditions and dates)'},
+  {kind:'engineer letter',text:"A structural engineer's written, dated confirmation, if you have one. A spoken or text OK isn't enough"}
 ];
 // What we have, what is missing and what is unclear, for the report, the PDF and the confirm page.
 // Missing data is always "need info", never an all-clear. Documents are never read in Stage 1.
@@ -2272,7 +2288,7 @@ function stage1KnowledgeLists(p){
   if(has(p.address))have.push('Site address');
   if(facts.buildingPositionStatus==='confirmed')have.push('Building placed on the map');
   if(facts.siteBoundaryStatus==='confirmed')have.push('Site boundary marked on the map');
-  const files=docs.map(item=>({name:item.name,guess:uploadTypeGuess(item.name)}));
+  const files=docs.map(item=>({name:item.name,guess:uploadTypeGuess(item.name),entry:item}));
   // Missing: questions not answered, map steps not done, then key documents not uploaded.
   try{stage1SteelReportGaps(p).forEach(gap=>missing.push(gap==='Site Layout'?'The building placed and the site boundary marked on the map (Site Layout)':`Not answered yet: ${gap}`))}catch(e){}
   stage1RegsMissingInfo(p).forEach(text=>missing.push(text));
@@ -2296,98 +2312,188 @@ function stage1KnowledgeLists(p){
   unsure(projectSiteEvidenceAvailability(facts),'Whether you have drawings or surveys: you said you are not sure');
   unsure(projectTemperatureCondition(facts),'Whether the building will be heated: you said you are not sure');
   if(projectReuseIntention(facts)==='Yes — assess it for reuse')unclear.push('Whether the existing ground is suitable: not checked yet');
-  files.filter(file=>file.guess.unreadable).forEach(file=>unclear.push(`${file.name}: we may not be able to read this. Please also send a PDF.`));
+  // Document gaps. A file being attached is never treated as complete, and nothing here reads as an all-clear.
+  // detectDocumentStatusToken() lives in evidence.js (not changed); it is only CALLED here, and only when it exists.
+  files.forEach(file=>{
+    const entry=file.entry||{},status=String(entry.extractionStatus||''),text=String(entry.extractedText||'');
+    if(['UNSUPPORTED','EXTRACTION_FAILED','OCR_REQUIRED','PARTIAL'].includes(status)||file.guess.unreadable)unclear.push(`${file.name}: we could not read all of this file. Please also send a dimensioned PDF of it.`);
+    if(!text)return;
+    const token=typeof detectDocumentStatusToken==='function'?detectDocumentStatusToken(text).value:null;
+    if(['PRELIMINARY','DRAFT','FOR APPROVAL','SUPERSEDED'].includes(token))unclear.push(`${file.name} is marked "${token.charAt(0)+token.slice(1).toLowerCase()}", so the figures on it are not confirmed. Please send the current issued version.`);
+    else if(/\b(TBC|TBD)\b|to be confirmed/i.test(text))unclear.push(`${file.name} has items marked "to be confirmed", so the figures on it are not confirmed. Please send the current issued version.`);
+    if(/\bby others\b/i.test(text))unclear.push(`${file.name} says some of the work is "by others". That doesn't show what will be built. Please send the drawing from whoever owns that part.`)
+  });
+  try{stage1ConfirmationEvidenceNotices(p).forEach(notice=>unclear.push(`${notice.label}: your documents and your answers don't agree${notice.value?` (${notice.value})`:''}. Please tell us which is right.`))}catch(e){}
+  if(has(facts.width)&&has(facts.length)&&has(facts.height))unclear.push('The size and height are what you entered. None of your files has been checked against them yet.');
   const unique=list=>[...new Set(list.filter(Boolean))];
   return {have:unique(have),missing:unique(missing),unclear:unique(unclear),files,
-    fileNote:files.length?`We have your file${files.length===1?'':'s'} but haven't reviewed ${files.length===1?'it':'them'} yet. That's part of Stage 2.`:''}
+    fileNote:files.length?`We have received your file${files.length===1?'':'s'}. ${files.length===1?'It has':'They have'} not been reviewed in the free check. A plain review is part of Stage 2.`:''}
 }
 function stage1KnowledgeMarkup(p){
   const k=stage1KnowledgeLists(p);
-  const list=(title,items,cls)=>`<div class="simple-know-block ${cls}"><h3>${esc(title)}</h3>${items.length?`<ul class="simple-list simple-list-tight">${items.map(text=>`<li>${esc(text)}</li>`).join('')}</ul>`:'<p class="meta">Nothing to list here.</p>'}</div>`;
-  const fileItems=k.files.map(file=>`<li><strong>${esc(file.name)}</strong> ${uploadFileDetail(file.name)}</li>`).join('');
-  return `${list("What's missing",k.missing,'simple-know-missing')}${list("What's unclear",k.unclear,'simple-know-unclear')}
+  const list=(title,items,cls)=>`<div class="simple-know-block ${cls}"><h3>${esc(title)}</h3>${items.length?`<ul class="simple-list simple-list-tight">${items.map(text=>`<li>${esc(text)}</li>`).join('')}</ul>`:'<p class="meta">Nothing listed yet. That is not an all-clear.</p>'}</div>`;
+  const fileItems=k.files.map(file=>`<li><strong>${esc(file.name)}</strong> ${uploadFileDetail(file.name)}<span class="simple-file-line">Received, not reviewed in the free check.</span></li>`).join('');
+  const open=k.missing.length+k.unclear.length;
+  return `<p class="simple-know-status" role="status"><strong>${open} thing${open===1?'':'s'} still open.</strong> Until each one is answered it stays as "Need info", never an all-clear.</p>${list("What's missing",k.missing,'simple-know-missing')}${list("What's unclear",k.unclear,'simple-know-unclear')}
 <div class="simple-know-block simple-know-have"><h3>What we have</h3>${k.have.length?`<ul class="simple-list simple-list-tight">${k.have.map(text=>`<li>${esc(text)}</li>`).join('')}</ul>`:'<p class="meta">No answers saved yet.</p>'}${k.files.length?`<h4>Your files</h4><ul class="simple-list simple-list-tight simple-files">${fileItems}</ul><p class="meta">${esc(k.fileNote)}</p>`:''}</div>
 <p class="meta simple-know-foot">${esc(UPLOAD_NOT_REVIEWED_TEXT)} This is not an all-clear: it only shows what we know and don't know so far.</p>`
 }
 
 // ---------------------------------------------------------------------------
-// Stage 1 as eight client questions, each with a probable answer. Problems only, never how to solve them.
-// Built from the project's saved answers where possible. Used by the on-screen report and the PDF.
-// Past-job evidence behind the wording (Job letters only, never shown to clients):
-//  Q1  Full planning was applied for on Jobs A, C, F, H, I and O, including an open canopy (Job F) and a tent hall (Job I).
-//      Conditions seen: start within 3 years, approved plans, matching materials, no surface water onto the highway,
-//      no external lighting without approved details, piling/vibration method statement, biodiversity net gain (Jobs C, F, H, I).
-//      Requests seen: noise assessment, swept-path plan, flood risk assessment, mining risk review (Jobs F, H, O).
-//      Raising the eaves after consent needed a variation (Job C).
-//  Q3  No past job simply reused a slab as it was (Jobs C, D, G, L).
-//  Q4  Job B's base design went through five revisions over three months.
-//  Q5  No signed completion certificate could be found on past jobs.
-//  Q8  Job D lessons: power, welfare, crane and lorry access, escorting deliveries, mezzanine added later.
-// CDM wording is from the Construction (Design and Management) Regulations 2015, regs 4, 5 and 6
-// (https://www.legislation.gov.uk/uksi/2015/51). The source is deliberately not shown on the client page.
-// Never say "permitted development" or "no planning needed" here (missing data is need info, never an all-clear).
+// Stage 1 as seven client questions, in the order it usually happens, each with a probable answer.
+// Written as "what you will probably have to deal with to get approved". Problems only, never how to solve them.
+// Past jobs are hidden reference only: they shaped the questions and the probable answers (Job letters in code comments only,
+// never on a client page, the PDF or in a rule the client can see). Nothing on a client page may mention a past job.
+//  Q1 Planning: full applications were the usual route, even for open canopies and tent halls (Jobs A, C, F, H, I, O); one extension
+//     went the certificate route (Job G). Conditions seen: start within 3 years, approved plans, matching materials, outside
+//     lighting details, piling/vibration method statement, biodiversity net gain, no surface water onto the road. A height change
+//     after approval needed a new approval (Job C). Never say "permitted development" or "no planning needed".
+//  Q2 Engineer, Q3 base and civils: a structural engineer designed the base on every job with a new base (Jobs C, D, G, L).
+//  Q4 Building Regulations: boundary fire walls, fire strategy requests, accessible layout, energy statement for unheated halls (Jobs B, C, D, H).
+//  Q5 CDM: Construction (Design and Management) Regulations 2015 reg 4 (client duties), reg 5 (appoint principal designer and
+//     principal contractor in writing before work starts; if the client does not, the client's own duties include theirs), reg 6
+//     (notify HSE: more than 30 working days with more than 20 people at once, or more than 500 person-days).
+//     "Usually the client acts as, or appoints, the principal contractor" is house experience, NOT law, and is worded as "usually".
+//     Source: https://www.legislation.gov.uk/uksi/2015/51. The legal references are deliberately not shown on the client page.
+//  Q6 Site risks and access: no rams.md was supplied, so these come from the Job D lessons (crane and lorry access, 110 V power and
+//     welfare by the client, escorted deliveries, buried services, hot-work permits). Project Check does not issue RAMS: never promise them.
+//  Q7 Consultants: house position, not law. Say "Building Control (council or a registered approver)", never "Approved Inspector".
+// Chips: Likely / Possibly / Unlikely / Need info. Missing input is always "Need info", never an all-clear.
 // ---------------------------------------------------------------------------
-const QUESTION_CHIPS={yes:'Probably yes',certain:'Yes',maybe:'Maybe – needs checking',unknown:"We don't know yet"};
-const PLANNING_CONDITIONS=['Materials and colour','Landscaping','Drainage and flood control (SuDS)','No surface water onto the road','Working hours during construction','A construction management plan','Noise limits','Outside lighting details','Parking, lorry access and turning space','Ground contamination checks','Wildlife and biodiversity net gain','Limits on what the building can be used for','Piling or vibration method statements'];
-const PLANNING_REFUSAL_REASONS=['How it looks (size, design, visual impact)','Effect on neighbours (noise, overlooking, loss of light)','Traffic, access and parking','Flood risk and drainage','Green Belt land','Nearby listed buildings or conservation areas','Harm to wildlife or trees'];
+const STAGE1_INTRO="Here's what you'll probably face to get your building approved, in the order it usually happens, and who you'll need. Think of it as the first chat across the table: no hard sell, and the answers and a plan come later, with Stuart.";
+const QUESTION_CHIPS={likely:'Likely',possibly:'Possibly',unlikely:'Unlikely',needinfo:'Need info'};
+const PLANNING_CONDITIONS=['Start building within 3 years of approval','Build to the approved plans','Materials and colour to match','Details of any outside lighting','A method statement for piling or vibration','Biodiversity net gain (leaving wildlife better off)','No surface water running onto the road','A new approval if the height changes','Working hours and a plan for lorries and noise while building','Noise limits once the building is in use','Drainage and flood control','Landscaping and protecting trees','Parking, lorry access and turning space','Checks if the ground may be contaminated'];
+const PLANNING_REFUSAL_REASONS=['How it looks (size and design)','Effect on neighbours (noise, overlooking, loss of light)','Traffic, access and parking','Flood risk and drainage','Green Belt land','Listed buildings or conservation areas nearby','Harm to wildlife and trees'];
+// Optional questions. Saved as new facts keys, never required, never part of the "still required" list.
+const STAGE1_OPTIONAL_QUESTIONS=[
+  {key:'existingBuildingOnSite',label:'Is there an existing building on the site?'},
+  {key:'runsSiteYourself',label:'Will you run the site yourself (act as the principal contractor)?'}
+];
+const OPTIONAL_ANSWERS=['Yes','No','Not sure'];
+function setStage1Optional(id,key,value){
+  const p=getP(id);
+  if(!p||!STAGE1_OPTIONAL_QUESTIONS.some(question=>question.key===key))return;
+  const facts=projectFacts(p);
+  if(OPTIONAL_ANSWERS.includes(value))facts[key]=value;else delete facts[key];
+  save();render()
+}
+window.setStage1Optional=setStage1Optional;
+function stage1OptionalMarkup(p){
+  const facts=projectFacts(p);
+  const rows=STAGE1_OPTIONAL_QUESTIONS.map(question=>`<div class="field"><label for="opt_${question.key}">${esc(question.label)}</label><select id="opt_${question.key}" onchange="setStage1Optional('${esc(p.id)}','${question.key}',this.value)"><option value="">Skip this one</option>${OPTIONAL_ANSWERS.map(value=>`<option ${facts[question.key]===value?'selected':''}>${value}</option>`).join('')}</select></div>`).join('');
+  return `<section class="card simple-optional" aria-labelledby="simpleOptionalTitle"><h2 id="simpleOptionalTitle">Two quick questions (optional)</h2><p class="meta">These help us sharpen the planning, engineering and site safety answers. Skip them if you like.</p>${rows}</section>`
+}
+// The first things you would ask a new client: what is it for, how big, where, is there a base, who runs the site.
+// Reuses the project fields already saved, so nothing is asked twice.
+function stage1BasisList(p){
+  const facts=projectFacts(p),has=stage1HasValue;
+  const size=has(facts.width)&&has(facts.length)?`${facts.width} m wide × ${facts.length} m long${has(facts.height)?`, ${facts.height} m high inside`:''}`:'';
+  const use=[facts.buildingUse,facts.buildingType].filter(has).join(' · ');
+  const base=projectExistingBase(facts);
+  const runs=facts.runsSiteYourself;
+  return [
+    ["What it's for",use],
+    ['How big',size],
+    ['Where',p.address],
+    ['Is there a base already?',has(base)?base:''],
+    ['Who runs the site?',runs==='Yes'?"You'll run it yourself":runs==='No'?'Someone else will run it':runs==='Not sure'?'Not sure yet':'']
+  ].map(([label,value])=>({label,value:has(value)?String(value):'',known:has(value)&&value!=='Not sure'&&value!=='Not sure yet'}))
+}
+function stage1BasisMarkup(p){
+  return `<section class="card simple-basis" aria-labelledby="simpleBasisTitle"><h2 id="simpleBasisTitle">What you've told us</h2><dl class="simple-told">${stage1BasisList(p).map(item=>`<div><dt>${esc(item.label)}</dt><dd>${item.known?esc(item.value):`<span class="confirmation-missing">Need info${item.value?` (${esc(item.value)})`:''}</span>`}</dd></div>`).join('')}</dl></section>`
+}
 // Stage 1 base answer, in three kinds: an existing slab, no usable base (a new one is needed) or not known.
 // Accepts the old question value ("Concrete slab") and the project-details value ("Concrete slab or concrete hardstanding").
 function stage1BaseKind(facts){
+  const raw=String(facts&&facts.base||'');
+  if(/^existing (building|foundations)/i.test(raw))return 'structure';
   const base=String(projectExistingBase(facts)||'');
   if(/^concrete slab/i.test(base)||base==='Concrete')return 'slab';
   if(!base||base==='Not sure')return 'unknown';
-  return 'new';
+  return 'new'
 }
 function stage1ClientQuestions(p){
   const facts=projectFacts(p),saved=p.backgroundChecks&&p.backgroundChecks.regsChecker,regs=stage1RegsFindings(p);
   const nation=facts.regsNation||(saved&&saved.nation)||'';
+  const onSite=facts.existingBuildingOnSite,runs=facts.runsSiteYourself;
+  const linked=projectAdjacentBuildingNeedsJunction(facts);
+  const baseKind=stage1BaseKind(facts);
   const list=[];
   const add=(status,answer,why,extra)=>list.push({n:list.length+1,title:CLIENT_QUESTION_TITLES[list.length],status,chip:QUESTION_CHIPS[status],answer,why,points:[],blocks:[],after:'',...extra});
   // 1. Planning
-  add('yes',`Most new industrial buildings needed full planning permission on past jobs, even open canopies and temporary-looking tent halls. Planners often add conditions (lighting, noise, drainage, vehicle access, wildlife), and changing the height after permission needs a new approval.${nation==='Wales'||nation==='Scotland'?` The planning rules in ${nation} are different from England.`:''}`,
-    'Starting work without the right permission can be expensive to put right.',
-    {blocks:[{heading:'Conditions councils often attach',items:PLANNING_CONDITIONS},{heading:'Common reasons for refusal',items:PLANNING_REFUSAL_REASONS}],
-     blockNote:'These two lists are general and probable. They are not specific to your site.',after:'Stage 2 checks which of these are likely for your site.'});
-  // 2. Groundwork
-  const ground=[];
-  if(facts.level==='No')ground.push('You told us the site is not level.');
-  else if(!stage1HasValue(facts.level)||facts.level==='Not sure')ground.push("We don't know yet if your site is level.");
-  if(facts.services==='Yes')ground.push('You told us there are drains or services on site. They may be under the building.');
-  else if(!stage1HasValue(facts.services)||facts.services==='Not sure')ground.push("We don't know yet where the drains and services run.");
-  if(facts.programme==='0–3 months')ground.push('You told us your timescale is tight.');
-  add('yes','Expect drainage, ground levels, access for a crane and lorries, and finding buried services. A sloping site can need retaining walls.',
-    'This is often the biggest hidden cost and delay, and it is usually outside the building price.',{points:ground});
-  // 3. Existing base
-  const baseKind=stage1BaseKind(facts);
-  if(baseKind==='slab')add('maybe','It may be suitable, but nobody can say until an engineer has checked it in writing.'+(projectReuseIntention(facts)==='No — a new base is planned'?' You told us you plan a new base instead.':''),'Everything else sits on the base, so a wrong guess is expensive.');
-  else if(baseKind==='new')add('yes','You will probably need a new concrete base. What is on the ground now is not usually a base a building can sit on.','Everything else sits on the base, so a wrong guess is expensive.');
-  else add('unknown',"We need to know what is on the ground now before we can say.",'Everything else sits on the base, so a wrong guess is expensive.');
-  // 4. Structural engineer
-  add('yes',`The base has to be designed for your building's loads and signed off, and Building Control needs to see it. On a past job the base design went through five revisions over three months before the building could go up.${stage1AdjacentJunctionApplies(p)?' Joining onto an existing building adds more engineering work at the join.':''}`,
-    'Base design can hold up the start of the building.');
-  // 5. Building Regulations (the live regs-checker flags are shown here, in plain words)
-  const regsBlocks=[],regsPoints=['Keep your Building Control sign-off paperwork. On past jobs no signed completion certificate could be found.'];
-  const cold=projectIsSteelFreeStanding(facts)?stage1SteelEnvelope(facts).label==='Get professional support':Boolean(p.stage1Assessments?.specialistLowTemperatureFlag);
+  const planningMissing=[];
+  if(!(stage1HasValue(facts.width)&&stage1HasValue(facts.length)))planningMissing.push('The size of the building');
+  if(!nation)planningMissing.push('The site country (we set this from the postcode in Site Layout)');
+  if(facts.siteBoundaryStatus!=='confirmed')planningMissing.push('Every site boundary marked in Site Layout');
+  const planningPoints=[];
+  if(onSite==='Yes')planningPoints.push("You've told us there is already a building on the site. Its size and use will matter, so expect to be asked about it.");
+  else if(onSite==='No')planningPoints.push("You've told us there is no building on the site today, so this would be treated as a new building.");
+  else planningPoints.push("We don't know yet whether there is an existing building on the site. It changes the answer, so it is worth finding out.");
+  let planningStatus='likely',planningAnswer="Most new industrial buildings need a full planning application. You'll need professional support to confirm.";
+  if(planningMissing.length){planningStatus='needinfo';planningAnswer="Most new industrial buildings need a full planning application. We can't say more until we have the details below.";planningMissing.forEach(text=>planningPoints.push(`Still needed: ${text}`))}
+  else if(nation==='Wales')planningAnswer="Planning rules in Wales are different from England. Planning permission is likely to be needed. You'll need professional support.";
+  else if(nation==='Scotland')planningAnswer="Planning rules in Scotland are different. Planning permission is likely to be needed. You'll need professional support.";
+  else if(linked){planningStatus='possibly';planningAnswer="A small extension to an existing industrial site is sometimes dealt with differently from a full application, but it depends on details we don't have yet. Please don't assume. You'll need professional support to confirm."}
+  add(planningStatus,planningAnswer,'Planning comes first. The other steps rely on what is approved, and changing the size or height later can mean applying again.',
+    {points:planningPoints,blocks:[{heading:'Conditions councils often attach (general)',items:PLANNING_CONDITIONS},{heading:'Common reasons councils refuse (general)',items:PLANNING_REFUSAL_REASONS}],
+     blockNote:'These two lists are general. They are not specific to your site.',after:'Stage 2: Stuart checks which of these are likely for your site.'});
+  // 2. Structural engineer
+  const engineerPoints=[];
+  if(linked)engineerPoints.push('Joining onto, or standing close to, an existing building usually means more engineering input at the join.');
+  if(onSite==='Yes')engineerPoints.push("You've told us there is already a building on site, so the engineer will want to know about its foundations.");
+  if(baseKind==='slab')engineerPoints.push('If you hope to reuse an existing slab, an engineer has to confirm it in writing first.');
+  engineerPoints.push("If the size or height changes later, the engineer's design usually has to be redone.");
+  add('likely',"Almost any steel building needs a structural engineer to design the base and the connections between the building and the base. Building Control will expect their calculations. This is separate from the building supplier. You'll need professional support.",
+    'The base design can hold up the start of the building.',{points:engineerPoints});
+  // 3. Existing base, roads, drainage, ground and services
+  const groundPoints=[];
+  if(projectReuseIntention(facts)==='Yes — assess it for reuse'&&['No','Not sure'].includes(projectSiteEvidenceAvailability(facts)))groundPoints.push('Without drawings or surveys, nobody can say yet whether what is there can be used.');
+  if(baseKind==='slab'&&projectReuseIntention(facts)==='No — a new base is planned')groundPoints.push('You told us you plan a new base instead.');
+  if(facts.level==='No')groundPoints.push('You told us the site is not level. A sloping site can need retaining walls.');
+  if(facts.services==='Yes')groundPoints.push('You told us there are drains or services on site. They may be under the building.');
+  if(onSite==='Yes')groundPoints.push("You've told us there is a building on site already. Anything built near or against it adds checks.");
+  groundPoints.push('Roads, hard standing and access for fire engines and delivery vehicles are your responsibility.');
+  groundPoints.push('Surface water and foul drainage connections are separate from the building. They may need design and approval.');
+  groundPoints.push('Old mining, made ground or gas can add work to the base.');
+  groundPoints.push('Pipes and cables under the building area can affect where it goes and how the base is built.');
+  if(baseKind==='structure')add('likely',"Building on or against an existing structure needs a structural check. You'll need professional support.",'This is often the hidden part of the job, and it is usually outside the building price.',{points:groundPoints});
+  else if(baseKind==='slab')add('possibly',"An existing slab may be usable, but it is unlikely to be accepted without a structural check of what is underneath and how thick it is. You'll need professional support.",'This is often the hidden part of the job, and it is usually outside the building price.',{points:groundPoints});
+  else if(baseKind==='new')add('likely',"The surface alone doesn't show that it can carry a steel building. A new or strengthened base is likely. You'll need professional support.",'This is often the hidden part of the job, and it is usually outside the building price.',{points:groundPoints});
+  else add('needinfo',"We can't say what you're building on yet. Tell us what is on the ground now.",'This is often the hidden part of the job, and it is usually outside the building price.',{points:groundPoints});
+  // 4. Building Regulations (the live regs-checker flags are shown here, in plain words)
+  const regsBlocks=[],regsPoints=[];
+  const cold=projectIsSteelFreeStanding(facts)?stage1SteelEnvelope(facts).label==='Get professional support':Boolean(p.stage1Assessments&&p.stage1Assessments.specialistLowTemperatureFlag);
   if(cold)regsPoints.push('You asked for a store colder than 2°C. That needs specialist design and extra checks.');
+  regsPoints.push('Later changes, such as adding a mezzanine floor, need their own checks.');
+  regsPoints.push('Building Control signs the finished building off at the end, so expect inspections along the way.');
   if(regs){
     if(regs.problems.length)regsBlocks.push({heading:'What we have spotted for your building',items:regs.problems.map(item=>item.why?`${item.text} ${item.why}`:item.text)});
     if(regs.support.length)regsBlocks.push({heading:"Worth a professional's opinion",items:regs.support});
     if(regs.needInfo.length)regsBlocks.push({heading:"We can't check these yet",items:regs.needInfo});
-  }else regsPoints.unshift("We have not run the boundary and fire checks yet. Finish Site Layout and Building Design first.");
-  add('yes','Building Control will check fire safety (especially walls near a boundary), escape routes, access for disabled people and energy use. Even for unheated buildings a written energy statement may be needed.',
-    'Building Control can stop or delay the job.',{points:regsPoints,blocks:regsBlocks});
-  // 6. CDM
-  add('certain','CDM (the Construction Design and Management Regulations 2015) gives you, the client, legal duties for health and safety on your project. On most projects the client either acts as the principal contractor or appoints one, and big sites usually run their own permits through their own health and safety team.',
-    'These are legal duties, and they apply before work starts.',
-    {points:['If more than one contractor will work on site (almost always: groundworker, building erector, electrician), a principal designer and a principal contractor must be appointed in writing before work starts. If nobody is appointed, those duties fall on you.',
-      'Ask early who will be principal designer and principal contractor.',
-      'If the work lasts more than 30 working days with more than 20 people on site at once, or more than 500 person-days, the Health and Safety Executive (HSE) must be told before work starts.']});
-  // 7. Consultants
-  add('yes',"You do, separately. That means a structural engineer, a planning consultant or architect, and Building Control fees. Sometimes it also means fire, drainage and electrical designers (for example for lighting and the fire alarm). None of this is in the building supplier's price.",
-    'These fees are extra to the building price.');
-  // 8. On site
-  add('yes','You will probably need to provide power, welfare (toilets), safe access for a large crane and delivery lorries, someone to escort deliveries, a cleared area, and knowledge of where buried services are. Later changes such as adding a mezzanine floor need their own checks.',
-    'If these are not ready, deliveries and the build can be delayed.');
+  }else regsPoints.unshift('We have not run the boundary and fire checks yet. Finish Site Layout and Building Design first.');
+  let regsStatus='likely',regsAnswer="Building Control will check fire safety (especially walls near a boundary), escape routes, access for disabled people and energy use. Even an unheated building may need a written energy statement. You'll need professional support.";
+  if(nation==='Wales'){regsStatus='needinfo';regsAnswer="Wales has its own Building Regulations guidance. You'll need professional support."}
+  else if(nation==='Scotland'){regsStatus='needinfo';regsAnswer="Scotland has a separate building warrant system. You'll need professional support."}
+  else if(!nation){regsStatus='needinfo';regsAnswer="We need to know the site country before we can say. We set it from the postcode in Site Layout."}
+  add(regsStatus,regsAnswer,'Building Control can hold up the job until it is satisfied.',{points:regsPoints,blocks:regsBlocks});
+  // 5. CDM: who runs the site
+  const cdmPoints=['Ask early who will be principal designer and who will be principal contractor.',
+    'If more than one contractor will work on site and nobody is appointed in writing, those duties fall on you.',
+    'Larger jobs must be notified to the Health and Safety Executive (HSE) before work starts: more than 30 working days with more than 20 people on site at once, or more than 500 person-days.'];
+  if(runs==='Yes')cdmPoints.unshift("You've told us you'll run the site yourself. That usually means you act as the principal contractor, so those duties sit with you and your own site safety team.");
+  else if(runs==='No')cdmPoints.unshift("You've told us someone else will run the site. They need to be appointed as principal contractor in writing before work starts, and a principal designer too.");
+  else cdmPoints.unshift("Need info: we don't know yet who will run the site.");
+  add('likely','CDM (the Construction (Design and Management) Regulations 2015) gives you, the client, legal duties for health and safety on your project, even when others do the work. In our experience the client usually acts as, or appoints, the principal contractor, and bigger sites usually run their own permits through their own health and safety team. That is our usual experience, not a legal rule.',
+    'These are legal duties, and they apply before work starts.',{points:cdmPoints});
+  // 6. Site risks and access
+  const siteRisks=['Access for a large crane and delivery lorries, and ground firm enough to carry them.','Overhead cables and buried services.','Working on a live site alongside your own people and vehicles: permits, escorts and keeping areas clear.','Lifting and working at height.','Power and welfare (toilets) for the crew.'];
+  if(onSite==='Yes')siteRisks.unshift("You've told us there is a building on the site already, so it may well be a live site while the work goes on.");
+  add('likely','Putting up a steel building is a big operation on your site. These are the things you will probably have to deal with on the day.',
+    'If these are not ready, deliveries and the build can be held up.',{points:siteRisks});
+  // 7. Consultants and fees
+  add('likely',"The building supplier supplies and erects the building. The independent professionals are normally appointed and paid by you, separately from the building price. Project Check does not appoint or pay them. You'll need professional support.",
+    'These fees are extra to the building price.',
+    {points:['Structural engineer: Likely','Building Control (the council or a registered approver): Likely','Principal designer for CDM: Likely','Planning consultant or architect: Possibly','Fire engineer: Possibly','Drainage and ground specialists: Possibly, depending on your site','Sometimes electrical and fire alarm designers for lighting and alarms.']});
   return list
 }
 function stage1QuestionCardMarkup(q){
@@ -2400,8 +2506,9 @@ ${q.points.length?`<ul class="simple-list simple-list-tight simple-qpoints">${q.
 ${q.blockNote?`<p class="meta simple-qnote">${esc(q.blockNote)}</p>`:''}${blocks?`<div class="simple-qblocks">${blocks}</div>`:''}${q.after?`<p class="simple-qafter">${esc(q.after)}</p>`:''}
 <p class="simple-qwhy"><strong>Why it matters:</strong> ${esc(q.why)}</p></article>`
 }
+// The report ends gently: a free call first, saving the project second, Stage 2 only as an offer.
 function stage1ReportActionsMarkup(id){
-  return `<section class="card simple-actions" aria-labelledby="simpleNextTitle"><h2 id="simpleNextTitle">Next step</h2><p class="meta">Talk it through with Stuart, get the answers and a plan, or keep a copy of this page.</p><div class="simple-cta-row">${callButton('btn green simple-cta')}<button type="button" class="btn simple-cta" onclick="route('stage2','${esc(id)}')">Get Stage 2</button><button type="button" class="btn secondary simple-cta" onclick="downloadReport('${esc(id)}','s1')">Download PDF</button></div></section>`
+  return `<section class="card simple-actions" aria-labelledby="simpleNextTitle"><h2 id="simpleNextTitle">An easy next step</h2><p class="meta">If you'd like to talk it through, Stuart is happy to have a short chat. There's no pressure and no sales pitch.</p><div class="simple-cta-row">${callButton('btn green simple-cta simple-cta-main')}<button type="button" class="btn simple-cta simple-cta-alt" onclick="route('project','${esc(id)}')">Save your project</button><button type="button" class="btn secondary simple-cta" onclick="downloadReport('${esc(id)}','s1')">Download PDF</button></div><p class="meta simple-stage2-offer">When you're ready, there's also Stage 2, where Stuart goes through the answers and a plan with you. <button type="button" class="simple-linkbtn" onclick="route('stage2','${esc(id)}')">See what Stage 2 includes</button></p></section>`
 }
 function stage1Summary(id){
 if(!requireUser())return;
@@ -2426,8 +2533,10 @@ const today=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',ye
 // An early check, not a design or an approval. Every card is a probable problem for the paid stage to deal with.
 app.innerHTML=`<div class="container simple-report">
 <header class="simple-report-head"><img class="workspace-logo" src="assets/project-check-logo.png" alt="Project Check — Know before you build."><div class="simple-report-title"><div class="eyebrow">Free check</div><h1>${esc(p.name)}</h1><p class="meta">${esc(today)}</p></div><button class="btn secondary" onclick="route('project','${esc(id)}')">Back to my project</button></header>
-<p class="simple-lead simple-report-intro">Free check: the probable problems for your building. No solutions – that's Stage 2.</p>
+<p class="simple-lead simple-report-intro">${esc(STAGE1_INTRO)}</p>
+${stage1BasisMarkup(p)}
 <section class="simple-qlist" aria-label="Your questions and probable answers">${stage1ClientQuestions(p).map(stage1QuestionCardMarkup).join('')}</section>
+${stage1OptionalMarkup(p)}
 <section class="card simple-know" aria-labelledby="simpleKnowTitle"><h2 id="simpleKnowTitle">What we still don't know</h2>${stage1KnowledgeMarkup(p)}</section>
 ${stage1ReportActionsMarkup(id)}</div>`
 }
@@ -2479,8 +2588,8 @@ const stage2Questions=[
 // correctly excluded from the Stage 1 two-file allowance (stage1EvidenceCount
 // only counts stage==='Stage 1'). There is no separate Stage 2 upload limit
 // in the existing product — none is introduced here, per instruction.
-// Stage 2 is not open yet: every building type stays on the one Stage 1 route.
-function startStage2(id){route('stage1Workspace',id)}
+// Stage 2 is not open for payment yet. Every Stage 2 link goes to the Stage 2 page, which explains it and offers the call.
+function startStage2(id){route('stage2',id)}
 function stage2EvidencePanelHTML(p){
 return `<div class="actions"><label class="btn secondary" for="s2files" style="display:inline-block">Upload files</label></div><input type="file" id="s2files" multiple style="display:none"><p class="meta">${uploadsLabel(p,p.stage)}</p><p class="meta">${p.evidence.length?`${p.evidence.length} file(s) recorded for this project: ${p.evidence.map(e=>esc(e.name)).join(', ')}`:'No files uploaded yet for this project.'}</p>`
 }
@@ -2630,7 +2739,7 @@ const body=!confirmed
   :card;
 app.innerHTML=`<div class="container quotation-summary"><div class="pagehead"><div><div class="eyebrow">Stage 2 · Quotation design summary</div><h1>Stage 2 design summary</h1><p class="meta">${esc(p.name)} · ${esc(p.address||'')}</p></div><button class="btn secondary" onclick="route('stage1Workspace','${esc(id)}')">Project overview</button></div>${body}</div>`;
 }
-function addQuote(id){let p=getP(id),supplier=document.querySelector('#qsupplier').value.trim(),price=document.querySelector('#qprice').value.trim(),lead=document.querySelector('#qlead').value.trim(),scope=document.querySelector('#qscope').value.trim(),file=document.querySelector('#qfile').files[0];if(!supplier)return alert('Enter the supplier name.');p.quotes.push({id:crypto.randomUUID(),supplier,price,lead,scope,file:file?.name||'',at:now()});if(file)p.evidence.push({name:file.name,size:file.size,type:file.type,at:now(),stage:'Quotation'});p.history.push({at:now(),text:`Supplier quotation added: ${supplier}`});save();quotes(id)}
+function addQuote(id){let p=getP(id),supplier=document.querySelector('#qsupplier').value.trim(),price=document.querySelector('#qprice').value.trim(),lead=document.querySelector('#qlead').value.trim(),scope=document.querySelector('#qscope').value.trim(),file=document.querySelector('#qfile').files[0];if(!supplier)return alert('Enter the supplier name.');if(file&&!splitUnreadablePhotos([file]).length)return;p.quotes.push({id:crypto.randomUUID(),supplier,price,lead,scope,file:file?.name||'',at:now()});if(file)p.evidence.push({name:file.name,size:file.size,type:file.type,at:now(),stage:'Quotation'});p.history.push({at:now(),text:`Supplier quotation added: ${supplier}`});save();quotes(id)}
 function requestThreeSuppliers(id){let p=getP(id);p.supplierRequest={at:now(),count:3,status:'Requested'};p.history.push({at:now(),text:'Requested three quotations from three suitable suppliers'});save();quotes(id)}
 
 // Evidence Intelligence Batch 4 — customer-facing Stage 3 action detail. This
@@ -2806,10 +2915,10 @@ doc.addImage(PC_BUILDING_REPORT_DATA_URL,'PNG',left,y,refW,refH);y+=refH+8
 const RETIRED_ANSWER_KEYS=['regsFireAccessElevations','regsFireAccessWidth'];
 const excludeKeys=['buildingPosition','buildingFootprint','siteBoundary','rollerDoors','buildingPositionStatus','siteBoundaryStatus','addressConfirmedOnly',...RETIRED_ANSWER_KEYS];
 if(stage==='s1'){
-// Clean Stage 1 report: intro, the eight questions with status and answer, what we still don't know, next steps.
+// Clean Stage 1 report: intro, the seven questions with status and answer, what we still don't know, next steps.
 {
 const ink=[16,24,40],muted=[71,84,103];
-const chipColour={yes:[180,60,10],certain:[180,60,10],maybe:[150,100,0],unknown:muted};
+const chipColour={likely:[180,60,10],possibly:[150,100,0],unlikely:[40,110,70],needinfo:muted};
 const ensure=h=>{if(y+h>278)newPage()};
 const put=(text,o={})=>{
   const size=o.size||9.5,gap=o.gap||5,ind=o.indent||0;
@@ -2823,8 +2932,11 @@ const bullet=(text,o={})=>{
 };
 const section=title=>{ensure(24);y+=5;put(title,{size:13,bold:true,gap:7});doc.setDrawColor(210);doc.setLineWidth(0.3);doc.line(left,y-3,left+width,y-3);y+=2};
 y+=2;
-put("Free check: the probable problems for your building. No solutions – that's Stage 2.",{size:10.5,gap:5.8,color:muted});
+put(STAGE1_INTRO,{size:10.5,gap:5.8,color:muted});
 y+=3;
+section("What you've told us");
+stage1BasisList(p).forEach(item=>bullet(`${item.label} ${item.known?item.value:'Need info'}`,{size:9.5,gap:5}));
+y+=2;
 stage1ClientQuestions(p).forEach(q=>{
   ensure(46);y+=3;
   put(`${q.n}. ${q.title}`,{size:12,bold:true,gap:6.4});
@@ -2844,16 +2956,16 @@ section("What we still don't know");
 {
   const k=stage1KnowledgeLists(p);
   const block=(title,items,empty)=>{ensure(14);y+=2;put(title,{bold:true,size:10.5,gap:5.6});if(items.length)items.forEach(text=>bullet(text,{indent:2,size:9,gap:4.8}));else put(empty,{size:9,color:muted,gap:4.8})};
-  block("What's missing",k.missing,'Nothing to list here.');
-  block("What's unclear",k.unclear,'Nothing to list here.');
+  block("What's missing",k.missing,'Nothing listed yet. That is not an all-clear.');
+  block("What's unclear",k.unclear,'Nothing listed yet. That is not an all-clear.');
   block('What we have',k.have,'No answers saved yet.');
-  if(k.files.length){y+=1;put('Your files',{bold:true,size:9.5,gap:5});k.files.forEach(file=>bullet(`${file.name} (${file.guess.label})${file.guess.unreadable?' – '+file.guess.note:''}`,{indent:2,size:9,gap:4.8}));put(k.fileNote,{size:9,gap:4.8,color:muted})}
+  if(k.files.length){y+=1;put('Your files',{bold:true,size:9.5,gap:5});k.files.forEach(file=>bullet(`${file.name} (${file.guess.label}) – received, not reviewed in the free check${file.guess.unreadable?'. '+file.guess.note:''}`,{indent:2,size:9,gap:4.8}));put(k.fileNote,{size:9,gap:4.8,color:muted})}
   y+=2;put(`${UPLOAD_NOT_REVIEWED_TEXT} This is not an all-clear: it only shows what we know and don't know so far.`,{size:8.5,italic:true,color:muted,gap:4.6})
 }
-section('Next steps');
+section('An easy next step');
 put(`${BOOK_CALL_LABEL}: ${/^https:\/\//i.test(BOOK_CALL_URL)?BOOK_CALL_URL:'booking link coming soon. Open Project Check for the latest.'}`,{bold:true,gap:5.4});
-y+=1;put("Stage 2: the answers and a plan. It is not open for payment yet, so book the call with Stuart to start.",{gap:5.2});
-y+=1;put('You can open this report again in Project Check at any time.',{size:9,color:muted,gap:5});
+y+=1;put('Your project is saved in Project Check, so you can open this report again at any time.',{size:9,color:muted,gap:5});
+y+=1;put("When you're ready, there's also Stage 2, where Stuart goes through the answers and a plan with you. It isn't open for payment yet.",{gap:5.2});
 doc.setTextColor(0,0,0);
 }
 }else{
@@ -2915,13 +3027,48 @@ function label(k){return ({name:'Your name',role:'Role',structure:'Structure typ
 // Stage 2 sales page, shown for the stage2 / stage2Summary / quotes / quotationSummary routes. No prices.
 // PLACEHOLDER: there is no payment code yet. "Get Stage 2" only explains that payments are not switched on and offers the call.
 // Works signed out (no project id). It never reads project data other than the project name for the back link.
+// Content sources (code comment only): regs-planning draft List A (planning file) and List B (Building Regulations guidance),
+// upload-bot draft section 2 (plain review per document type). Plain words only: no numbers, prices, test counts or paragraph references.
 const STAGE2_FEATURES=[
   {title:'A Teams meeting with Stuart',text:'Go through your project together, in plain words, and ask anything you like.'},
   {title:'Upload as the job goes on',text:'Add site photos and documents whenever you have them. Each time you get a plain review: what is there, what is missing, what is unclear and what to ask next.'},
   {title:'A planning history file',text:'Nearby industrial planning applications and the conditions the councils attached to them.'},
   {title:'Building Regulations guidance',text:'Guidance for your building on fire near boundaries, access and energy.'},
   {title:'Solutions to each problem',text:'For every problem found in your free check, what you can do about it.'},
-  {title:'The planning picture, made real for your site',text:'Stuart shows which planning conditions and refusal reasons are likely where you are, using nearby applications.'}
+  {title:'Stuart makes it real for your site',text:'Stuart shows which planning conditions and refusal reasons are likely where you are, using nearby applications.'}
+];
+const STAGE2_PLANNING_FILE=[
+  'Nearby industrial applications: the same estate and the roads around it first, then a little further out',
+  'What was decided for each one, and whether the decision came from officers or a committee',
+  'The conditions and notes attached, including any that must be met before work starts and any time limits',
+  'The reports the council asked for, such as flood risk, traffic, noise, wildlife, ground or mining',
+  'Refused and withdrawn applications, and the reasons given: often the best early warning',
+  'Whether a certificate of lawfulness was used instead of a full application',
+  'What neighbours and the council\'s advisers (highways, environmental health, drainage, wildlife) said',
+  'Any later changes to an approval, and what changed',
+  'Where we looked and the date we looked, because planning websites change'
+];
+const STAGE2_REGS_GUIDANCE=[
+  'Fire and boundaries: how close walls can be, and what the walls and openings need to be made of',
+  'Rooflights and portal frames near a boundary',
+  'Exits and how far people travel to reach one',
+  'Fire engine access and water supply',
+  'Energy rules for your building, including the changes coming in 2027',
+  'Access for disabled people, from the road to the door',
+  'Whether a very small or temporary building is treated differently',
+  'Where the rules in Wales or Scotland differ, checked against the right local guidance',
+  'Which planning route might apply to an extension, and what has to be known before anyone can say'
+];
+// Made-up examples only. Each is clearly marked in the page. [Square brackets] show where real details would go.
+const STAGE2_EXAMPLE_REVIEWS=[
+  {type:'Steel drawings',present:'A general arrangement drawing, revision [rev], dated [date], with the grid, eaves and ridge levels.',missing:'A current, dimensioned drawing with door sizes. Please send it as a PDF.',unclear:'The title block gives one size and the grid gives another. Which one is final?',next:'Can you confirm each door as width × height?'},
+  {type:'Base and groundworks drawings',present:'A foundation drawing, revision [rev], dated [date].',missing:'A drawing for the final building size and height, and any ground investigation report.',unclear:'The foundation drawing is older than the latest steel drawing. Which one were the foundations designed on?',next:'Who is appointing the groundworker, and is there a setting-out drawing tied to the steel grid?'},
+  {type:'Planning drawings and decision notices',present:'Planning drawings, revision [rev], dated [date].',missing:'The decision notice and its conditions.',unclear:'The planning drawings show a different eaves height from the steel drawings. Which is final?',next:'Was the building supplier involved in the planning drawings?'},
+  {type:'Building Control',present:'An application dated [date] and the council or approver it went to.',missing:'Who the principal designer and principal contractor will be.',unclear:'Whether the fire strategy was written from the planning drawings or the steel drawings.',next:'Which set of drawings does Building Control hold?'},
+  {type:"Engineer's calculations and letters",present:"Calculations dated [date] for the final height and size.",missing:"A written, dated confirmation from the engineer.",unclear:'A phone call or text saying the foundations are fine. That is not written confirmation.',next:"Can the engineer send a dated letter for the final design?"},
+  {type:'Site surveys',present:'A measured survey dated [date] with the proposed building drawn on it.',missing:'A measured survey of the site.',unclear:'A hand sketch where opposite sides do not match.',next:'Can a surveyor measure and square the site?'},
+  {type:'Quotes and contracts',present:'A quote, revision [rev], dated [date], for a building of [size].',missing:'The order, or a record of later changes.',unclear:'The same length appears with three different values across the papers. Which is final?',next:'Is there a record of each design change?'},
+  {type:'Site photos',present:'Photos dated [date] showing [the area / the groundworks / the steel].',missing:'A date we can read on each photo, so they can be put in order.',unclear:'Photos that may belong to a different site.',next:'Which photos belong to this site, and when were they taken?'}
 ];
 function stage2GetClicked(button){
   const box=document.querySelector('#stage2Notice');
@@ -2937,14 +3084,20 @@ function paidStagePage(id){
   const backLabel=p?'Back to my project':(state.user?'Back to my projects':'Back to home');
   document.body.dataset.page='paidStage';
   const features=STAGE2_FEATURES.map((item,index)=>`<article class="simple-step"><span class="simple-step-num" aria-hidden="true">${index+1}</span><h3>${esc(item.title)}</h3><p>${esc(item.text)}</p></article>`).join('');
+  const plainList=items=>`<ul class="simple-list simple-list-tight">${items.map(text=>`<li>${esc(text)}</li>`).join('')}</ul>`;
+  const examples=STAGE2_EXAMPLE_REVIEWS.map(item=>`<details class="simple-example simple-example-doc"><summary>${esc(item.type)} <span class="simple-example-mark">Example only</span></summary><dl class="simple-example-list"><div><dt>What's there</dt><dd>${esc(item.present)}</dd></div><div><dt>What's missing</dt><dd>${esc(item.missing)}</dd></div><div><dt>What's unclear</dt><dd>${esc(item.unclear)}</dd></div><div><dt>What to ask next</dt><dd>${esc(item.next)}</dd></div></dl></details>`).join('');
   app.innerHTML=`<div class="container simple-paid simple-stage2">
-<section class="simple-hero simple-stage2-hero" aria-labelledby="stage2Title"><div class="eyebrow">Stage 2</div><h1 id="stage2Title">Stage 2: the answers and a plan</h1><p class="simple-lead">Your free check showed the probable problems. Stage 2 shows what to do about them, with Stuart alongside you.</p></section>
+<section class="simple-hero simple-stage2-hero" aria-labelledby="stage2Title"><div class="eyebrow">Stage 2</div><h1 id="stage2Title">Stage 2: the answers and a plan</h1><p class="simple-lead">Your free check showed what you'll probably have to deal with. Stage 2 goes through what to do about it, with Stuart alongside you. There's no rush: have a read, and book a chat when you're ready.</p></section>
 <section class="simple-section" aria-labelledby="stage2GetTitle"><h2 id="stage2GetTitle">What you get</h2><div class="simple-steps">${features}</div></section>
-<section class="simple-section" aria-labelledby="stage2ExampleTitle"><h2 id="stage2ExampleTitle">What a plain review looks like</h2>
-<article class="simple-example" aria-label="Example review, made up for illustration"><p class="simple-example-tag">EXAMPLE ONLY. Made-up content, not a real project.</p><p class="simple-example-file"><strong>example-site-photo.jpg</strong> (made-up file)</p>
-<dl class="simple-example-list"><div><dt>What's there</dt><dd>A concrete yard with a fence along one side and a building at the back. (Made-up.)</dd></div><div><dt>What's missing</dt><dd>A wider view showing the whole area where the new building would go. (Made-up.)</dd></div><div><dt>What's unclear</dt><dd>Whether the ground slopes, because the photo is taken from one angle. (Made-up.)</dd></div><div><dt>What to ask next</dt><dd>Can you send a photo from the far corner, looking back across the yard? (Made-up.)</dd></div></dl></article></section>
+<section class="simple-section" aria-labelledby="stage2PlanTitle"><h2 id="stage2PlanTitle">Your planning history file</h2><p class="simple-lead">So you and your planning consultant can see what the council has approved nearby, and what it asked for.</p>${plainList(STAGE2_PLANNING_FILE)}</section>
+<section class="simple-section" aria-labelledby="stage2RegsTitle"><h2 id="stage2RegsTitle">Building Regulations guidance</h2><p class="simple-lead">Guidance for your building, in plain words.</p>${plainList(STAGE2_REGS_GUIDANCE)}</section>
+<section class="simple-section" aria-labelledby="stage2ExampleTitle"><h2 id="stage2ExampleTitle">What a plain review of your uploads looks like</h2>
+<p class="simple-example-tag">EXAMPLES ONLY. Made-up content, not a real project. Square brackets show where your own details would go.</p>
+<p class="meta">Each time you upload, you see four short lists: what's there, what's missing, what's unclear and what to ask next. Anything missing or unclear stays as "Need info" until it is answered.</p>
+${examples}
+<p class="meta">Please send photos as JPEG or PNG and drawings as PDF. iPhone HEIC photos can't be read yet: change your camera to "Most Compatible" first.</p></section>
 <section class="card simple-actions simple-stage2-cta" aria-labelledby="stage2CtaTitle"><h2 id="stage2CtaTitle">Ready to start?</h2>
-<div class="simple-cta-row"><button type="button" class="btn green simple-cta" aria-expanded="false" aria-controls="stage2Notice" onclick="stage2GetClicked(this)">Get Stage 2 <span class="simple-badge">Payments not on yet</span></button>${callButton('btn simple-cta simple-cta-alt')}<button type="button" class="btn secondary simple-cta" onclick="${backAction}">${backLabel}</button></div>
+<div class="simple-cta-row"><button type="button" class="btn green simple-cta" aria-expanded="false" aria-controls="stage2Notice" onclick="stage2GetClicked(this)">Get Stage 2 <span class="simple-badge">Placeholder: payments not on yet</span></button>${callButton('btn simple-cta simple-cta-alt')}<button type="button" class="btn secondary simple-cta" onclick="${backAction}">${backLabel}</button></div>
 <div id="stage2Notice" class="simple-notice" role="status" hidden></div></section>
 </div><footer class="home-footer"><img src="assets/project-check-banner-logo.png" alt="Project Check — Know before you build."><nav aria-label="Account footer"><button data-route="home">Home</button><button data-route="signin">Sign in</button></nav><span></span><div class="home-footer-legal"><div></div><small>© 2026 Project Check</small></div></footer>`;
 }
