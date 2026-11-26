@@ -43,3 +43,5 @@ These come from real jobs. They are evidence of what happened, not legal advice.
 12. **Highways and parking can hold up small schemes.** On a 133 m² unit, highways recommended deferral over parking-bay sizes (2.4 × 4.8 m minimum), a lost pedestrian gate, disabled and cycle parking, and EV charging. Moving a door after consent needed a non-material amendment.
 13. **Duty-holder roles.** On two builds the client was named Principal Designer and Principal Contractor in the method statement. Check the client understands those CDM duties.
 14. **Scope drifts between quote and build.** Doors went from none to 4 roller doors, the length went from 20 m to 17 m, and ridge heights differed between quote and drawings. Re-check doors, fire exits and dimensions against the planning drawings before building.
+
+For how to read client uploads (drawings, Building Control and planning packs) and the problems between the parties, see [UPLOAD-RULES.md](UPLOAD-RULES.md).

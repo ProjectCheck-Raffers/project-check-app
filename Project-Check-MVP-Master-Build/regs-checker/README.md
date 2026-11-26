@@ -35,9 +35,9 @@ New result value `note` = the rule applies but is not a problem (exemption flag,
 | `L_ROOFLIGHT_U_QUOTE` | Quote: heated + rooflights = U 2.2 max. |
 | `M_ACCESS` | Problem: services = Yes. Stage 2: level threshold and accessible door. |
 | `F_CONDENSATION` | Advice only (never a fail): unheated + vehicles/wet goods. Stage 2 text only. |
-| `H_DRAINAGE_QUOTE` | Quote: gutters/downpipes by building supplier; surface water connection is customer scope. |
+| `H_DRAINAGE_QUOTE` | Quote: gutters/downpipes by building supplier; surface water connection is customer scope. Built inside an existing building (base answer "Existing building / structure") = `stage1NoteInternal` (services line only) and no gutter / surface water quote lines. |
 | `B_FIRE_ACCESS_11M` | Customer-scope note: "Fire engine access \u2013 get professional support". No inputs. |
-| `L_ENERGY` | Reads the Building Design services answer (Yes = customer-scope note, No = ok, Not sure/blank = need info). |
+| `L_ENERGY` | Fixed heating or cooling test (ADL Vol 2). Heated, other temperature, or services Yes = customer-scope note. Unheated + services No + exempt use (industrial, storage, workshop, agricultural) = ok. Unheated + services No + any other use (e.g. sports, leisure) = `stage1Problem` ("Part L statement may be needed – get professional support"). Heated answer, services or use unknown = need info (`needInfoHeating`, `needInfo`, `needInfoUse`). |
 | `L_2027_HEATED` | Heated only; a customer-scope note (L_2027 was removed). Old detail: AD L 2026 edition from 24 Mar 2027: doors U 1.6; U-values unchanged (walls 0.26, roof 0.18, floor 0.18); energy calculation favours low-carbon heating. Old rules if BC application is before 24 Mar 2027 and work starts before `transitionEnd`. Quote: personnel doors U 1.6. |
 
 ### Fact keys the rules read (questions NOT yet added to the form - app.js is outside regs-checker, needs Stuart's go)
@@ -58,7 +58,7 @@ The Building Design page now asks (card "Building Regulations and planning"): `r
 ### Permitted development (2026-11-25)
 
 `PLAN_PD` was rewritten (still `approved:false`). Its saved result carries `measured.status` (`not-pd`, `unknown`, `likely-pd`) with `reasons` (figures) and `missing`. `describePermittedDevelopment(savedRegsChecker)` turns that into the three allowed sentences for the Stage 1 report and PDF; the saved record also carries `pdApproved` so an unapproved rule reads "We can't yet say ... not approved yet" instead of a conclusion. It never says "no planning needed".
-A boundary side with no marked boundary line facing it (Site Layout) has no distance and is need info; `pcBgBoundaryDistances` in background-checks.js returns null for that side.
+A boundary side with no marked boundary line facing it (Site Layout) has no distance and is need info. `B_BOUNDARY` and `B_BOUNDARY_1M` read `backgroundChecks.buildingRegs.facingBoundaryDistances` (`pcBgFacingBoundaryDistances` in background-checks.js: each wall to the boundary it faces, 80 degree rule, measured at right angles, null when no facing boundary). Other rules still read `boundaryDistances` (nearest line anywhere).
 **Not coded / UNKNOWN:** article 2(3) land and SSSI lower limits; the tallest building on site for a free-standing building (needs `regsExistingHeight`, which the Building Design card only asks when the building links to an existing one, so a free-standing building reads need info until that is answered); existing floor area is compared with the footprint (single storey assumed).
 
 ### Report honesty (2026-11-25)
@@ -73,7 +73,7 @@ The old separate Stage 1 check files were moved in here. Rules with `"reportSect
 | --- | --- |
 | `FOUNDATION_BASE` | Existing surface answer in `triggerValues` = `stage1Problem`; "Not sure" = `stage1ProblemNotSure`. Customer scope ("get professional support"). Concrete slab = nothing. |
 | `SITE_LEVELS` | Level answer No / Not sure = `stage1Problem`; No = also `needInfo`. |
-| `PROGRAMME` | Programme "0–3 months" = `stage1Problem`. |
+| `PROGRAMME` | Programme "0–3 months" = `stage1Problem`. `approved:false` (2026-11-26): the programme question is not asked, so it never fires. |
 | `MAP_NOT_CONFIRMED` | Building position not confirmed = `needInfoPosition`; site boundary not confirmed = `needInfoBoundary`. Need info only, one line each. |
 
 Dropped as duplicates: the old close-boundary flag (covered by `B_BOUNDARY`, `B_BOUNDARY_1M`, `B_BOUNDARY_FIRERATED_QUOTE`, `A_FRAME_BOUNDARY`), the old heated-building flag (`L_ENERGY`, `L_2027_HEATED`) and the old services/drainage flag (folded into the `H_DRAINAGE_QUOTE` note). The browser loads `rules.json` as soon as `checker.js` loads; the Stage 1 report redraws once if it was opened before the rules arrived. Default roller door sizes now live in `building-layout.js` (`pcDoorSizeDefault`).

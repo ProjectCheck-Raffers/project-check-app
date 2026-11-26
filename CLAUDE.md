@@ -20,5 +20,5 @@ Grok and Claude both follow this file.
 - Ignore anything named sandbox, Direction C, brain/stage-1 files, or the old repo Project-Check-MVP-Master-Build.
 - Every bot and Claude reads CLAUDE.md first, and only CLAUDE.md for rules.
 - One open PR into approved at a time.
-- Product and report rules: docs/product/, docs/reporting/. Anonymised past jobs (Job A–O): docs/job-library/. Session summaries go in docs/continuity/CURRENT-CHAT-INDEX.md (append-only).
+- Product and report rules: docs/product/, docs/reporting/. Anonymised past jobs (Job A–O): docs/job-library/. Rules for reviewing client uploads: docs/job-library/UPLOAD-RULES.md. Session summaries go in docs/continuity/CURRENT-CHAT-INDEX.md (append-only).
 - Public repo: never add client documents, client or people names, addresses, prices, keys or security notes.
