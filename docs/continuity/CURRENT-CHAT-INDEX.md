@@ -344,3 +344,70 @@ Findings not yet built (awaiting Stuart's go):
 - Scope of supply tags: THORSPAN supplies the building and fire exits. Lighting, heating, ECB court, fire access roads, foundations, M&E and Building Control applications are the customer's – show "get professional support", not "potential problem".
 - A panel brand (e.g. Balex PIR) is not a fire rating; a building on the same site is not automatically a relevant boundary.
 - Stage 2 boundary solution text (cheapest first: move the building, fire-rated panels on that elevation only, fewer openings, confirm same-site with Building Control, rated panels all round).
+
+## Nightly continuity record – 2026-11-26
+
+### Date and stopping point
+
+26 November 2026, recorded by the GitHub Actions workflow `nightly-continuity.yml` (run 45779726781). The current stopping point visible in the repository is as follows.
+
+Live `approved` HEAD when this run read the branch is `c17208cd15b7b9ce885a0998702df65fa6867e18` ("Merge pull request #5 from ProjectCheck-Raffers/review", 25 November 2026 14:00 Europe/London). The last non-continuity commit on `approved` within the fetched history is `c17208cd15b7b9ce885a0998702df65fa6867e18` ("Merge pull request #5 from ProjectCheck-Raffers/review", 25 November 2026 14:00 Europe/London).
+
+Commits on `approved` in the 24 hours before this run:
+
+- `c17208cd15b7b9ce885a0998702df65fa6867e18` ("Merge pull request #5 from ProjectCheck-Raffers/review", ProjectCheck-Raffers)
+- `f71f9863aa9c24e46abf71c993faf7deaa2b0c91` ("Stage 1 Free Report: cancel old Direction C header so review-shell header matches Building Design", ProjectCheck-Raffers)
+- `08ce1f86fe04b9121cfd1c09203580dca6a10296` ("Report/PDF drawings: show confirmed indicative fire exits from project checks", ProjectCheck-Raffers)
+- `2dcbe6dabf22af678f0783aa3f5dfa237e227a8d` ("Remove report download cap; add 2-uploads-per-stage limit with Uploads (n/2) label", ProjectCheck-Raffers)
+- `b76ae13729179a515eac77cb920bbddbf530fe6f` ("regs-checker: add planning, Sch 2, loads, boundary, doors, rooflights, Part M, condensation, drainage, 2027 rules (approved:false)", ProjectCheck-Raffers)
+- `4f2094466f707845eff295bcc5c6fa3e2aaeda18` ("Merge pull request #4 from ProjectCheck-Raffers/handover-regs-checker-2026-11-23", ProjectCheck-Raffers)
+- `c12d99d556ca13e099ed06fd74d30e59c7545ba5` ("Merge approved into handover-regs-checker-2026-11-23 (index already contains approved content)", ProjectCheck-Raffers)
+- `5c7476c07039cdc99c1475164d8c8cc80a974428` ("Merge approved; append 23 Nov handover after latest entry with 25 Nov update note", ProjectCheck-Raffers)
+- `1ec1702b9c60eded8eed7528591e22724384f15c` ("Merge pull request #3 from ProjectCheck-Raffers/continuity-2026-11-19", ProjectCheck-Raffers)
+- `7fdb28f068cc1847c3c097ca7413324f0c0eba89` ("Merge approved into continuity-2026-11-19; append 19 Nov handover after latest entry", ProjectCheck-Raffers)
+- `880624b4dc7af569e022994622242951c777a7d0` ("docs(continuity): correct PR #1 status to merged 20 Nov 2026", ProjectCheck-Raffers)
+- `c5765f56503da136e35d3710ccd407f4815f38b0` ("docs(continuity): nightly continuity record – 2026-11-25 [skip ci]", github-actions[bot])
+
+Pull requests closed or merged in the same 24 hours:
+
+- PR #5, "Stage 1 Potential issues checker (regs-checker)": merged (merge commit `c17208cd15b7b9ce885a0998702df65fa6867e18`) at 2026-11-25T14:00:28Z.
+- PR #4, "Continuity index: 23 Nov 2026 Grok-to-Claude handover – regs checker": merged (merge commit `4f2094466f707845eff295bcc5c6fa3e2aaeda18`) at 2026-11-25T12:26:18Z.
+- PR #3, "Continuity index: 19 Nov 2026 Grok-to-Claude handover": merged (merge commit `1ec1702b9c60eded8eed7528591e22724384f15c`) at 2026-11-25T12:20:43Z.
+
+This run has no access to private chats, so any Project Check work outside GitHub cannot be determined from the repository.
+
+### Live-verified approved HEAD
+
+`c17208cd15b7b9ce885a0998702df65fa6867e18` on `approved` ("Merge pull request #5 from ProjectCheck-Raffers/review", 25 November 2026 14:00 Europe/London), read live from GitHub immediately before this entry was written.
+
+### Open PRs
+
+Read live: 3 open PR(s); none touched by this record. Check-run results were not read by this run.
+
+PR #8, "Move everything worth keeping from the old repos (sanitised)", head `migrate-old-repo` (`d616e39911c04ea4b4dc8257cd2235bd4c2bbbc3`), base `approved` (`c17208cd15b7b9ce885a0998702df65fa6867e18`); created 25 November 2026 23:59 Europe/London, last updated 25 November 2026 23:59 Europe/London; open, not draft, unmerged; not touched.
+
+PR #7, "Job library: anonymised past jobs and lessons for the regs checker", head `job-library` (`f53874c0d6ec917c1d3675beea47837a61e65e25`), base `approved` (`c17208cd15b7b9ce885a0998702df65fa6867e18`); created 25 November 2026 23:43 Europe/London, last updated 25 November 2026 23:43 Europe/London; open, not draft, unmerged; not touched.
+
+PR #6, "Navigation, regs questions, one route, permitted development, report honesty", head `review` (`19419e350c259fcdc14b819c8ab5fb3f9c757687`), base `approved` (`c17208cd15b7b9ce885a0998702df65fa6867e18`); created 25 November 2026 15:35 Europe/London, last updated 25 November 2026 15:50 Europe/London; open, not draft, unmerged; not touched.
+
+### Unresolved blockers
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+- None recorded in the previous nightly record.
+
+### Note
+
+This is an automated GitHub-state record, not a full transcript. It was generated without an AI model and has no access to private chats. It changes only this file.
