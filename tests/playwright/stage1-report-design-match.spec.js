@@ -23,8 +23,8 @@ function stateFixture() {
     relevantBoundaries: [],
   };
   const project = {
-    id: PROJECT_ID, owner: user.id, name: 'Report match project', address: '5 College Rd N, Aston Clinton, Aylesbury HP22 5EZ',
-    postcode: 'HP22 5EZ', status: 'Active', stage: 'Stage 1', created: '2026-11-03T09:00:00.000Z', facts, stage2: {},
+    id: PROJECT_ID, owner: user.id, name: 'Report match project', address: '5 Example Rd, Exampleton AB1 4CD',
+    postcode: 'AB1 4CD', status: 'Active', stage: 'Stage 1', created: '2026-11-03T09:00:00.000Z', facts, stage2: {},
     evidence: [], quotes: [], supplierRequest: null, risks1: [], actions1: [], risks2: [], actions2: [],
     history: [], downloads: { s1: 0, s2: 0 }, stage1Complete: true, stage2Complete: false, plan: null,
   };

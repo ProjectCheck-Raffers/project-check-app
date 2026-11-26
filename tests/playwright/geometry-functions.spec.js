@@ -38,7 +38,7 @@ test.describe('Finding A: fire-door advisory gated on valid, positive, finite di
   // valid dimensions with 0 personnel doors. That block was deliberately,
   // permanently removed from geometry.js's validateGeometry() on 2026-08-26
   // ("Personnel-door question corrected; perimeter ÷ 32 m rule retired from
-  // live behaviour", following the Coveris fire-strategy evidence review —
+  // live behaviour", following the Job B fire-strategy evidence review —
   // see CHANGELOG.md/MASTER-SPEC.md); suggestedPersonnelDoorAllowance()
   // itself is deliberately preserved, unaltered, but no longer called from
   // anywhere. Not a regression, not incomplete migration — an intentional,

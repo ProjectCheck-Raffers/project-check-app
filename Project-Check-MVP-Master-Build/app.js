@@ -1502,7 +1502,7 @@ const stage1Questions=[
 // p.facts.rollerDoors on saved projects still loads and still seeds the drawing.
 // REMOVED 2026-11-14: the Stage 1 'rollerCount' (vehicle doors) question page. Vehicle
 // doors are set in Building Design; legacy p.facts.rollerCount still loads and seeds the drawing.
-// Wording corrected 2026-08-26 (Coveris fire-strategy evidence — see
+// Wording corrected 2026-08-26 (Job B fire-strategy evidence — see
 // EVIDENCE-INTELLIGENCE-SPEC.md § "Recorded project evidence" and MASTER-SPEC.md §
 // "Personnel doors / means-of-escape responsibility split"): this captures ONLY the
 // customer's requested normal-access personnel-door quantity. It is not, and must
@@ -1843,12 +1843,12 @@ const statusLabel={ASSUMED_IN_DOCUMENT:'stated as an assumption in a document',P
 hint+=`<div class="banner evidence-assist"><b>Context from your uploaded documents</b>${assist.contextRecords.map(r=>`<div class="meta" style="margin-top:6px">"${esc(r.extracted_value)}" — ${esc(statusLabel[r.evidence_status]||r.evidence_status)}. Source: ${esc(r.source_file)} — ${esc(r.source_page_or_section)}.</div>`).join('')}<div class="meta" style="margin-top:6px">This is not a confirmed answer — please answer based on what you actually know.</div></div>`
 }
 }
-// REMOVED 2026-08-26 (Coveris fire-strategy evidence — see EVIDENCE-INTELLIGENCE-SPEC.md
+// REMOVED 2026-08-26 (Job B fire-strategy evidence — see EVIDENCE-INTELLIGENCE-SPEC.md
 // § "Recorded project evidence" and MASTER-SPEC.md § "Personnel doors / means-of-escape
 // responsibility split"): this question no longer shows a "preliminary personnel/fire
 // door allowance" banner derived from building perimeter ÷ 32 m. That calculation
 // blurred customer-requested personnel doors, means-of-escape exit provision and
-// fire-resisting doors into one invented number, which the Coveris evidence shows is
+// fire-resisting doors into one invented number, which the Job B evidence shows is
 // not how a real means-of-escape assessment works (travel distance/occupancy/exit
 // direction, not perimeter ÷ 32). The customer's answer to this question is now stored
 // exactly as given, with no suggested/calculated value offered or substituted. The old

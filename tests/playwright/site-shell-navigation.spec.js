@@ -2,7 +2,7 @@ const {test,expect}=require('@playwright/test');
 
 const KEY='projectcheck_master_v1';
 const user={id:'journey-user',email:'journey@example.test',name:'Journey Review',company:'Project Check',mobile:'07700 900123'};
-const project={id:'22222222-2222-4222-8222-222222222222',owner:user.id,name:'The Mount',address:'Systems House, Lingfield',postcode:'RH7 6JP',status:'Active',stage:'Stage 1',created:new Date().toISOString(),facts:{buildingUse:'Manufacturing or factory use',buildingType:'Free-standing building',length:'41',width:'38',height:'7',roofPitch:'5'},stage2:{},evidence:[],quotes:[],risks1:[],actions1:[],risks2:[],actions2:[],history:[],downloads:{s1:0,s2:0},stage1Complete:false,stage2Complete:false};
+const project={id:'22222222-2222-4222-8222-222222222222',owner:user.id,name:'Example Project',address:'Example House, Exampleton',postcode:'AB1 3CD',status:'Active',stage:'Stage 1',created:new Date().toISOString(),facts:{buildingUse:'Manufacturing or factory use',buildingType:'Free-standing building',length:'41',width:'38',height:'7',roofPitch:'5'},stage2:{},evidence:[],quotes:[],risks1:[],actions1:[],risks2:[],actions2:[],history:[],downloads:{s1:0,s2:0},stage1Complete:false,stage2Complete:false};
 
 async function seed(page){await page.addInitScript(({key,value})=>localStorage.setItem(key,JSON.stringify(value)),{key:KEY,value:{user:{id:user.id,email:user.email},users:[user],projects:[project],stage3ImpactRegister:[]}})}
 
@@ -35,7 +35,7 @@ test('drawer shows the approved project journey and locked Stage 2 only',async({
  await seed(page);await page.goto('/#stage1Workspace/'+project.id);
  await page.locator('#menuBtn').click();
  const drawer=page.locator('#siteDrawer');
- await expect(drawer.locator('#drawerProjectName')).toHaveText('The Mount');
+ await expect(drawer.locator('#drawerProjectName')).toHaveText('Example Project');
  await expect(drawer.getByRole('button',{name:/Project Overview/})).toHaveAttribute('aria-current','page');
  await expect(drawer.getByRole('button',{name:/Initial Questions/})).toBeVisible();
  await expect(drawer.getByRole('button',{name:/Project Documents/})).toBeVisible();

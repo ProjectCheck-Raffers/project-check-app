@@ -6,7 +6,7 @@ const STORAGE_KEY = 'projectcheck_master_v1';
 
 function projectFixture(id, confirmedSite = true) {
   const address = id === PROJECT_ID
-    ? 'Unit 15, Cotes Park Industrial Estate, Alfreton DE55 4RF'
+    ? 'Unit 15, Example Industrial Estate, Exampleton AB1 2CD'
     : '1 Other Site, Derby DE1 1AA';
   const facts = {
     role: 'Managing Director',
@@ -55,9 +55,9 @@ function projectFixture(id, confirmedSite = true) {
   return {
     id,
     owner: 'user-page-15b',
-    name: id === PROJECT_ID ? 'Alfreton Distribution Building' : 'Isolated second project',
+    name: id === PROJECT_ID ? 'Exampleton Distribution Building' : 'Isolated second project',
     address,
-    postcode: id === PROJECT_ID ? 'DE55 4RF' : 'DE1 1AA',
+    postcode: id === PROJECT_ID ? 'AB1 2CD' : 'DE1 1AA',
     status: 'Active',
     stage: 'Stage 1',
     created: '2026-11-03T09:00:00.000Z',
@@ -115,8 +115,8 @@ test('carries confirmed project facts into an editable, persistent and lockable 
   page.on('pageerror', error => pageErrors.push(error.message));
 
   await openBuildingDesign(page);
-  await expect(page.locator('.bd-project-facts')).toContainText('Alfreton Distribution Building');
-  await expect(page.locator('.bd-project-facts')).toContainText('Alfreton');
+  await expect(page.locator('.bd-project-facts')).toContainText('Exampleton Distribution Building');
+  await expect(page.locator('.bd-project-facts')).toContainText('Exampleton');
   await expect(page.locator('.bd-project-facts')).toContainText('40.0 m × 24.0 m');
   await expect(page.locator('.bd-project-facts')).toContainText('Clear height 6.0 m');
   await expect(page.locator('.bd-project-facts')).toContainText('Roof pitch 10°');
