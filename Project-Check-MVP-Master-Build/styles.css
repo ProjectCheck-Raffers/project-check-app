@@ -1672,3 +1672,75 @@ body:is([data-page="signin"],[data-page="create"]) .home-footer{max-width:1040px
 .simple-example-doc summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:center;flex-wrap:wrap;gap:8px}
 .simple-example-mark{display:inline-block;padding:2px 8px;border-radius:999px;border:1px dashed #b42318;color:#b42318;font-size:12px;font-weight:800}
 .simple-stage2 .simple-example-tag{margin:0 0 8px}
+
+/* Fourth pass (simple-s1d): infographic style for the Stage 1 report, topic icon grid, planning step view, summary strip,
+   and one consistent look across the customer pages. Mobile first. One accent colour per topic, built around the brand green and dark ink.
+   Every accent is at least 4.5:1 against white. */
+.simple-topic-1{--tc:#207a3d}.simple-topic-2{--tc:#1d3a5f}.simple-topic-3{--tc:#0f6b6b}.simple-topic-4{--tc:#3b5b92}
+.simple-topic-5{--tc:#4a3f8f}.simple-topic-6{--tc:#55701f}.simple-topic-7{--tc:#2b5f75}
+.simple-topics{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 16px}
+.simple-topic{display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-width:0;min-height:44px;padding:10px 10px 12px;border:1px solid #d9e0db;border-top:4px solid var(--tc);border-radius:12px;background:#fff;color:var(--ink);text-align:left;overflow-wrap:anywhere}
+.simple-topic:focus-visible,.simple-linkbtn:focus-visible,.simple-more summary:focus-visible{outline:3px solid var(--tc,#207a3d);outline-offset:2px}
+.simple-topic:hover{box-shadow:0 4px 14px rgba(16,24,40,.10)}
+.simple-topic-icon{display:inline-flex;width:32px;height:32px;color:var(--tc)}
+.simple-topic-icon svg,.simple-qicon svg{width:100%;height:100%}
+.simple-topic-label{font-size:14px;font-weight:700;line-height:1.25}
+.simple-topic:last-child:nth-child(odd){grid-column:1/-1}
+.simple-qcard{border-left-color:var(--tc,#98a2b3)!important;scroll-margin-top:84px}
+.simple-qnum{background:var(--tc,var(--green));color:#fff}
+.simple-qicon{flex:0 0 auto;display:inline-flex;width:26px;height:26px;color:var(--tc)}
+.simple-qhead{align-items:center;flex-wrap:wrap}
+.simple-qhead h3{flex:1 1 180px;min-width:0}
+.simple-bullets{margin:0;padding:0;list-style:none;display:grid;gap:6px;font-size:16px;line-height:1.4}
+.simple-bullets li{position:relative;padding-left:20px}
+.simple-bullets li::before{content:"";position:absolute;left:3px;top:.5em;width:8px;height:8px;border-radius:50%;background:var(--tc,var(--green))}
+.simple-more{border-top:1px dashed #d9e0db;padding-top:6px}
+.simple-more summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:700;color:var(--tc,var(--green))}
+.simple-more[open] summary{margin-bottom:6px}
+.simple-more>*+*{margin-top:8px}
+.simple-flow{margin:4px 0 0;padding:12px;border-radius:12px;background:#f7f9f8;border:1px solid #e6ebe8;display:grid;gap:10px}
+.simple-flow h4{margin:0;font-size:17px}
+.simple-flow-key{margin:0;display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:#5c3a00}
+.simple-hold-dot{display:inline-flex;flex:0 0 auto;width:20px;height:20px;border-radius:50%;background:#b45f06;color:#fff;font-weight:800;font-size:13px;align-items:center;justify-content:center}
+.simple-flow-list{margin:0;padding:0;list-style:none;display:grid;gap:24px}
+.simple-flow-step{position:relative;display:flex;gap:10px;align-items:flex-start;min-width:0;padding:12px;border:1px solid #d9e0db;border-radius:12px;background:#fff;overflow-wrap:anywhere}
+.simple-flow-step::after{content:"";position:absolute;left:50%;bottom:-17px;width:10px;height:10px;border-right:3px solid var(--tc,var(--green));border-bottom:3px solid var(--tc,var(--green));transform:translateX(-50%) rotate(45deg)}
+.simple-flow-step:last-child::after{display:none}
+.simple-flow-step.is-hold{border-color:#e0b25a;border-left:5px solid #b45f06}
+.simple-flow-num{flex:0 0 auto;width:28px;height:28px;border-radius:50%;background:var(--tc,var(--green));color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center}
+.simple-flow-body{display:grid;gap:4px;min-width:0;font-size:15px;line-height:1.4}
+.simple-flow-body strong{font-size:15px}
+.simple-hold{display:block;margin-top:4px;padding:6px 8px;border-radius:8px;background:#fff4d6;border:1px solid #f0d58a;color:#5c3a00;font-size:14px}
+.simple-hold-tag{display:block;font-size:12px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:#7a4b00}
+.simple-flow-time{margin:0;font-size:15px;line-height:1.45}
+.simple-flow-nations{margin:0}
+.simple-summary-strip{margin-top:18px;padding:18px 16px;border-radius:14px;background:#101828;color:#fff;display:grid;gap:12px;border-left:6px solid var(--green)}
+.simple-summary-strip h2{margin:0;font-size:22px;color:#fff}
+.simple-summary-stats{margin:0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.simple-summary-stats li{display:flex;flex-direction:column;gap:2px;min-width:0;padding:10px;border-radius:10px;background:rgba(255,255,255,.08)}
+.simple-summary-stats strong{font-size:28px;line-height:1}
+.simple-summary-stats span{font-size:14px;color:#d0d5dd;line-height:1.25}
+.simple-summary-note{margin:0;color:#d0d5dd;line-height:1.45}
+.simple-summary-strip .simple-cta-main{background:var(--green);border-color:#fff;color:#fff}
+.simple-summary-strip .simple-cta-alt{background:transparent;border-color:#fff;color:#fff}
+.simple-summary-strip .simple-linkbtn{color:#fff}
+/* One look across the customer pages: same card shape, heading sizes, full-width buttons on phone. */
+.customer-area .card,body:not([data-page="siteLayout"]):not([data-page="buildingLayout"]) .stage1-tech-card,.simple-report .card,.simple-paid-card,.profile-card{border-radius:12px;border:1px solid #d9e0db}
+.customer-area h1,body:not([data-page="siteLayout"]):not([data-page="buildingLayout"]) .stage1-technical-header h1,.simple-report-title h1,.simple-paid h1,.profile-page h1{font-size:26px;line-height:1.2;overflow-wrap:anywhere}
+.simple-report,.simple-paid,.profile-page{max-width:880px}
+@media(max-width:600px){
+.customer-area .actions,body:not([data-page="siteLayout"]):not([data-page="buildingLayout"]) .stage1-workspace .actions,body:not([data-page="siteLayout"]):not([data-page="buildingLayout"]) .stage1-workspace-action,.simple-report-head,.customer-heading{flex-direction:column;align-items:stretch}
+.customer-area .btn:not(.small):not(.compact),body:not([data-page="siteLayout"]):not([data-page="buildingLayout"]) .stage1-workspace .btn:not(.small):not(.compact),.simple-report .btn,.simple-paid .btn,.profile-page .btn{width:100%;min-height:44px;white-space:normal;text-align:center}
+.customer-area,body:not([data-page="siteLayout"]):not([data-page="buildingLayout"]) .stage1-workspace,.simple-report,.simple-paid{overflow-wrap:anywhere}
+}
+@media(min-width:768px){
+.customer-area h1,body:not([data-page="siteLayout"]):not([data-page="buildingLayout"]) .stage1-technical-header h1,.simple-report-title h1,.simple-paid h1,.profile-page h1{font-size:32px}
+.simple-topics{grid-template-columns:repeat(4,1fr);gap:12px}
+.simple-topic:last-child:nth-child(odd){grid-column:auto}
+.simple-flow-list{grid-template-columns:repeat(3,minmax(0,1fr));gap:26px 30px}
+.simple-flow-step::after{left:auto;bottom:auto;right:-21px;top:50%;transform:translateY(-50%) rotate(-45deg)}
+.simple-flow-step:nth-child(3n)::after{display:none}
+.simple-flow-step{flex-direction:column}
+.simple-summary-strip{padding:22px 24px}
+.simple-summary-stats{max-width:520px}
+}

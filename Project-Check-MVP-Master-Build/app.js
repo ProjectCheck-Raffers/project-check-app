@@ -741,7 +741,7 @@ const lastSaved=item=>{const dates=(item.history||[]).map(h=>Date.parse(h.at)).f
 app.innerHTML=`<div class="container customer-area workspace-dashboard" data-customer-workspace>
 <section class="workspace-progress card">
 <div class="workspace-title-row"><div><div class="eyebrow">Your account</div><h1>My projects</h1><p class="workspace-stage">${p?"Welcome back":"Welcome"}, ${esc((u.name||"").split(" ")[0]||"there")}</p></div></div>
-${p?`<h2 class="dashboard-active-name">${esc(p.name)}</h2><div class="stage-progress" aria-label="Free check progress: ${progress(p)} percent"><span style="width:${progress(p)}%"></span></div><div class="workspace-progress-label"><span>Free check · ${progress(p)}% done</span><strong>${status(p)}</strong></div><ol class="dashboard-journey" aria-label="Your project journey">${["Free check","Paid stage (coming soon)"].map((name,i)=>`<li ${i===0?'aria-current="step"':""}><span>${i+1}</span>${name}</li>`).join("")}</ol>`:`<p class="meta">Your account is ready. Create your first project. You will need a project name, what the building is for and where it will go.</p><button class="btn secondary" onclick="newProject()">Create project</button>`}</section>
+${p?`<h2 class="dashboard-active-name">${esc(p.name)}</h2><div class="stage-progress" aria-label="Free check progress: ${progress(p)} percent"><span style="width:${progress(p)}%"></span></div><div class="workspace-progress-label"><span>Free check · ${progress(p)}% done</span><strong>${status(p)}</strong></div>`:`<p class="meta">Your account is ready. Create your first project. You will need a project name, what the building is for and where it will go.</p><button class="btn secondary" onclick="newProject()">Create project</button>`}</section>
 ${p?`<section class="card dashboard-next"><div class="eyebrow">Your next step</div><h2>${nextStep(p).label}</h2><p>${p.stage1Complete?"Your free check is done. See the problems we think are likely for your project.":"Check your details, add any drawings you have, then see your probable problems."}</p><div class="simple-cta-row"><button class="btn green" onclick="route('${nextStep(p).route}','${p.id}')">${nextStep(p).label}</button>${callButton("btn secondary")}</div></section>`:""}
 <section class="workspace-section"><div class="eyebrow">Your projects</div><div class="project-list">${ps.length?ps.map(function(item){return `<article class="project-summary card"><div><h2>${esc(item.name||"Untitled project")}</h2><p>${esc(item.address||"Site address not added")}</p><p class="meta">${lastSaved(item)}</p><p class="project-file-count">${(item.evidence||[]).length} document(s)</p></div><div class="project-summary-actions"><strong>${status(item)} · ${progress(item)}%</strong></div></article>`}).join(""):`<article class="project-summary project-summary-empty card"><div><h2>No projects yet</h2><p>Your first project will show here once you create it.</p></div><button class="btn green" onclick="newProject()">Create project</button></article>`}</div></section>
 <details class="card dashboard-guide"><summary>How the free check works <span>View</span></summary><ol><li><strong>Check your details.</strong> Open your project and use Edit to change anything.</li><li><strong>Add any drawings you have.</strong> You can add them later if they are not ready.</li><li><strong>Place the building.</strong> Show where it will go on the site and mark the boundaries nearby.</li><li><strong>See your probable problems.</strong> We list them in plain words.</li></ol></details></div><footer class="home-footer"><img src="assets/project-check-banner-logo.png" alt="Project Check — Know before you build."><nav aria-label="Account footer"><button data-route="home">Home</button><button data-route="signin">Sign in</button></nav><span></span><div class="home-footer-legal"><div></div><small>© 2026 Project Check</small></div></footer>`;
@@ -2355,8 +2355,8 @@ function stage1KnowledgeMarkup(p){
 //     (notify HSE: more than 30 working days with more than 20 people at once, or more than 500 person-days).
 //     "Usually the client acts as, or appoints, the principal contractor" is house experience, NOT law, and is worded as "usually".
 //     Source: https://www.legislation.gov.uk/uksi/2015/51. The legal references are deliberately not shown on the client page.
-//  Q6 Site risks and access: no rams.md was supplied, so these come from the Job D lessons (crane and lorry access, 110 V power and
-//     welfare by the client, escorted deliveries, buried services, hot-work permits). Project Check does not issue RAMS: never promise them.
+//  Q6 Site risks and access: themes from the research note on past method statements for industrial and steel jobs (access and set-down space, induction and permits incl. permit to dig,
+//     buried and overhead services, base and ground, crane lift plans, wind, work at height, asbestos). Problems only. Project Check does not issue RAMS: never promise them. CDM: Project Check never holds a duty-holder role.
 //  Q7 Consultants: house position, not law. Say "Building Control (council or a registered approver)", never "Approved Inspector".
 // Chips: Likely / Possibly / Unlikely / Need info. Missing input is always "Need info", never an all-clear.
 // ---------------------------------------------------------------------------
@@ -2364,6 +2364,49 @@ const STAGE1_INTRO="Here's what you'll probably face to get your building approv
 const QUESTION_CHIPS={likely:'Likely',possibly:'Possibly',unlikely:'Unlikely',needinfo:'Need info'};
 const PLANNING_CONDITIONS=['Start building within 3 years of approval','Build to the approved plans','Materials and colour to match','Details of any outside lighting','A method statement for piling or vibration','Biodiversity net gain (leaving wildlife better off)','No surface water running onto the road','A new approval if the height changes','Working hours and a plan for lorries and noise while building','Noise limits once the building is in use','Drainage and flood control','Landscaping and protecting trees','Parking, lorry access and turning space','Checks if the ground may be contaminated'];
 const PLANNING_REFUSAL_REASONS=['How it looks (size and design)','Effect on neighbours (noise, overlooking, loss of light)','Traffic, access and parking','Flood risk and drainage','Green Belt land','Listed buildings or conservation areas nearby','Harm to wildlife and trees'];
+// Topic icons (inline SVG line icons, same stroke style as PRICING_SHIELD_ICON) and one accent colour per topic.
+// Accents are built around the brand green and the dark ink in styles.css. Each one passes AA contrast as text on white.
+const svgIcon=paths=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${paths}</svg>`;
+const S1_TOPICS=[
+  {label:'Planning',rgb:[32,122,61],icon:svgIcon('<path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path d="M9 14l2 2 4-4"/>')},
+  {label:'Engineer',rgb:[29,58,95],icon:svgIcon('<path d="M5 5h14"/><path d="M5 19h14"/><path d="M12 5v14"/>')},
+  {label:'Base and groundworks',rgb:[15,107,107],icon:svgIcon('<path d="M12 4l9 4-9 4-9-4z"/><path d="M3 12l9 4 9-4"/><path d="M3 16l9 4 9-4"/>')},
+  {label:'Building Regulations',rgb:[59,91,146],icon:svgIcon('<path d="M4 21V8l8-5 8 5v13z"/><path d="M9 21v-6h6v6"/>')},
+  {label:'CDM',rgb:[74,63,143],icon:svgIcon('<path d="M4 16a8 8 0 0116 0z"/><path d="M3 16h18v3H3z"/><path d="M12 8v3"/>')},
+  {label:'Site risks and access',rgb:[85,112,31],icon:svgIcon('<path d="M12 3l10 18H2z"/><path d="M12 10v5"/><path d="M12 18h.01"/>')},
+  {label:'Consultants and fees',rgb:[43,95,117],icon:svgIcon('<circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/><circle cx="17" cy="9" r="2.5"/><path d="M17 14c2.5 0 4 2 4 5"/>')}
+];
+// "How planning works" step view. Plain words, problems only. Time line source (code comment only): Town and Country Planning
+// (Development Management Procedure) (England) Order 2015, article 34: 8 weeks, or 13 weeks for major development
+// (1,000 m2 or more of floor space, or a site of 1 hectare or more). Wales and Scotland have their own rules.
+const PLANNING_STEPS=[
+  {title:'Ask the council for advice first',text:'This is called pre-application advice. It is optional and usually costs a fee.'},
+  {title:'Apply online',text:'Use the Planning Portal (or apply on paper).'},
+  {title:'Choose full or outline',text:'Outline means the details come later.'},
+  {title:'Send the fee and the supporting documents',text:'Drawings, and reports such as flood, transport, noise or wildlife if needed.'},
+  {title:'The council checks the application is complete',hold:'Missing documents stop the clock until they are sent.'},
+  {title:'The council confirms it is valid',text:'The clock starts.'},
+  {title:'Neighbours and other bodies are consulted',text:'This includes highways and drainage. A site notice goes up.',hold:'Objections and consultee requests can add time and changes.'},
+  {title:'A planning officer decides',text:'Or a committee, if it is bigger or has been objected to.'},
+  {title:'The decision',text:'Granted, granted with conditions, refused, or not decided in time.',hold:'Some conditions must be cleared before you start building.'}
+];
+const PLANNING_TIMELINE='Usually 8 weeks once the application is valid, 13 weeks for major schemes (e.g. 1,000 m² or more of floor space or a site of 1 hectare or more). It often takes longer.';
+const PLANNING_NATIONS_NOTE='Wales and Scotland follow a similar process, but the rules differ.';
+const HOLD_LABEL='Where people get held up';
+function planningStepViewMarkup(){
+  const steps=PLANNING_STEPS.map((step,i)=>`<li class="simple-flow-step${step.hold?' is-hold':''}"><span class="simple-flow-num" aria-hidden="true">${i+1}</span><div class="simple-flow-body"><strong>${esc(step.title)}</strong>${step.text?`<span class="simple-flow-text">${esc(step.text)}</span>`:''}${step.hold?`<span class="simple-hold"><span class="simple-hold-tag">${HOLD_LABEL}</span><span>${esc(step.hold)}</span></span>`:''}</div></li>`).join('');
+  return `<section class="simple-flow" aria-label="How planning works"><h4>How planning works</h4><p class="simple-flow-key"><span class="simple-hold-dot" aria-hidden="true">!</span> ${HOLD_LABEL}</p><ol class="simple-flow-list">${steps}</ol><p class="simple-flow-time"><strong>How long?</strong> ${esc(PLANNING_TIMELINE)}</p><p class="meta simple-flow-nations">${PLANNING_NATIONS_NOTE}</p></section>`
+}
+function s1Jump(n){
+  const el=document.getElementById('simpleQcard'+n);if(!el)return;
+  const calm=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  el.scrollIntoView({behavior:calm?'auto':'smooth',block:'start'});
+  const h=document.getElementById('simpleQ'+n);if(h){h.setAttribute('tabindex','-1');h.focus({preventScroll:true})}
+}
+window.s1Jump=s1Jump;
+function topicIconGridMarkup(list){
+  return `<nav class="simple-topics" aria-label="Topics in this report">${list.map(q=>`<button type="button" class="simple-topic simple-topic-${q.n}" onclick="s1Jump(${q.n})"><span class="simple-topic-icon">${S1_TOPICS[q.n-1].icon}</span><span class="simple-topic-label">${esc(S1_TOPICS[q.n-1].label)}</span><span class="simple-chip simple-chip--${q.status}">${esc(q.chip)}</span></button>`).join('')}</nav>`
+}
 // Optional questions. Saved as new facts keys, never required, never part of the "still required" list.
 const STAGE1_OPTIONAL_QUESTIONS=[
   {key:'existingBuildingOnSite',label:'Is there an existing building on the site?'},
@@ -2419,7 +2462,7 @@ function stage1ClientQuestions(p){
   const linked=projectAdjacentBuildingNeedsJunction(facts);
   const baseKind=stage1BaseKind(facts);
   const list=[];
-  const add=(status,answer,why,extra)=>list.push({n:list.length+1,title:CLIENT_QUESTION_TITLES[list.length],status,chip:QUESTION_CHIPS[status],answer,why,points:[],blocks:[],after:'',...extra});
+  const add=(status,answer,why,extra)=>list.push({n:list.length+1,title:CLIENT_QUESTION_TITLES[list.length],status,chip:QUESTION_CHIPS[status],answer,why,bullets:[],points:[],blocks:[],after:'',openMore:false,steps:false,...extra});
   // 1. Planning
   const planningMissing=[];
   if(!(stage1HasValue(facts.width)&&stage1HasValue(facts.length)))planningMissing.push('The size of the building');
@@ -2434,8 +2477,16 @@ function stage1ClientQuestions(p){
   else if(nation==='Wales')planningAnswer="Planning rules in Wales are different from England. Planning permission is likely to be needed. You'll need professional support.";
   else if(nation==='Scotland')planningAnswer="Planning rules in Scotland are different. Planning permission is likely to be needed. You'll need professional support.";
   else if(linked){planningStatus='possibly';planningAnswer="A small extension to an existing industrial site is sometimes dealt with differently from a full application, but it depends on details we don't have yet. Please don't assume. You'll need professional support to confirm."}
+  const planningBullets=[];
+  if(planningMissing.length)planningBullets.push('Most new industrial buildings need a full planning application',"We can't say more until we have your details");
+  else if(nation==='Wales')planningBullets.push('Planning rules in Wales are different from England','Planning permission is likely to be needed');
+  else if(nation==='Scotland')planningBullets.push('Planning rules in Scotland are different','Planning permission is likely to be needed');
+  else if(linked)planningBullets.push('A small extension is sometimes treated differently',"It depends on details we don't have yet, so please don't assume");
+  else planningBullets.push('Most new industrial buildings need a full planning application');
+  planningBullets.push(onSite==='Yes'?'Existing building on site: its size and use will matter':onSite==='No'?'No building on the site today: treated as a new building':"Existing building on site: we don't know yet");
+  planningBullets.push("You'll need professional support to confirm");
   add(planningStatus,planningAnswer,'Planning comes first. The other steps rely on what is approved, and changing the size or height later can mean applying again.',
-    {points:planningPoints,blocks:[{heading:'Conditions councils often attach (general)',items:PLANNING_CONDITIONS},{heading:'Common reasons councils refuse (general)',items:PLANNING_REFUSAL_REASONS}],
+    {bullets:planningBullets,steps:true,points:planningPoints,blocks:[{heading:'Conditions councils often attach (general)',items:PLANNING_CONDITIONS},{heading:'Common reasons councils refuse (general)',items:PLANNING_REFUSAL_REASONS}],
      blockNote:'These two lists are general. They are not specific to your site.',after:'Stage 2: Stuart checks which of these are likely for your site.'});
   // 2. Structural engineer
   const engineerPoints=[];
@@ -2444,7 +2495,7 @@ function stage1ClientQuestions(p){
   if(baseKind==='slab')engineerPoints.push('If you hope to reuse an existing slab, an engineer has to confirm it in writing first.');
   engineerPoints.push("If the size or height changes later, the engineer's design usually has to be redone.");
   add('likely',"Almost any steel building needs a structural engineer to design the base and the connections between the building and the base. Building Control will expect their calculations. This is separate from the building supplier. You'll need professional support.",
-    'The base design can hold up the start of the building.',{points:engineerPoints});
+    'The base design can hold up the start of the building.',{bullets:['Almost any steel building needs one','They design the base and its connections','Separate from the building supplier',"You'll need professional support"],points:engineerPoints});
   // 3. Existing base, roads, drainage, ground and services
   const groundPoints=[];
   if(projectReuseIntention(facts)==='Yes — assess it for reuse'&&['No','Not sure'].includes(projectSiteEvidenceAvailability(facts)))groundPoints.push('Without drawings or surveys, nobody can say yet whether what is there can be used.');
@@ -2456,10 +2507,14 @@ function stage1ClientQuestions(p){
   groundPoints.push('Surface water and foul drainage connections are separate from the building. They may need design and approval.');
   groundPoints.push('Old mining, made ground or gas can add work to the base.');
   groundPoints.push('Pipes and cables under the building area can affect where it goes and how the base is built.');
-  if(baseKind==='structure')add('likely',"Building on or against an existing structure needs a structural check. You'll need professional support.",'This is often the hidden part of the job, and it is usually outside the building price.',{points:groundPoints});
-  else if(baseKind==='slab')add('possibly',"An existing slab may be usable, but it is unlikely to be accepted without a structural check of what is underneath and how thick it is. You'll need professional support.",'This is often the hidden part of the job, and it is usually outside the building price.',{points:groundPoints});
-  else if(baseKind==='new')add('likely',"The surface alone doesn't show that it can carry a steel building. A new or strengthened base is likely. You'll need professional support.",'This is often the hidden part of the job, and it is usually outside the building price.',{points:groundPoints});
-  else add('needinfo',"We can't say what you're building on yet. Tell us what is on the ground now.",'This is often the hidden part of the job, and it is usually outside the building price.',{points:groundPoints});
+  const groundBullets=[baseKind==='structure'?'Building on or against an existing structure needs a structural check':baseKind==='slab'?'An existing slab may be usable, but only after a structural check':baseKind==='new'?'A new or strengthened base is likely':"We can't say what you're building on yet",
+    'Roads, drainage and services are separate from the building',
+    'Old mining, made ground or gas can add work',
+    "You'll need professional support"];
+  if(baseKind==='structure')add('likely',"Building on or against an existing structure needs a structural check. You'll need professional support.",'This is often the hidden part of the job, and it is usually outside the building price.',{bullets:groundBullets,points:groundPoints});
+  else if(baseKind==='slab')add('possibly',"An existing slab may be usable, but it is unlikely to be accepted without a structural check of what is underneath and how thick it is. You'll need professional support.",'This is often the hidden part of the job, and it is usually outside the building price.',{bullets:groundBullets,points:groundPoints});
+  else if(baseKind==='new')add('likely',"The surface alone doesn't show that it can carry a steel building. A new or strengthened base is likely. You'll need professional support.",'This is often the hidden part of the job, and it is usually outside the building price.',{bullets:groundBullets,points:groundPoints});
+  else add('needinfo',"We can't say what you're building on yet. Tell us what is on the ground now.",'This is often the hidden part of the job, and it is usually outside the building price.',{bullets:groundBullets,points:groundPoints});
   // 4. Building Regulations (the live regs-checker flags are shown here, in plain words)
   const regsBlocks=[],regsPoints=[];
   const cold=projectIsSteelFreeStanding(facts)?stage1SteelEnvelope(facts).label==='Get professional support':Boolean(p.stage1Assessments&&p.stage1Assessments.specialistLowTemperatureFlag);
@@ -2475,7 +2530,8 @@ function stage1ClientQuestions(p){
   if(nation==='Wales'){regsStatus='needinfo';regsAnswer="Wales has its own Building Regulations guidance. You'll need professional support."}
   else if(nation==='Scotland'){regsStatus='needinfo';regsAnswer="Scotland has a separate building warrant system. You'll need professional support."}
   else if(!nation){regsStatus='needinfo';regsAnswer="We need to know the site country before we can say. We set it from the postcode in Site Layout."}
-  add(regsStatus,regsAnswer,'Building Control can hold up the job until it is satisfied.',{points:regsPoints,blocks:regsBlocks});
+  const regsBullets=[regsStatus==='needinfo'?(nation==='Wales'?'Wales has its own Building Regulations guidance':nation==='Scotland'?'Scotland has a separate building warrant system':'We need the site country first (set from the postcode in Site Layout)'):'Fire safety, especially walls near a boundary','Escape routes, disabled access and energy use','Building Control signs it off at the end',"You'll need professional support"];
+  add(regsStatus,regsAnswer,'Building Control can hold up the job until it is satisfied.',{bullets:regsBullets,points:regsPoints,blocks:regsBlocks,openMore:regsBlocks.length>0});
   // 5. CDM: who runs the site
   const cdmPoints=['Ask early who will be principal designer and who will be principal contractor.',
     'If more than one contractor will work on site and nobody is appointed in writing, those duties fall on you.',
@@ -2484,31 +2540,54 @@ function stage1ClientQuestions(p){
   else if(runs==='No')cdmPoints.unshift("You've told us someone else will run the site. They need to be appointed as principal contractor in writing before work starts, and a principal designer too.");
   else cdmPoints.unshift("Need info: we don't know yet who will run the site.");
   add('likely','CDM (the Construction (Design and Management) Regulations 2015) gives you, the client, legal duties for health and safety on your project, even when others do the work. In our experience the client usually acts as, or appoints, the principal contractor, and bigger sites usually run their own permits through their own health and safety team. That is our usual experience, not a legal rule.',
-    'These are legal duties, and they apply before work starts.',{points:cdmPoints});
-  // 6. Site risks and access
-  const siteRisks=['Access for a large crane and delivery lorries, and ground firm enough to carry them.','Overhead cables and buried services.','Working on a live site alongside your own people and vehicles: permits, escorts and keeping areas clear.','Lifting and working at height.','Power and welfare (toilets) for the crew.'];
-  if(onSite==='Yes')siteRisks.unshift("You've told us there is a building on the site already, so it may well be a live site while the work goes on.");
+    'These are legal duties, and they apply before work starts.',
+    {bullets:['As the client, you have legal duties under CDM, even when others do the work','Ask early who is principal designer and who is principal contractor','Larger jobs must be notified to the HSE before work starts','Project Check does not act in any of these roles'],points:cdmPoints});
+  // 6. Site risks and access. Themes come from general information about industrial and steel building jobs (problems only).
+  // Project Check does not write RAMS or tell anyone how to work safely, and must never promise them. The client's own principal contractor,
+  // the lifting contractor and competent advisers do that. Never present these as statistics, and never name a past job on a client page.
+  const siteBlocks=[
+    {heading:'Getting in and unloading',items:['Vehicle access: a long lorry or a crane may not be able to reach or turn at the building position.','Deliveries: is there a clear, flat area close by to set down materials and lay them out?','Deliveries can compete with your own traffic and people.']},
+    {heading:'Before work starts',items:['Your own site induction and permits are needed before anyone starts, including a permit to dig.','Buried and overhead services must be checked. Drawings of them are often missing or out of date.','Is the ground or base really concrete, and firm enough? Thickness, finish and distance from the edge all matter.']},
+    {heading:'While it is being built',items:['Crane lifts need a lift plan, and the crane and its paperwork are often settled late.','Wind can stop work, especially crane lifts and roof sheeting, so a tight programme can slip.','Working at height on access platforms needs firm, level ground and clear routes.','Power and welfare (toilets) for the crew are normally yours to provide.']},
+    {heading:'If existing buildings are involved',items:['Is there an asbestos survey? Unknown asbestos can stop work.','A live site limits when and where work can happen.']}
+  ];
+  const siteIntro=[];
+  if(onSite==='Yes')siteIntro.push("You've told us there is a building on the site already, so it may well be a live site while the work goes on.");
+  if(linked)siteIntro.push('Joining onto an existing building means someone has to make the opening, and that is often not planned yet.');
   add('likely','Putting up a steel building is a big operation on your site. These are the things you will probably have to deal with on the day.',
-    'If these are not ready, deliveries and the build can be held up.',{points:siteRisks});
+    'If these are not ready, deliveries and the build can be held up.',
+    {bullets:['Vehicle access, deliveries and space to set down materials','Your site induction and permits, including a permit to dig','Buried and overhead services, and ground that is firm enough','Crane lifts, wind and working at height'],points:siteIntro,blocks:siteBlocks,openMore:true,
+     blockNote:'This is general information about steel building jobs. Project Check does not write RAMS or tell anyone how to work safely: your principal contractor and the lifting contractor do that.'});
   // 7. Consultants and fees
   add('likely',"The building supplier supplies and erects the building. The independent professionals are normally appointed and paid by you, separately from the building price. Project Check does not appoint or pay them. You'll need professional support.",
     'These fees are extra to the building price.',
-    {points:['Structural engineer: Likely','Building Control (the council or a registered approver): Likely','Principal designer for CDM: Likely','Planning consultant or architect: Possibly','Fire engineer: Possibly','Drainage and ground specialists: Possibly, depending on your site','Sometimes electrical and fire alarm designers for lighting and alarms.']});
+    {bullets:['Structural engineer and Building Control: likely','Principal designer for CDM: likely, appointed by you','Planning consultant, fire engineer, drainage and ground specialists: possibly','Appointed and paid by you, separately from the building price'],points:['Structural engineer: Likely','Building Control (the council or a registered approver): Likely','Principal designer for CDM: Likely','Planning consultant or architect: Possibly','Fire engineer: Possibly','Drainage and ground specialists: Possibly, depending on your site','Sometimes electrical and fire alarm designers for lighting and alarms.']});
   return list
 }
 function stage1QuestionCardMarkup(q){
   const blocks=q.blocks.map(block=>`<div class="simple-qblock"><h4>${esc(block.heading)}</h4><ul class="simple-list simple-list-tight">${block.items.map(text=>`<li>${esc(text)}</li>`).join('')}</ul></div>`).join('');
-  return `<article class="simple-qcard simple-qcard--${q.status}" aria-labelledby="simpleQ${q.n}">
-<div class="simple-qhead"><span class="simple-qnum" aria-hidden="true">${q.n}</span><h3 id="simpleQ${q.n}">${esc(q.title)}</h3></div>
+  const more=`<p class="simple-qanswer">${esc(q.answer)}</p>${q.points.length?`<ul class="simple-list simple-list-tight simple-qpoints">${q.points.map(text=>`<li>${esc(text)}</li>`).join('')}</ul>`:''}${q.blockNote?`<p class="meta simple-qnote">${esc(q.blockNote)}</p>`:''}${blocks?`<div class="simple-qblocks">${blocks}</div>`:''}${q.after?`<p class="simple-qafter">${esc(q.after)}</p>`:''}`;
+  return `<article id="simpleQcard${q.n}" class="simple-qcard simple-qcard--${q.status} simple-topic-${q.n}" aria-labelledby="simpleQ${q.n}">
+<div class="simple-qhead"><span class="simple-qnum" aria-hidden="true">${q.n}</span><span class="simple-qicon">${S1_TOPICS[q.n-1].icon}</span><h3 id="simpleQ${q.n}">${esc(q.title)}</h3></div>
 <p class="simple-chip-row"><span class="simple-chip-lead">Problem for you?</span><span class="simple-chip simple-chip--${q.status}">${esc(q.chip)}</span></p>
-<p class="simple-qanswer">${esc(q.answer)}</p>
-${q.points.length?`<ul class="simple-list simple-list-tight simple-qpoints">${q.points.map(text=>`<li>${esc(text)}</li>`).join('')}</ul>`:''}
-${q.blockNote?`<p class="meta simple-qnote">${esc(q.blockNote)}</p>`:''}${blocks?`<div class="simple-qblocks">${blocks}</div>`:''}${q.after?`<p class="simple-qafter">${esc(q.after)}</p>`:''}
+<ul class="simple-bullets">${q.bullets.map(text=>`<li>${esc(text)}</li>`).join('')}</ul>
+${q.steps?planningStepViewMarkup():''}
+<details class="simple-more"${q.openMore?' open':''}><summary>More detail</summary>${more}</details>
 <p class="simple-qwhy"><strong>Why it matters:</strong> ${esc(q.why)}</p></article>`
 }
 // The report ends gently: a free call first, saving the project second, Stage 2 only as an offer.
-function stage1ReportActionsMarkup(id){
-  return `<section class="card simple-actions" aria-labelledby="simpleNextTitle"><h2 id="simpleNextTitle">An easy next step</h2><p class="meta">If you'd like to talk it through, Stuart is happy to have a short chat. There's no pressure and no sales pitch.</p><div class="simple-cta-row">${callButton('btn green simple-cta simple-cta-main')}<button type="button" class="btn simple-cta simple-cta-alt" onclick="route('project','${esc(id)}')">Save your project</button><button type="button" class="btn secondary simple-cta" onclick="downloadReport('${esc(id)}','s1')">Download PDF</button></div><p class="meta simple-stage2-offer">When you're ready, there's also Stage 2, where Stuart goes through the answers and a plan with you. <button type="button" class="simple-linkbtn" onclick="route('stage2','${esc(id)}')">See what Stage 2 includes</button></p></section>`
+// Counts for the summary strip: things to deal with (not "Unlikely"), how many are likely, how many still need information.
+function stage1SummaryCounts(list){
+  const count=status=>list.filter(q=>q.status===status).length;
+  return {deal:list.filter(q=>q.status!=='unlikely').length,likely:count('likely'),needinfo:count('needinfo')}
+}
+function stage1ReportActionsMarkup(id,list){
+  const c=stage1SummaryCounts(list);
+  return `<section class="simple-summary-strip" aria-labelledby="simpleNextTitle"><h2 id="simpleNextTitle">An easy next step</h2>
+<ul class="simple-summary-stats"><li><strong>${c.deal}</strong><span>thing${c.deal===1?'':'s'} to deal with</span></li><li><strong>${c.likely}</strong><span>Likely</span></li><li><strong>${c.needinfo}</strong><span>Need info</span></li></ul>
+<p class="simple-summary-note">If you'd like to talk it through, Stuart is happy to have a short chat. There's no pressure and no sales pitch.</p>
+<div class="simple-cta-row">${callButton('btn green simple-cta simple-cta-main')}<button type="button" class="btn simple-cta simple-cta-alt" onclick="route('project','${esc(id)}')">Save your project</button><button type="button" class="btn simple-cta simple-cta-alt" onclick="downloadReport('${esc(id)}','s1')">Download PDF</button></div>
+<p class="simple-summary-note simple-stage2-offer">When you're ready, there's also Stage 2, where Stuart goes through the answers and a plan with you. <button type="button" class="simple-linkbtn" onclick="route('stage2','${esc(id)}')">See what Stage 2 includes</button></p></section>`
 }
 function stage1Summary(id){
 if(!requireUser())return;
@@ -2531,14 +2610,16 @@ let p=getP(id);if(!p)return route('dashboard');
 document.body.dataset.page='stage1-shell';
 const today=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
 // An early check, not a design or an approval. Every card is a probable problem for the paid stage to deal with.
+const questions=stage1ClientQuestions(p);
 app.innerHTML=`<div class="container simple-report">
 <header class="simple-report-head"><img class="workspace-logo" src="assets/project-check-logo.png" alt="Project Check — Know before you build."><div class="simple-report-title"><div class="eyebrow">Free check</div><h1>${esc(p.name)}</h1><p class="meta">${esc(today)}</p></div><button class="btn secondary" onclick="route('project','${esc(id)}')">Back to my project</button></header>
 <p class="simple-lead simple-report-intro">${esc(STAGE1_INTRO)}</p>
+${topicIconGridMarkup(questions)}
 ${stage1BasisMarkup(p)}
-<section class="simple-qlist" aria-label="Your questions and probable answers">${stage1ClientQuestions(p).map(stage1QuestionCardMarkup).join('')}</section>
+<section class="simple-qlist" aria-label="Your questions and probable answers">${questions.map(stage1QuestionCardMarkup).join('')}</section>
 ${stage1OptionalMarkup(p)}
 <section class="card simple-know" aria-labelledby="simpleKnowTitle"><h2 id="simpleKnowTitle">What we still don't know</h2>${stage1KnowledgeMarkup(p)}</section>
-${stage1ReportActionsMarkup(id)}</div>`
+${stage1ReportActionsMarkup(id,questions)}</div>`
 }
 
 const stage2Questions=[
@@ -2934,23 +3015,70 @@ const section=title=>{ensure(24);y+=5;put(title,{size:13,bold:true,gap:7});doc.s
 y+=2;
 put(STAGE1_INTRO,{size:10.5,gap:5.8,color:muted});
 y+=3;
+const questions=stage1ClientQuestions(p);
+// Topic grid: one small coloured tile per topic with its number, label and status. Plain drawn shapes, no images.
+{
+  const cols=4,gutter=3,cw=(width-gutter*(cols-1))/cols,ch=17,rows=Math.ceil(questions.length/cols);
+  ensure(rows*(ch+gutter)+4);
+  questions.forEach((q,i)=>{
+    const x=left+(i%cols)*(cw+gutter),top=y+Math.floor(i/cols)*(ch+gutter),rgb=S1_TOPICS[i].rgb;
+    doc.setFillColor(246,248,247);doc.setDrawColor(217,224,219);doc.setLineWidth(0.2);doc.roundedRect(x,top,cw,ch,1.5,1.5,'FD');
+    doc.setFillColor(...rgb);doc.rect(x,top+0.4,1.8,ch-0.8,'F');
+    doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(...rgb);
+    doc.splitTextToSize(`${q.n}. ${S1_TOPICS[i].label}`,cw-6).slice(0,2).forEach((line,li)=>doc.text(line,x+4,top+5+li*3.8));
+    doc.setFontSize(8);doc.setTextColor(...chipColour[q.status]);doc.text(q.chip,x+4,top+ch-2.4)
+  });
+  y+=rows*(ch+gutter)+2
+}
 section("What you've told us");
 stage1BasisList(p).forEach(item=>bullet(`${item.label} ${item.known?item.value:'Need info'}`,{size:9.5,gap:5}));
 y+=2;
-stage1ClientQuestions(p).forEach(q=>{
-  ensure(46);y+=3;
-  put(`${q.n}. ${q.title}`,{size:12,bold:true,gap:6.4});
-  doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(...muted);
-  doc.text('Problem for you?',left,y);
-  doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(...chipColour[q.status]);
-  doc.text(q.chip,left+30,y);y+=6;
-  put(q.answer,{gap:5});
-  if(q.points.length){y+=1;q.points.forEach(text=>bullet(text,{indent:2,size:9}))}
+// The planning step view as a numbered list. Each step is kept whole on one page; hold-up steps get an amber marker and label.
+const stepViewPdf=rgb=>{
+  ensure(30);y+=1;put('How planning works',{bold:true,size:10.5,gap:5.6});
+  doc.setFillColor(194,120,3);doc.circle(left+2.2,y-1.3,1.9,'F');doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(255,255,255);doc.text('!',left+2.2,y-0.4,{align:'center'});
+  doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(92,58,0);doc.text(HOLD_LABEL,left+6,y);y+=6;
+  PLANNING_STEPS.forEach((step,i)=>{
+    doc.setFont('helvetica','bold');doc.setFontSize(9.5);const titleLines=doc.splitTextToSize(step.title,width-10);
+    doc.setFont('helvetica','normal');doc.setFontSize(9);const textLines=step.text?doc.splitTextToSize(step.text,width-10):[];
+    doc.setFontSize(8.5);const holdLines=step.hold?doc.splitTextToSize(`${HOLD_LABEL}: ${step.hold}`,width-16):[];
+    ensure(titleLines.length*4.8+textLines.length*4.6+(holdLines.length?holdLines.length*4.4+4:0)+3);
+    doc.setFillColor(...rgb);doc.circle(left+3.5,y-1.3,3,'F');doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(255,255,255);doc.text(String(i+1),left+3.5,y-0.2,{align:'center'});
+    doc.setFontSize(9.5);doc.setTextColor(...ink);titleLines.forEach(line=>{doc.text(line,left+10,y);y+=4.8});
+    doc.setFont('helvetica','normal');doc.setFontSize(9);textLines.forEach(line=>{doc.text(line,left+10,y);y+=4.6});
+    if(holdLines.length){
+      const hh=holdLines.length*4.4+2;
+      doc.setFillColor(255,244,214);doc.setDrawColor(240,213,138);doc.setLineWidth(0.2);doc.roundedRect(left+10,y-2.6,width-10,hh,1,1,'FD');
+      doc.setFillColor(194,120,3);doc.rect(left+10,y-2.6,1.6,hh,'F');
+      doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(92,58,0);holdLines.forEach(line=>{doc.text(line,left+14,y);y+=4.4});y+=1.4
+    }
+    y+=2.2
+  });
+  doc.setTextColor(...ink);
+  put(`How long? ${PLANNING_TIMELINE}`,{size:9,gap:4.8});
+  put(PLANNING_NATIONS_NOTE,{size:8.5,italic:true,color:muted,gap:4.6})
+};
+questions.forEach(q=>{
+  const rgb=S1_TOPICS[q.n-1].rgb;
+  // Keep the coloured heading band together with the first bullets that follow it.
+  doc.setFont('helvetica','bold');doc.setFontSize(11.5);
+  const titleLines=doc.splitTextToSize(`${q.n}.  ${q.title}`,width-34),bandH=titleLines.length*5.6+3.6;
+  ensure(bandH+26);y+=4;
+  doc.setFillColor(...rgb);doc.roundedRect(left,y,width,bandH,1.8,1.8,'F');
+  doc.setTextColor(255,255,255);titleLines.forEach((line,li)=>doc.text(line,left+3,y+5.6+li*5.6));
+  doc.setFillColor(255,255,255);doc.roundedRect(left+width-27,y+(bandH-6)/2,24,6,3,3,'F');
+  doc.setFontSize(8.5);doc.setTextColor(...chipColour[q.status]);doc.text(q.chip,left+width-15,y+(bandH-6)/2+4.2,{align:'center'});
+  y+=bandH+5;
+  q.bullets.forEach(text=>bullet(text,{indent:1,size:10,gap:5.2}));
+  if(q.steps)stepViewPdf(rgb);
+  y+=1.5;put('More detail',{bold:true,size:9.5,gap:5,color:rgb});
+  put(q.answer,{size:9,gap:4.8});
+  if(q.points.length){y+=1;q.points.forEach(text=>bullet(text,{indent:2,size:9,gap:4.8}))}
   if(q.blockNote){y+=1;put(q.blockNote,{size:8.5,italic:true,color:muted,gap:4.6})}
   q.blocks.forEach(block=>{y+=1.5;ensure(14);put(block.heading,{bold:true,size:9.5,gap:5});block.items.forEach(text=>bullet(text,{indent:2,size:9,gap:4.8}))});
   if(q.after){y+=1.5;put(q.after,{bold:true,size:9,gap:5})}
   y+=1.5;put(`Why it matters: ${q.why}`,{size:8.5,italic:true,color:muted,gap:4.6});
-  y+=3;doc.setDrawColor(225);doc.setLineWidth(0.2);ensure(2);doc.line(left,y,left+width,y);y+=2
+  y+=2
 });
 section("What we still don't know");
 {
@@ -2962,10 +3090,31 @@ section("What we still don't know");
   if(k.files.length){y+=1;put('Your files',{bold:true,size:9.5,gap:5});k.files.forEach(file=>bullet(`${file.name} (${file.guess.label}) – received, not reviewed in the free check${file.guess.unreadable?'. '+file.guess.note:''}`,{indent:2,size:9,gap:4.8}));put(k.fileNote,{size:9,gap:4.8,color:muted})}
   y+=2;put(`${UPLOAD_NOT_REVIEWED_TEXT} This is not an all-clear: it only shows what we know and don't know so far.`,{size:8.5,italic:true,color:muted,gap:4.6})
 }
-section('An easy next step');
-put(`${BOOK_CALL_LABEL}: ${/^https:\/\//i.test(BOOK_CALL_URL)?BOOK_CALL_URL:'booking link coming soon. Open Project Check for the latest.'}`,{bold:true,gap:5.4});
-y+=1;put('Your project is saved in Project Check, so you can open this report again at any time.',{size:9,color:muted,gap:5});
-y+=1;put("When you're ready, there's also Stage 2, where Stuart goes through the answers and a plan with you. It isn't open for payment yet.",{gap:5.2});
+// Summary box: counts, then the next step. The call is first, saving the project second, Stage 2 only as a gentle offer.
+{
+  const c=stage1SummaryCounts(questions),inner=width-10;
+  const callText=`${BOOK_CALL_LABEL}: ${/^https:\/\//i.test(BOOK_CALL_URL)?BOOK_CALL_URL:'booking link coming soon. Open Project Check for the latest.'}`;
+  doc.setFont('helvetica','bold');doc.setFontSize(10);const callLines=doc.splitTextToSize(callText,inner);
+  doc.setFont('helvetica','normal');doc.setFontSize(9);
+  const saveLines=doc.splitTextToSize('Save your project: it is saved in Project Check, so you can open this report again at any time.',inner);
+  const stage2Lines=doc.splitTextToSize("When you're ready, there's also Stage 2, where Stuart goes through the answers and a plan with you. It isn't open for payment yet.",inner);
+  const boxH=7+9+17+callLines.length*5.2+saveLines.length*4.8+stage2Lines.length*4.8+6;
+  ensure(boxH+8);y+=6;
+  doc.setFillColor(16,24,40);doc.roundedRect(left,y,width,boxH,2.5,2.5,'F');
+  doc.setFillColor(32,122,61);doc.rect(left,y+2,2.2,boxH-4,'F');
+  let by=y+8;
+  doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(13);doc.text('An easy next step',left+5,by);by+=9;
+  [[String(c.deal),c.deal===1?'thing to deal with':'things to deal with'],[String(c.likely),'Likely'],[String(c.needinfo),'Need info']].forEach(([num,text],i)=>{
+    const x=left+5+i*(inner/3);
+    doc.setFont('helvetica','bold');doc.setFontSize(16);doc.setTextColor(255,255,255);doc.text(num,x,by+4);
+    doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(208,213,221);doc.text(text,x,by+9.5)
+  });
+  by+=17;
+  doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(255,255,255);callLines.forEach(line=>{doc.text(line,left+5,by);by+=5.2});
+  doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(208,213,221);
+  saveLines.forEach(line=>{doc.text(line,left+5,by);by+=4.8});stage2Lines.forEach(line=>{doc.text(line,left+5,by);by+=4.8});
+  y+=boxH+2
+}
 doc.setTextColor(0,0,0);
 }
 }else{
