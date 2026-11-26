@@ -11,11 +11,11 @@
   var OTHER_TEMP = 'Other temperature requirement';
   var NEED = 'need info', PROBLEM = 'potential problem', OK = 'ok', NOTE = 'note';
   // L_ENERGY: building uses inside the ADL low-energy-demand exemption when unheated (industrial sites, workshops,
-  // storage, non-residential agricultural). Options are BUILDING_USE_OPTIONS in app.js; free text (older projects) uses the word test.
+  // non-residential agricultural). Storage and distribution are not named in ADL, so they get the check line (Stuart, 26 Nov 2026). Options are BUILDING_USE_OPTIONS in app.js; free text (older projects) uses the word test.
   var USE_OPTIONS = ['Warehousing and general storage', 'Distribution and logistics', 'Manufacturing or factory use', 'Workshop or vehicle repair', 'Vehicle or plant wash facility', 'Timber or materials storage', 'Food production or chilled storage', 'Spray room or process enclosure', 'Indoor sports or leisure use', 'Other industrial or commercial use'];
-  var USE_EXEMPT = ['Warehousing and general storage', 'Distribution and logistics', 'Manufacturing or factory use', 'Workshop or vehicle repair', 'Timber or materials storage'];
-  var USE_EXEMPT_TEXT = /storage|warehous|\bstores?\b|industrial|manufactur|factory|workshop|agricultur|\bfarm|\bbarn\b/i;
-  var USE_NOT_EXEMPT_TEXT = /sport|leisure|padel|cricket|tennis|gym|fitness|office|retail|\bshop\b|showroom|resident|dwelling|school|church|community|chill|cold|freez|food|spray|commercial/i;
+  var USE_EXEMPT = ['Manufacturing or factory use', 'Workshop or vehicle repair'];
+  var USE_EXEMPT_TEXT = /industrial|manufactur|factory|workshop|agricultur|\bfarm|\bbarn\b/i;
+  var USE_NOT_EXEMPT_TEXT = /storage|warehous|\bstores?\b|distribut|logistic|sport|leisure|padel|cricket|tennis|gym|fitness|office|retail|\bshop\b|showroom|resident|dwelling|school|church|community|chill|cold|freez|food|spray|commercial/i;
 
   function num(v) { if (v === '' || v === null || v === undefined) return null; var n = Number(v); return isFinite(n) ? n : null; }
   function fill(t, v) { return String(t || '').replace(/\{(\w+)\}/g, function (m, k) { return v && v[k] !== undefined ? v[k] : m; }); }
@@ -153,8 +153,8 @@
       // ADL Vol 2: the test is fixed heating or cooling (2021 para 0.11 / 2026 para 0.12, and 2.27-2.29 / 2.26-2.28).
       // Reads the Stage 1 heated / temperature answer, the Building Design services answer and the building use.
       // - heated, other temperature (heating or cooling) or services Yes = note (energy calculation may be needed)
-      // - unheated, services No, and a use inside the exemption (industrial, storage, workshop, agricultural) = ok
-      // - unheated, services No, any other use (e.g. sports or leisure) = check line, never an all-clear
+      // - unheated, services No, and a use inside the exemption (industrial, workshop, agricultural) = ok
+      // - unheated, services No, any other use (e.g. storage, distribution, sports or leisure) = check line, never an all-clear
       // - anything unknown (heated answer, services answer or use) = need info, never ok
       var m = { heating: i.heating, services: i.services, use: i.use };
       if (i.services === 'Yes' || i.heating === HEATED || i.heating === OTHER_TEMP) return [entry(r, NOTE, m)];
