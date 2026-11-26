@@ -1,4 +1,4 @@
-> **Migrated 25 Nov 2026** from the private repo Project-Check-MVP-Master-Build (branch approved).
+> **Migrated 25 Nov 2026** from an earlier private repo.
 
 # Supplier anchoring methods
 

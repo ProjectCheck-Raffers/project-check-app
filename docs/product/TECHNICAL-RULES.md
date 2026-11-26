@@ -1,4 +1,4 @@
-> **Migrated 25 Nov 2026** from the private repo Project-Check-MVP-Master-Build (branch approved). Client jobs anonymised as Job A–O. Full anonymised job records are in docs/job-library.
+> **Migrated 25 Nov 2026** from an earlier private repo. Client jobs anonymised as Job A–O. Full anonymised job records are in docs/job-library.
 
 # Preliminary technical rules
 
