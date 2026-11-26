@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "project-check-architect": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "tools/project-check-architect-mcp/index.js"
+      ],
+      "env": {}
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "name": "Project Check — live preview",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:1-22-bookworm",
+  "forwardPorts": [5099],
+  "portsAttributes": {
+    "5099": {
+      "label": "Project Check live preview",
+      "onAutoForward": "openPreview",
+      "visibility": "private"
+    }
+  },
+  "postCreateCommand": "cd tests/playwright && npm ci",
+  "postStartCommand": "bash -lc 'cd Project-Check-MVP-Master-Build && (npx --yes serve -l 5099 > /tmp/project-check-preview.log 2>&1 &)'",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "openai.chatgpt",
+        "ms-playwright.playwright",
+        "dbaeumer.vscode-eslint",
+        "stylelint.vscode-stylelint"
+      ]
+    }
+  }
+}

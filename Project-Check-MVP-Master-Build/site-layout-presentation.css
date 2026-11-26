@@ -127,14 +127,6 @@ body.dc-active .nav .dc-nav-active-item::after {
   height: 2px;
   background: var(--dc-nav-green);
 }
-body.dc-active .nav .nav-strong {
-  border: 1px solid var(--dc-header-border); /* exact Figma #E0E3E3 (98:390) — was --dc-line (#E3E5E5), a near-identical but distinct token */
-  border-radius: 12px;
-  padding: 12px 20px;
-  font: 400 18px/1.3 var(--dc-font);
-  color: var(--dc-nav-navy);
-  box-shadow: 0 7px 14px rgba(0, 0, 0, .1);
-}
 
 /* ======================================================================
    Header below the 858 reference width — proportional calc(N/858*100vw)
@@ -174,13 +166,7 @@ body.dc-active .nav .nav-strong {
     white-space: nowrap;
   }
   body.dc-active .nav .dc-nav-active-item::after { bottom: calc(-8 / 858 * 100vw); }
-  body.dc-active .nav .nav-strong {
-    flex: none;
-    padding: calc(12 / 858 * 100vw) calc(20 / 858 * 100vw);
-    border-radius: calc(12 / 858 * 100vw);
-    font-size: calc(18 / 858 * 100vw);
-    white-space: nowrap;
-  }
+  
 }
 
 /* ======================================================================
@@ -649,52 +635,7 @@ body.dc-active .card .actions .btn:disabled { border-color: var(--dc-line); colo
    Building-position / site-boundary maps (S1-MAP01 / S1-MAP02)
    ====================================================================== */
 body.dc-page-map .container > .card { gap: 14px; }
-body.dc-page-map .map-help { margin: 0; color: var(--dc-navy); font: 400 17px/1.4 var(--dc-font); }
-body.dc-page-map .map-search {
-  width: 100%;
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-body.dc-page-map .map-search input {
-  flex: 1 1 320px;
-  min-height: 56px;
-  padding: 16px 18px;
-  border: 1px solid var(--dc-line);
-  border-radius: var(--dc-radius-field);
-  font: 400 18px/1.3 var(--dc-font);
-  box-sizing: border-box;
-}
-body.dc-page-map .map-search .btn.secondary,
-body.dc-page-map .map-toolbar .btn.secondary {
-  min-height: 56px;
-  padding: 14px 20px;
-  border: 1px solid var(--dc-navy);
-  border-radius: var(--dc-radius-field);
-  background: #fff;
-  color: var(--dc-navy);
-  font: 600 18px/1.25 var(--dc-font);
-  box-shadow: none;
-}
-body.dc-page-map .map-toolbar.compact-toolbar .btn.compact {
-  min-height: 44px;
-  padding: 10px 14px;
-  border-radius: 10px;
-  font-size: 15px;
-}
-body.dc-page-map .layer-toggle-row { display: flex; gap: 22px; color: var(--dc-navy); font: 400 17px/1.3 var(--dc-font); }
-body.dc-page-map .layer-toggle { display: flex; align-items: center; gap: 8px; }
-body.dc-page-map .map-toolbar {
-  width: 100%;
-  padding: 12px 14px;
-  border: 1px solid var(--dc-line);
-  border-radius: var(--dc-radius-field);
-  background: #fff;
-  box-sizing: border-box;
-}
-body.dc-page-map .map-toolbar strong { font: 600 16px/1.3 var(--dc-font); color: var(--dc-navy); }
-body.dc-page-map .map-toolbar .actions { gap: 10px; }
-body.dc-page-map .bearing-readout { color: var(--dc-muted); font-weight: 400; }
+
 body.dc-page-map .mapbox {
   width: 100%;
   height: 330px;
@@ -725,11 +666,7 @@ body.dc-page-map .container > .card:not(:first-of-type) .meta {
   color: var(--dc-navy);
   opacity: .8;
 }
-body.dc-page-map .container > .card:not(:first-of-type) #s1evidenceStatus {
-  color: var(--dc-green);
-  font-weight: 600;
-  opacity: 1;
-}
+
 body.dc-page-map .container > .card:not(:first-of-type) .actions {
   justify-content: flex-start;
 }
@@ -751,8 +688,7 @@ body.dc-page-report .card {
    matching every re-pulled report/doors-review frame exactly. */
 body.dc-page-report .card.dc-tone-white,
 body.dc-page-report .card:not([class*="dc-tone-"]) { background: #fff; border: 1px solid var(--dc-line); box-shadow: 0 7px 16px rgba(0, 0, 0, .05); }
-body.dc-page-report .card.dc-tone-green-soft { background: var(--dc-soft-green); border: 1px solid var(--dc-line); box-shadow: 0 7px 16px rgba(0, 0, 0, .05); }
-body.dc-page-report .card.dc-tone-green-strong { background: var(--dc-soft-green); border: 1px solid var(--dc-nav-green); box-shadow: 0 7px 16px rgba(0, 0, 0, .05); }
+
 body.dc-page-report .card h3 { margin: 0 0 4px; color: var(--dc-navy); font: 700 24px/1.25 var(--dc-font); }
 body.dc-page-report .card > p.meta:first-of-type,
 body.dc-page-report .card .meta { color: var(--dc-navy); opacity: .8; font: 400 17px/1.4 var(--dc-font); }
@@ -814,32 +750,11 @@ body.dc-page-report.dc-stage1-screen .card:not([class*="dc-tone-"]) {
   border: 1px solid var(--dc-line);
   box-shadow: 0 7px 16px rgba(0, 0, 0, .05);
 }
-body.dc-page-report.dc-stage1-screen .card.dc-tone-green-soft {
-  background: #f3f9f2;
-  border: 1px solid var(--dc-line);
-  box-shadow: 0 7px 16px rgba(0, 0, 0, .05);
-}
-body.dc-page-report.dc-stage1-screen .card.dc-tone-green-strong {
-  background: #f3f9f2;
-  border: 1px solid var(--dc-nav-green);
-  box-shadow: 0 7px 16px rgba(0, 0, 0, .05);
-}
+
 /* New 4th tone (198:99 "Information not established") — Assumptions /
    information not yet established only. Amber, not red/error — flagged
    as an open item for Stage 2, never as a failure (per the Figma
    concept's own framing). */
-body.dc-page-report.dc-stage1-screen .card.dc-tone-amber {
-  background: #fef8e0;
-  border: 1px solid #d1a621;
-  box-shadow: 0 7px 16px rgba(0, 0, 0, .05);
-}
-body.dc-page-report.dc-stage1-screen .card.dc-tone-amber h3 { color: #755708; }
-body.dc-page-report.dc-stage1-screen .card.dc-tone-amber .meta { color: #594f2e; opacity: 1; }
-body.dc-page-report.dc-stage1-screen .card.dc-tone-amber .risk {
-  background: #fffdf6;
-  border-color: #ecd48a;
-  color: #594f2e;
-}
 
 /* Info-grid rows (198:28 "Project summary") — the label renders as its
    own line above the value (CUSTOMER / Bobby McConville), not inline on
@@ -989,9 +904,7 @@ body.dc-page-doorsreview .container > .card {
   border-radius: var(--dc-radius-card);
   box-sizing: border-box;
 }
-body.dc-page-doorsreview .container > .card.dc-tone-white { background: #fff; border: 1px solid var(--dc-line); box-shadow: 0 7px 16px rgba(0, 0, 0, .05); }
-body.dc-page-doorsreview .container > .card.dc-tone-green-soft { background: var(--dc-soft-green); border: 1px solid var(--dc-line); box-shadow: 0 7px 16px rgba(0, 0, 0, .05); }
-body.dc-page-doorsreview .container > .card.dc-tone-green-strong { background: var(--dc-soft-green); border: 1px solid var(--dc-nav-green); box-shadow: 0 7px 16px rgba(0, 0, 0, .05); }
+
 body.dc-page-doorsreview .container > .card h3 { margin: 0; color: var(--dc-navy); font: 700 24px/1.25 var(--dc-font); }
 body.dc-page-doorsreview .container > .card .meta { color: var(--dc-navy); opacity: .8; }
 body.dc-page-doorsreview .svg-wrap {
@@ -1136,45 +1049,6 @@ body.dc-page-workspace .progress span { display: block; height: 8px; background:
 
 /* --- Pricing page specifics (CHECK/UNDERSTAND/DECIDE/MOVE FORWARD strip,
    the four price cards, and the two banners below them) --- */
-body.dc-page-workspace .pagehead h1.pricing-headline { font-size: 34px; }
-body.dc-page-workspace .pagehead .hl-green { color: var(--dc-green); }
-body.dc-page-workspace .pricing-journey {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 14px;
-  padding: 20px 24px;
-  border: 1px solid var(--dc-line);
-  border-radius: var(--dc-radius-card);
-  background: var(--dc-soft-green);
-  box-sizing: border-box;
-}
-body.dc-page-workspace .pricing-journey-step { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; min-width: 110px; }
-body.dc-page-workspace .pricing-journey-step .journey-icon { width: 48px; height: 48px; }
-body.dc-page-workspace .pricing-journey-step .eyebrow {
-  margin: 0;
-  color: var(--dc-green);
-  font: 700 13px/1.2 var(--dc-font);
-  letter-spacing: .3px;
-  text-transform: uppercase;
-}
-body.dc-page-workspace .pricing-journey-caption { color: var(--dc-navy); opacity: .8; font: 400 13px/1.3 var(--dc-font); }
-body.dc-page-workspace .pricing-journey-line { flex: 1 1 24px; height: 1px; background: var(--dc-line); min-width: 16px; }
-body.dc-page-workspace .price-card { display: flex; flex-direction: column; gap: 10px; position: relative; }
-body.dc-page-workspace .price-card.featured { background: var(--dc-soft-green); border: 2px solid var(--dc-green); }
-body.dc-page-workspace .price-card .journey-icon { width: 44px; height: 44px; }
-body.dc-page-workspace .price-card .price { color: var(--dc-navy); font: 700 32px/1.1 var(--dc-font); }
-body.dc-page-workspace .price-card .price-sub { color: var(--dc-muted); font: 400 14px/1.2 var(--dc-font); margin-top: -6px; }
-body.dc-page-workspace .price-card .check-list { list-style: none; margin: 4px 0; padding: 0; display: flex; flex-direction: column; gap: 8px; color: var(--dc-navy); font: 400 15px/1.4 var(--dc-font); }
-body.dc-page-workspace .price-card .check-list li { padding-left: 22px; position: relative; }
-body.dc-page-workspace .price-card .check-list li::before { content: "✓"; position: absolute; left: 0; color: var(--dc-green); font-weight: 700; }
-body.dc-page-workspace .price-card .popular-badge {
-  position: absolute; top: -12px; right: 20px;
-  background: var(--dc-green); color: #fff;
-  padding: 4px 12px; border-radius: 12px;
-  font: 700 11px/1.2 var(--dc-font); letter-spacing: .4px;
-}
-body.dc-page-workspace .price-card > .btn { margin-top: auto; width: 100%; text-align: center; }
 
 /* ======================================================================
    PRICING — structural rebuild (Figma frame 143:41 "PRICING — APPROVED /
@@ -1192,54 +1066,20 @@ body.dc-page-workspace .price-card > .btn { margin-top: auto; width: 100%; text-
    selector purely to out-specificity the equal-weight shared rules above
    (both are 1 type + 2 classes without it) without relying on source
    order. */
-body.dc-active.dc-page-pricing .pagehead {
-  background: #f3f9f2;
-  border: 1px solid var(--dc-line);
-  border-radius: var(--dc-radius-card);
-  padding: 37px 35px;
-  align-items: flex-start;
-}
-body.dc-active.dc-page-pricing .pagehead .eyebrow { font-size: 18px; }
-body.dc-active.dc-page-pricing .pagehead h1.pricing-headline { font-size: 44px; line-height: 1.05; margin: 14px 0 0; }
-body.dc-active.dc-page-pricing .pagehead .meta { font-size: 21px; line-height: 1.5; margin-top: 18px; opacity: 1; color: var(--dc-navy); }
+
 /* Green divider under the intro paragraph (143:79) — a decorative
    element direction-c-trial.js/app.js don't need to touch further; the
    div is added once in app.js's pricing() markup and styled purely here. */
-body.dc-active.dc-page-pricing .pricing-intro-divider { width: 94px; height: 2px; background: var(--dc-nav-green); margin-top: 24px; }
 
 /* "How pricing develops with your project" card (143:80) wrapping the
    4-row journey strip. */
-body.dc-active.dc-page-pricing .pricing-journey-card { padding: 27px 31px; }
-body.dc-active.dc-page-pricing .pricing-journey-title { margin: 0; font: 700 29px/1.1 var(--dc-font); color: var(--dc-navy); }
-body.dc-active.dc-page-pricing .pricing-journey-card > .meta { margin: 8px 0 20px; color: var(--dc-muted); opacity: 1; font: 400 18px/1.35 var(--dc-font); }
-body.dc-active.dc-page-pricing .pricing-journey { display: flex; flex-direction: column; gap: 16px; flex-wrap: nowrap; padding: 0; border: 0; background: none; }
-body.dc-active.dc-page-pricing .pricing-journey-step {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  text-align: left;
-  min-width: 0;
-  width: 100%;
-  padding: 17px 24px;
-  border-radius: 18px;
-  border: 1px solid var(--dc-line);
-  background: #fff;
-  box-sizing: border-box;
-}
+
 /* First two rows (CHECK/UNDERSTAND, the two free stages) carry the
    highlighted pale-green/green-border row treatment; DECIDE/MOVE FORWARD
    stay plain white — matches 143:83/89 vs 143:95/101 exactly.
    PRICING_CARDS' order is fixed, protected content (see app.js's own
    governance comment on that constant), so selecting by position here
    adds no new data and can't drift from which stages are actually free. */
-body.dc-active.dc-page-pricing .pricing-journey-step:nth-child(-n+2) {
-  background: var(--dc-soft-green);
-  border-color: var(--dc-nav-green);
-}
-body.dc-active.dc-page-pricing .pricing-journey-step .journey-icon { width: 56px; height: 56px; flex: 0 0 auto; }
-body.dc-active.dc-page-pricing .pricing-journey-headline { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; flex: 0 0 auto; width: 180px; }
-body.dc-active.dc-page-pricing .pricing-journey-step .eyebrow { margin: 0; }
-body.dc-active.dc-page-pricing .pricing-journey-caption { flex: 1 1 auto; color: var(--dc-navy); opacity: 1; font: 400 17px/1.35 var(--dc-font); text-align: left; }
 
 /* Price cards (143:107/135/163/193): single full-width column (was a
    4-col grid), each card a CSS grid — icon/title/badge left, price top-
@@ -1247,52 +1087,12 @@ body.dc-active.dc-page-pricing .pricing-journey-caption { flex: 1 1 auto; color:
    then a 2-column feature checklist, then the CTA. Grid areas let the
    visual order differ from the existing, unchanged DOM order (icon, h3,
    badge, price, price-sub, ul, button) with zero markup change. */
-body.dc-active.dc-page-pricing .grid4 { display: flex; flex-direction: column; gap: 22px; }
-body.dc-active.dc-page-pricing .price-card {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  grid-template-areas: "icon title price" "icon badge pricesub" "checklist checklist checklist" "cta cta cta";
-  column-gap: 24px;
-  row-gap: 12px;
-  align-items: start;
-}
-body.dc-active.dc-page-pricing .price-card .journey-icon { grid-area: icon; width: 70px; height: 70px; }
-body.dc-active.dc-page-pricing .price-card h3 { grid-area: title; margin: 0; align-self: end; font-size: 20px; }
-body.dc-active.dc-page-pricing .price-card .pill { grid-area: badge; justify-self: start; align-self: start; }
-body.dc-active.dc-page-pricing .price-card .price { grid-area: price; justify-self: end; align-self: end; font-size: 48px; }
-body.dc-active.dc-page-pricing .price-card .price-sub { grid-area: pricesub; justify-self: end; align-self: start; margin-top: 0; }
-body.dc-active.dc-page-pricing .price-card .check-list {
-  grid-area: checklist;
-  display: block;
-  columns: 2;
-  column-gap: 40px;
-  border-top: 1px solid var(--dc-line);
-  padding-top: 20px;
-  margin: 4px 0 0;
-}
-body.dc-active.dc-page-pricing .price-card .check-list li { break-inside: avoid-column; margin-bottom: 8px; }
-body.dc-active.dc-page-pricing .price-card > .btn { grid-area: cta; margin-top: 4px; width: 360px; max-width: 100%; }
 
-body.dc-page-workspace .banner.confidence-strip,
-body.dc-page-workspace .supplier-banner {
-  display: flex;
-  flex-direction: row; /* styles.css sets column below 900px (.confidence-strip/.supplier-banner, unscoped by page) — overridden so this stays one coherent Direction C row at every required width; flex-wrap below still lets it drop to its own line where genuinely too narrow. */
-  align-items: flex-start;
-  gap: 20px;
-  border-radius: var(--dc-radius-card);
-  padding: 24px 28px;
-  box-sizing: border-box;
-  box-shadow: 0 10px 30px rgba(16, 24, 40, .06);
-}
-body.dc-page-workspace .banner.confidence-strip { background: var(--dc-soft-green); border: 2px solid var(--dc-green); }
-body.dc-page-workspace .supplier-banner { border: 1px solid var(--dc-line); align-items: center; flex-wrap: wrap; row-gap: 18px; background: #fff; }
-body.dc-page-workspace .banner.confidence-strip .journey-icon,
-body.dc-page-workspace .supplier-banner .journey-icon { width: 40px; height: 40px; flex: 0 0 auto; }
 /* flex-basis only, no flex-grow — a growing body would claim all
    remaining space on its flex line and force the button onto its own
    line with a large gap above it even where there is plainly room for
    both on one row. */
-body.dc-page-workspace .supplier-banner-body { flex: 0 1 420px; }
+
 /* styles.css has a pre-existing `.supplier-banner .btn{width:100%}` rule
    below 900px, which — as a flex child with no room left on the icon+body
    row — was forcing this button onto its own line with a large gap above
@@ -1300,7 +1100,6 @@ body.dc-page-workspace .supplier-banner-body { flex: 0 1 420px; }
    row as the icon/text at every Direction C width; flex-wrap above still
    drops it to its own (full-width) line if a given width genuinely can't
    fit all three. */
-body.dc-page-workspace .supplier-banner .btn { margin-left: auto; flex: 0 0 auto; width: auto; }
 
 /* ======================================================================
    Narrow-phone refinements (390 / 430) — the 858px-capped container above
@@ -1333,23 +1132,7 @@ body.dc-page-workspace .supplier-banner .btn { margin-left: auto; flex: 0 0 auto
      simpler single-column arrangement below ~600px rather than shrinking
      in place — same principle as every other Direction C narrow-phone
      rule in this block. */
-  body.dc-active.dc-page-pricing .pagehead { padding: 24px 22px; }
-  body.dc-active.dc-page-pricing .pagehead h1.pricing-headline { font-size: 28px; }
-  body.dc-active.dc-page-pricing .pagehead .meta { font-size: 16px; margin-top: 12px; }
-  body.dc-active.dc-page-pricing .pricing-journey-card { padding: 20px 18px; }
-  body.dc-active.dc-page-pricing .pricing-journey-title { font-size: 22px; }
-  body.dc-active.dc-page-pricing .pricing-journey-step { flex-wrap: wrap; padding: 16px 18px; }
-  body.dc-active.dc-page-pricing .pricing-journey-headline { width: auto; }
-  body.dc-active.dc-page-pricing .price-card {
-    grid-template-columns: auto 1fr;
-    grid-template-areas: "icon title" "icon badge" "price price" "pricesub pricesub" "checklist checklist" "cta cta";
-    row-gap: 8px;
-  }
-  body.dc-active.dc-page-pricing .price-card .price,
-  body.dc-active.dc-page-pricing .price-card .price-sub { justify-self: start; text-align: left; }
-  body.dc-active.dc-page-pricing .price-card .price { font-size: 36px; margin-top: 8px; }
-  body.dc-active.dc-page-pricing .price-card .check-list { columns: 1; }
-  body.dc-active.dc-page-pricing .price-card > .btn { width: 100%; }
+
 }
 
 /* ======================================================================
@@ -1379,8 +1162,7 @@ body.dc-active.dc-page-myprojects .projects > .card {
   position: relative;
   padding: 27px 31px;
 }
-body.dc-active.dc-page-myprojects .project-card-head { display: flex; align-items: center; gap: 20px; margin-bottom: 18px; }
-body.dc-active.dc-page-myprojects .project-card-head .journey-icon { width: 70px; height: 70px; flex: 0 0 auto; }
+
 body.dc-active.dc-page-myprojects .card.project h3 { margin: 0 0 8px; font-size: 28px; }
 body.dc-active.dc-page-myprojects .card.project .pill {
   display: inline-block;
@@ -1390,9 +1172,9 @@ body.dc-active.dc-page-myprojects .card.project .pill {
   padding: 8px 18px;
   border-radius: 17px;
 }
-body.dc-active.dc-page-myprojects .project-divider { height: 1px; background: var(--dc-line); margin: 18px 0; }
+
 body.dc-active.dc-page-myprojects .card.project .meta { opacity: 1; color: var(--dc-muted); font-size: 17px; margin: 8px 0 0; }
-body.dc-active.dc-page-myprojects .project-note { margin-top: 16px; }
+
 body.dc-active.dc-page-myprojects .card.project .actions { margin-top: 20px; gap: 16px; }
 body.dc-active.dc-page-myprojects .card.project .actions .btn { height: 62px; padding: 0 28px; border-radius: 14px; font-size: 19px; }
 body.dc-active.dc-page-myprojects .card.project .actions .btn:not(.secondary) { background: var(--dc-nav-green); border-color: var(--dc-nav-green); }
@@ -1410,7 +1192,7 @@ body.dc-active.dc-page-myprojects .container > .card:not(.project) p:not(.pill) 
 body.dc-active.dc-page-myprojects .container > .card:not(.project) .btn.green { height: 62px; padding: 0 28px; border-radius: 14px; background: var(--dc-nav-green); border-color: var(--dc-nav-green); font-size: 19px; }
 
 @media (max-width: 600px) {
-  body.dc-active.dc-page-myprojects .project-card-head { flex-wrap: wrap; gap: 14px; }
+  
   body.dc-active.dc-page-myprojects .card.project .actions { flex-wrap: wrap; }
   body.dc-active.dc-page-myprojects .card.project .actions .btn { flex: 1 1 100%; }
 }
@@ -1532,7 +1314,7 @@ body.dc-active .mapbox { max-width: 100%; }
 .auth-intro .auth-center { margin: 0; font-size: 17px; color: var(--dc-muted); }
 /* The locked frame has no separate circular icon — the badge above (or,
    for Create account, the heading alone) takes that role instead. */
-.auth-icon { display: none; }
+
 .auth-panel .field label { font-size: 14px; font-weight: 600; color: var(--dc-navy); }
 .auth-panel .field input {
   height: 58px;
@@ -1556,7 +1338,7 @@ body.dc-active .mapbox { max-width: 100%; }
 }
 .modal .auth-panel .consent-row label { flex: 1 1 0; min-width: 0; }
 .auth-panel .password-field input { padding-right: 44px; }
-.auth-panel #forgotPw { display: block; margin: -6px 0 4px auto; color: var(--dc-nav-green); font-weight: 600; }
+
 .auth-panel .btn.green.full { height: 58px; border-radius: 14px; background: var(--dc-nav-green); border-color: var(--dc-nav-green); font-size: 17px; }
 .auth-panel .btn.outline-green.full { height: 58px; border-radius: 14px; border-color: var(--dc-navy); color: var(--dc-navy); font-size: 17px; }
 /* Plain centred text, no divider line either side, matching the locked
@@ -1572,14 +1354,6 @@ body.dc-active .mapbox { max-width: 100%; }
    app. No field, label, id, button, validation or create-project logic
    changed — only the heading's presentation.
    ====================================================================== */
-.modal .card.new-project-modal { width: min(598px, 100%); border-radius: 27px; border: 1px solid var(--dc-nav-green); box-shadow: 0 10px 24px rgba(0, 0, 0, .08); }
-.new-project-intro { background: #f3f9f2; border: 1px solid var(--dc-line); border-radius: 20px; padding: 18px 22px; margin: 0 0 20px; }
-.new-project-intro h2 { margin: 0; font: 700 30px/1.2 var(--dc-font); color: var(--dc-navy); }
-.new-project-modal .field label { font-size: 16px; font-weight: 600; color: var(--dc-navy); }
-.new-project-modal .field input { height: 64px; padding: 0 16px; border-radius: 14px; border: 1px solid var(--dc-line); font-size: 18px; box-sizing: border-box; }
-.new-project-modal .actions { gap: 20px; margin-top: 8px; }
-.new-project-modal .btn.green { height: 56px; padding: 0 24px; border-radius: 14px; background: var(--dc-nav-green); border-color: var(--dc-nav-green); font-size: 18px; }
-.new-project-modal .btn.secondary { height: 56px; padding: 0 24px; border-radius: 14px; border-color: var(--dc-navy); color: var(--dc-navy); font-size: 18px; }
 
 /* ======================================================================
    QUOTATIONS — join the shared Direction C header/card treatment
@@ -1668,16 +1442,6 @@ body.dc-active.dc-page-stage3 .container > .card > p.meta { color: var(--dc-navy
    150:264's own "RESOLVED" card tone; its nested action cards also drop
    back to plain white/grey pill so a closed item doesn't read as if it
    still needs attention. */
-body.dc-active.dc-page-stage3 .container > .card.resolved-actions {
-  background: #fff;
-  border: 1px solid var(--dc-line);
-}
-body.dc-active.dc-page-stage3 .container > .card.resolved-actions > h3 { font-size: 22px; }
-body.dc-active.dc-page-stage3 .container > .card.resolved-actions .card {
-  background: #fff;
-  border: 1px solid var(--dc-line);
-  margin-top: 14px;
-}
 
 /* ======================================================================
    TERMS & PRIVACY — join the shared Direction C header/card treatment
@@ -1767,9 +1531,7 @@ body[data-page="profileEdit"] #projectsBtn{color:#0a6b1a;font-weight:600}
 body[data-page="dashboard"] #projectsBtn::after,
 body[data-page="profile"] #projectsBtn::after,
 body[data-page="profileEdit"] #projectsBtn::after{content:"";position:absolute;left:50%;bottom:2px;width:52px;height:2px;transform:translateX(-50%);background:#0a6b1a}
-body[data-page="dashboard"] .nav .nav-strong,
-body[data-page="profile"] .nav .nav-strong,
-body[data-page="profileEdit"] .nav .nav-strong{padding:11px 16px;border:1px solid #e0e3e3;border-radius:10px;background:#fff;box-shadow:0 4px 10px rgba(0,0,0,.07)}
+
 body[data-page="dashboard"] .customer-area,
 body[data-page="profile"] .customer-area,
 body[data-page="profileEdit"] .customer-area{width:min(1180px,calc(100% - 48px));padding:30px 0 54px}
@@ -1781,7 +1543,7 @@ body[data-page="dashboard"] .project .journey-icon{width:50px;height:50px;flex-b
 body[data-page="dashboard"] .project h3{font-size:21px}
 body[data-page="dashboard"] .project .actions{display:flex;gap:10px;margin-top:18px}
 body[data-page="dashboard"] .project .btn{padding:12px 16px;font-size:14px}
-body[data-page="dashboard"] .project-brief{max-width:860px;margin:0 auto;padding:26px}
+
 body[data-page="profile"] .profile-card,
 body[data-page="profileEdit"] .profile-card{max-width:860px;padding:26px;border-radius:14px}
 body[data-page="profile"] .profile-card h1,
@@ -1811,9 +1573,7 @@ body[data-page="profileEdit"] .nav button[data-route="pricing"]{display:none!imp
 body[data-page="dashboard"] .nav button,
 body[data-page="profile"] .nav button,
 body[data-page="profileEdit"] .nav button{font-size:13px}
-body[data-page="dashboard"] .nav .nav-strong,
-body[data-page="profile"] .nav .nav-strong,
-body[data-page="profileEdit"] .nav .nav-strong{padding:9px 10px}
+
 body[data-page="dashboard"] .customer-area,
 body[data-page="profile"] .customer-area,
 body[data-page="profileEdit"] .customer-area{width:calc(100% - 24px);padding:20px 0 36px}
@@ -1829,7 +1589,7 @@ body[data-page="profileEdit"] .profile-card h1{font-size:28px}
 body[data-page="profile"] .profile-details{grid-template-columns:1fr 1fr}
 body[data-page="profile"] .profile-details>div{padding:12px}
 body[data-page="profile"] .profile-details dd{font-size:14px}
-body[data-page="profile"] .profile-title .meta{font-size:14px}
+
 body[data-page="profile"] .profile-card .actions{display:flex;flex-direction:row;flex-wrap:wrap}
 body[data-page="profile"] .profile-card .actions .btn{width:auto}
 }
@@ -1844,15 +1604,14 @@ body[data-page="dashboard"],body[data-page="profile"],body[data-page="profileEdi
 .workspace-dashboard,.profile-page{max-width:920px;padding-top:36px;padding-bottom:64px}
 .workspace-progress{padding:34px 38px;margin-bottom:18px;border:1px solid #d8dfdb;border-radius:22px}
 .workspace-progress h1,.profile-page h1{margin:8px 0 5px;font-size:clamp(2rem,5vw,3rem)}
-.workspace-stage{font-size:1.08rem;font-weight:650;color:#68717a}.stage-progress{height:10px;border-radius:99px;background:#e5eae7;margin-top:30px;overflow:hidden}.stage-progress span{display:block;width:25%;height:100%;border-radius:99px;background:#168743}.stage-numbers{display:flex;justify-content:space-between;margin-top:15px;color:#69717a}.stage-numbers b{color:#168743}
-.next-step-panel{padding:36px;border-radius:22px;background:#eaf6ee;margin-bottom:42px}.next-step-panel h2{margin:10px 0;font-size:clamp(1.65rem,4vw,2.25rem)}.next-step-panel p{max-width:630px;color:#647078;font-size:1.08rem}.next-step-panel .btn{width:100%;margin-top:24px}
+.workspace-stage{font-size:1.08rem;font-weight:650;color:#68717a}.stage-progress{height:10px;border-radius:99px;background:#e5eae7;margin-top:30px;overflow:hidden}.stage-progress span{display:block;width:25%;height:100%;border-radius:99px;background:#168743}
+
 .workspace-section>.eyebrow{margin:0 0 12px}.project-summary{display:flex;justify-content:space-between;gap:24px;padding:30px 34px;border-radius:20px}.project-summary h2{margin:0 0 10px}.project-summary p{margin:0;color:#67727c;line-height:1.5}.project-summary>strong{color:#168743;white-space:nowrap}
-.upload-summary{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:25px 34px;margin-top:24px;border-radius:18px}.upload-summary h3,.upload-summary p{margin:0}.upload-summary p{margin-top:8px;color:#6b747c}.upload-summary .btn{min-width:138px}.stage-guide{width:100%;border:1px solid #cfddd4;background:#edf7f0;border-radius:18px;padding:23px 30px;margin-top:24px;display:flex;justify-content:space-between;font:inherit;font-weight:700;color:#142034;cursor:pointer}.stage-guide strong{color:#168743}
+
 .profile-page>.customer-heading{margin-bottom:28px}.profile-identity{display:flex;align-items:center;gap:20px;padding:28px 32px;margin-bottom:22px;border-radius:20px}.profile-identity h2,.profile-identity p{margin:0}.profile-identity p{margin-top:5px;color:#68727a}.profile-avatar{width:62px;height:62px;border-radius:50%;display:grid;place-items:center;background:#e4f3e8;color:#168743;font-size:1.5rem;font-weight:800}
 .profile-page .profile-card{padding:32px;margin-bottom:22px;border-radius:20px}.profile-details{display:grid;grid-template-columns:1fr 1fr;gap:0;margin:18px 0 26px}.profile-details>div{padding:18px 0;border-bottom:1px solid #e1e6e3}.profile-details>div:nth-child(odd){padding-right:22px}.profile-details dt{color:#68727a;font-size:.86rem}.profile-details dd{margin:7px 0 0;font-weight:650}.verified{display:inline-block;margin-left:8px;padding:4px 9px;border-radius:99px;background:#e5f4e9;color:#147b3b;font-size:.75rem;font-weight:800}.security-row{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:22px 0;border-bottom:1px solid #e1e6e3}.security-row:last-child{border-bottom:0}.security-row h3,.security-row p{margin:0}.security-row p{margin-top:6px;color:#68727a}
-.sitefooter{background:#fff;border-top:1px solid #dfe5e1;padding:44px 24px;display:flex;flex-direction:column;align-items:center;gap:18px;color:#172131}.sitefooter-logo{width:132px;height:auto}.sitefooter-primary,.sitefooter-links{display:flex;gap:28px;flex-wrap:wrap;justify-content:center}.sitefooter button{background:none;border:0;font:inherit;font-weight:650;cursor:pointer;color:#172131}.sitefooter-primary button[data-route="dashboard"]{color:#168743}.sitefooter-rule{width:min(100%,640px);height:1px;background:#dfe5e1}.sitefooter-links button,.sitefooter-copy{font-size:.86rem;color:#68727a;font-weight:500}
-@media(max-width:640px){.workspace-dashboard,.profile-page{padding:22px 16px 44px}.workspace-progress,.next-step-panel,.profile-page .profile-card,.profile-identity{padding:24px}.project-summary,.upload-summary{padding:22px}.profile-details{grid-template-columns:1fr}.profile-details>div:nth-child(odd){padding-right:0}.upload-summary,.security-row{align-items:flex-start}.upload-summary{flex-direction:column}.upload-summary .btn{width:100%}.topbar .nav{gap:7px}.topbar .nav button{padding:9px 10px;font-size:.86rem}.stage-guide{padding:20px}}
-
+.sitefooter{background:#fff;border-top:1px solid #dfe5e1;padding:44px 24px;display:flex;flex-direction:column;align-items:center;gap:18px;color:#172131}.sitefooter-logo{width:132px;height:auto}.sitefooter-primary,.sitefooter-links{display:flex;gap:28px;flex-wrap:wrap;justify-content:center}.sitefooter button{background:none;border:0;font:inherit;font-weight:650;cursor:pointer;color:#172131}.sitefooter-primary button[data-route="dashboard"]{color:#168743}.sitefooter-links button,.sitefooter-copy{font-size:.86rem;color:#68727a;font-weight:500}
+@media(max-width:640px){.workspace-dashboard,.profile-page{padding:22px 16px 44px}.workspace-progress,.next-step-panel,.profile-page .profile-card,.profile-identity{padding:24px}.project-summary,.upload-summary{padding:22px}.profile-details{grid-template-columns:1fr}.profile-details>div:nth-child(odd){padding-right:0}.upload-summary,.security-row{align-items:flex-start}.topbar .nav{gap:7px}.topbar .nav button{padding:9px 10px;font-size:.86rem}}
 
 /* Customer workspace continuity tidy-up — Page Review only, 17 September 2026.
    Scoped to the authenticated pages in Stuart's approved task. Public Home and
@@ -1876,9 +1635,9 @@ body[data-page="profileEdit"] .brand-logo{height:52px;max-width:220px;object-fit
 .workspace-title-row,.workspace-progress-label,.project-summary-actions,.project-page-actions,.customer-heading{display:flex;align-items:center;justify-content:space-between;gap:18px}
 .workspace-title-row h1{margin-bottom:4px}.workspace-progress-label{margin-top:12px;color:#68717a}.workspace-progress-label strong{color:#168743}
 .project-list{display:grid;gap:16px}.project-summary-actions{flex-direction:column;align-items:flex-end}
-.workspace-boundary{display:flex;align-items:center;justify-content:space-between;gap:24px;margin-top:24px;padding:26px 30px;border-radius:18px;border-color:#cfe0d5;background:#f1f8f3}.workspace-boundary h2,.workspace-boundary p{margin:0}.workspace-boundary p{margin-top:7px;color:#68727a}
+
 .project-page{max-width:1180px;padding-top:36px;padding-bottom:64px}.project-page .pagehead{align-items:center;margin-bottom:24px}.project-page .grid4>.card,.project-page .grid3>.card{border:1px solid #d8dfdb;border-radius:18px;box-shadow:0 8px 22px rgba(20,55,35,.05)}.project-page .grid4>.card{display:flex;flex-direction:column}.project-page .grid4>.card .btn{margin-top:auto}.stage1-entry-card{border-color:#add4ba!important;background:#f3faf5}.stage1-entry-card .field-note{margin:10px 0 0;color:#4c6755}
-.profile-page .customer-heading{align-items:flex-end}.profile-page .customer-heading>.actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}.profile-project-detail{grid-column:1/-1}.profile-project-field{grid-column:1/-1}.profile-form input[readonly]{background:#f2f5f3;color:#59645e}.profile-form input:disabled{background:#f2f5f3;color:#8a948e}
+.profile-page .customer-heading{align-items:flex-end}.profile-page .customer-heading>.actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}.profile-form input[readonly]{background:#f2f5f3;color:#59645e}.profile-form input:disabled{background:#f2f5f3;color:#8a948e}
 @media(max-width:760px){
  body[data-page="dashboard"] .topbar,
  body[data-page="project"] .topbar,
@@ -1894,7 +1653,7 @@ body[data-page="profileEdit"] .brand-logo{height:52px;max-width:220px;object-fit
  .project-summary{align-items:flex-start;flex-direction:column}
  .project-summary-actions{width:100%;align-items:flex-start;flex-direction:row}
  .project-summary-actions .btn{margin-left:auto}
- .profile-project-detail{grid-column:auto}
+ 
 }
 @media(max-width:430px){
  body[data-page="dashboard"] .brand-logo,
@@ -2016,26 +1775,6 @@ body[data-review-shell] .document-register tr[hidden]{display:none}
 }
 
 /* CEO Master 40:30 — guided Pricing replacement, 20 September 2026. */
-body[data-page="pricing"] .ceo-guided-pricing{padding:0;background:#fff}
-.ceo-guided-pricing .ceo-pricing-body{display:flex;flex-direction:column;gap:24px;width:min(100%,760px);margin:0 auto;padding:12px 12px 24px;box-sizing:border-box;font-family:Inter,Arial,sans-serif}
-.ceo-guided-pricing .ceo-pricing-body>section,.ceo-guided-pricing .pricing-cta-section{box-sizing:border-box;width:100%;margin:0}
-.ceo-guided-pricing .pricing-hero{padding:20px;background:#f0faf3;border-radius:18px}
-.ceo-guided-pricing .pricing-hero .eyebrow{margin:0;color:#058029;font-size:14px;font-weight:700;line-height:20px;letter-spacing:1px}
-.ceo-guided-pricing .pricing-hero h1{margin:14px 0;font-size:27px;line-height:32px;color:#091b2e}
-.ceo-guided-pricing .pricing-hero p{margin:0;font-size:16px;line-height:24px;color:#5c636d;max-width:none}
-.ceo-guided-pricing .pricing-card{padding:18px;border:1px solid #d9e0db;border-radius:18px;background:#fff;box-shadow:0 7px 16px rgba(16,24,40,.06)}
-.ceo-guided-pricing .pricing-card h2{margin:0 0 12px;color:#091b2e;font-size:20px;line-height:26px}
-.ceo-guided-pricing .pricing-card-intro{margin:0 0 14px;color:#5c636d;font-size:16px;line-height:24px}
-.ceo-guided-pricing .pricing-card>p:last-child{margin-bottom:0}
-.ceo-guided-pricing .pricing-steps{gap:14px}
-.ceo-guided-pricing .pricing-step-row{padding:16px 20px;border-radius:16px;background:#f6f8f7}
-.ceo-guided-pricing .pricing-step-title,.ceo-guided-pricing .pricing-appointment-name{margin:0;color:#091b2e;font-size:15px;font-weight:600;line-height:20px}
-.ceo-guided-pricing .pricing-step-desc,.ceo-guided-pricing .pricing-appointment-desc{margin:8px 0 0;color:#5c636d;font-size:16px;line-height:24px}
-.ceo-guided-pricing .pricing-appointments{background:#f2fbf4;box-shadow:none}
-.ceo-guided-pricing .pricing-appointments-list{gap:12px;margin-top:12px}
-.ceo-guided-pricing .pricing-appointment-row{display:block;padding:16px;border-radius:16px;border:1px solid #d9e0db;box-shadow:0 7px 16px rgba(16,24,40,.06)}
-.ceo-guided-pricing .pricing-cta-full{min-height:56px;padding:16px;border:0;border-radius:10px;background:#058029;font:700 16px/22px Inter,Arial,sans-serif;cursor:pointer}
-.ceo-guided-pricing .home-footer{margin-top:0}
 
 /* CEO-approved Stage 1 workspace 111:183, 20 September 2026. */
 body[data-page="stage1Workspace"]{background:#fff}
@@ -2143,7 +1882,6 @@ body[data-page="projectSettings"] .sitefooter{max-width:528px;margin:0 auto}
 .workspace-dashboard .project-summary-actions{flex-wrap:wrap}
 @media(max-width:600px){.workspace-dashboard .workspace-progress-label{flex-wrap:wrap;gap:8px}.workspace-dashboard .project-summary-actions .btn{width:100%}.workspace-dashboard .dashboard-next{padding:20px}}
 
-
 /* Stage 1 carried-forward confirmation screen — 21 September 2026. */
 body[data-page="stage1Confirm"]{background:#fff}
 body[data-page="stage1Confirm"] .stage1-workspace{width:100%;max-width:760px;margin:0 auto;padding:24px 16px 48px;gap:16px;font-family:Inter,Arial,sans-serif;color:#091b2e}
@@ -2204,50 +1942,39 @@ body[data-page="stage1Workspace"] .sitefooter{max-width:1180px}
 .stage1-confirmation .confirmation-action-buttons .btn:last-child:nth-child(odd){grid-column:1/-1}
 }
 
-
 /* Stage 1 combined Site Layout — 21 September 2026. */
 body[data-page="siteLayout"]{background:#fff}
 body[data-page="siteLayout"] .stage1-workspace{width:100%;max-width:760px;margin:0 auto;padding:24px 16px 48px;gap:16px;font-family:Inter,Arial,sans-serif;color:#091b2e}
 .site-layout-page .site-layout-intro{background:#eef8f0}
 .site-layout-page .site-layout-intro h1{margin:10px 0;font-size:30px;line-height:1.25}
 .site-layout-page .site-layout-intro p{margin:0;font-size:16px;line-height:1.55}
-.site-layout-guide{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.site-layout-guide-step{display:flex;gap:12px;align-items:flex-start;padding:14px;border:1px solid #d9e3dc;border-radius:14px;background:#fff}
-.site-layout-guide-step>span{display:grid;place-items:center;flex:0 0 32px;width:32px;height:32px;border-radius:50%;background:#eef8f0;color:#167439;font-weight:800}
-.site-layout-guide-step strong{display:block;font-size:15px}
-.site-layout-guide-step p{margin:4px 0 0;color:#59675f;font-size:13px;line-height:1.4}
-.site-layout-guide-step.is-current{border-color:#9fcbb0;background:#f7fcf8}
+
 .site-layout-page .stage1-tech-card{padding:20px}
 .site-layout-page .site-layout-note{margin:14px 0;padding:12px 14px;border-radius:12px;background:#f4f7f5;color:#33463b;font-size:14px;line-height:1.45}
 .site-layout-warning{margin:12px 0;padding:12px 14px;border:1px solid #e7c46a;border-radius:12px;background:#fff8e7;color:#6a4a00;font-weight:600;line-height:1.45}
 .site-layout-dimensions{display:grid;gap:3px;margin:14px 0;padding:14px;border:1px solid #d9e3dc;border-radius:14px;background:#fff}
 .site-layout-dimensions span,.site-layout-dimensions small{color:#59675f}
 .site-layout-dimensions strong{font-size:23px;line-height:1.25}
-.site-layout-layer-toggle{display:flex;gap:18px;margin:14px 0;padding:12px 14px;border:1px solid #d9e3dc;border-radius:12px;background:#fff}
-.site-layout-layer-toggle .layer-toggle{display:flex;gap:8px;align-items:center;font-weight:600}
+
 .site-layout-map{width:100%;height:430px;min-height:430px;border:1px solid #cfdad3;border-radius:18px;overflow:hidden;background:#eef2ef}
 .site-layout-page .map-status{margin:12px 0;color:#33463b;font-size:14px;line-height:1.45}
 .site-layout-controls,.site-layout-confirm-row,.site-layout-boundary-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
-.site-layout-controls{grid-template-columns:repeat(3,minmax(0,1fr))}
+
 .site-layout-page .btn{min-height:48px;white-space:normal}
 .site-layout-page .btn.secondary{background:#fff;border:1px solid #091b2e;color:#091b2e}
 .site-layout-page .btn.green{background:#058029;color:#fff;border:0}
 .site-layout-page .btn:disabled{opacity:.5;cursor:not-allowed}
 .site-layout-disclaimer{margin:14px 0 0;padding-top:14px;border-top:1px solid #e0e7e2;color:#65726b;font-size:13px;line-height:1.5}
 .site-layout-boundary-card[hidden]{display:none!important}
-.site-layout-boundary-help{margin:14px 0;padding:14px 16px;border-radius:14px;background:#eef8f0}
-.site-layout-boundary-help strong{display:block;margin-bottom:8px}
-.site-layout-boundary-help ol{margin:0;padding-left:22px;line-height:1.55}
+
 @media(max-width:600px){
  body[data-page="siteLayout"] .stage1-workspace{padding:16px 14px 36px}
- .site-layout-guide{grid-template-columns:1fr}
+ 
  .site-layout-page .stage1-tech-card{padding:18px}
  .site-layout-map{height:360px;min-height:360px}
- .site-layout-controls{grid-template-columns:1fr 1fr}
- .site-layout-controls .btn:last-child{grid-column:1/-1}
+
  .site-layout-confirm-row,.site-layout-boundary-controls{grid-template-columns:1fr}
   }
-
 
 /* Company/site address separation — 21 September 2026. */
 .project-address-choice{margin:0;padding:0;border:0}
@@ -2256,25 +1983,7 @@ body[data-page="siteLayout"] .stage1-workspace{width:100%;max-width:760px;margin
 .project-address-choice input[type="radio"]{width:20px;height:20px;flex:0 0 20px;margin:1px 0 0}
 .site-layout-map.is-locating{visibility:hidden}
 
-
 /* Site Layout touch-rotation guidance — 21 September 2026. */
-.site-layout-position-help{margin:14px 0;padding:16px;border:1px solid #cfe2d5;border-radius:14px;background:#eef8f0}
-.site-layout-position-help[hidden]{display:none!important}
-.site-layout-position-help h3{margin:0 0 8px;color:#091b2e;font-size:20px;line-height:1.3}
-.site-layout-position-help p{margin:0;color:#33463b;line-height:1.5}
-.site-layout-position-help ul{margin:12px 0;padding-left:22px;color:#33463b;line-height:1.55}
-.site-layout-position-help li+li{margin-top:6px}
-.site-layout-position-action{padding-top:4px}
-.site-layout-gesture-reminder{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:14px}
-.site-layout-gesture-reminder span{padding:10px 8px;border:1px solid #c9d9ce;border-radius:10px;background:#fff;text-align:center;color:#425148;font-size:13px;line-height:1.35}
-.site-layout-gesture-reminder strong{display:block;color:#176d36;font-size:14px}
-@media(max-width:600px){
- .site-layout-position-help{padding:14px}
- .site-layout-gesture-reminder{grid-template-columns:1fr}
- .site-layout-gesture-reminder span{display:flex;justify-content:space-between;gap:12px;text-align:left}
- .site-layout-gesture-reminder strong{display:inline}
-}
-
 
 /* Confirmed building state — 21 September 2026. */
 #siteLayoutBuildingControls[hidden],
@@ -2287,7 +1996,6 @@ body[data-page="siteLayout"] .stage1-workspace{width:100%;max-width:760px;margin
  .site-layout-building-confirmed{grid-template-columns:1fr}
  .site-layout-building-confirmed .btn{width:100%}
 }
-
 
 /* Site Layout Figma redesign — 2026-11-02 */
 .site-layout-page.site-layout-redesign{
@@ -2317,10 +2025,7 @@ body[data-page="siteLayout"] .stage1-workspace{width:100%;max-width:760px;margin
 .site-layout-project-summary .site-layout-dimensions{display:flex;gap:8px;align-items:baseline}
 .site-layout-project-summary .site-layout-dimensions span{font-size:.78rem;color:#68766f}
 .site-layout-map-card{padding:clamp(14px,2.5vw,28px);overflow:visible}
-.site-layout-card-heading{display:flex;justify-content:space-between;gap:20px;align-items:end;margin-bottom:14px}
-.site-layout-card-heading h2{margin:4px 0 0}
-.site-layout-step-label{font-size:.76rem;font-weight:850;letter-spacing:.06em;text-transform:uppercase;color:#087a32}
-.site-layout-card-heading .site-layout-note{max-width:520px;margin:0;text-align:right}
+
 .site-layout-map-config{
   margin:10px 0;
   border:1px solid #d8e4dc;
@@ -2395,8 +2100,7 @@ body[data-page="siteLayout"] .stage1-workspace{width:100%;max-width:760px;margin
 .site-layout-rotate-handle[hidden]{display:none}
 @media (max-width:800px){
  .site-layout-redesign-hero{grid-template-columns:1fr}
- .site-layout-card-heading{display:block}
- .site-layout-card-heading .site-layout-note{margin-top:8px;text-align:left}
+
  .site-layout-config-grid{grid-template-columns:1fr}
  .site-layout-map{height:54vh!important;min-height:390px}
 }
@@ -2414,17 +2118,7 @@ body[data-page="siteLayout"] .stage1-workspace{width:100%;max-width:760px;margin
 @media(min-width:900px){
   /* Guided pricing: retain the approved content and order, but use the
      available canvas for the route and appointment comparisons. */
-  .ceo-guided-pricing .ceo-pricing-body{
-    width:min(calc(100% - 48px),1180px);
-    padding:32px 24px 56px;
-    gap:22px;
-  }
-  .ceo-guided-pricing .pricing-hero{padding:30px 34px}
-  .ceo-guided-pricing .pricing-hero h1{font-size:clamp(34px,3.4vw,48px);line-height:1.12}
-  .ceo-guided-pricing .pricing-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
-  .ceo-guided-pricing .pricing-step-row{height:100%}
-  .ceo-guided-pricing .pricing-appointments-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
-  .ceo-guided-pricing .pricing-appointment-row{height:100%}
+
   body[data-page="pricing"] .home-footer{max-width:1180px}
 
   /* Create Project: the phone form remains one column; desktop presents the
@@ -2505,7 +2199,6 @@ body[data-page="siteLayout"] .stage1-workspace{width:100%;max-width:760px;margin
     padding:32px 24px 56px;
   }
 }
-
 
 /* Simplified Site Layout — sticky bottom action, full-width confirm */
 .site-layout-sticky-actions{
