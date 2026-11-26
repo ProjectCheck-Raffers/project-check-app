@@ -18,21 +18,31 @@ async function geocodeSitePostcode(postcode){
  const payload=await response.json();
  const result=payload?.result;
  if(!result||!Number.isFinite(Number(result.latitude))||!Number.isFinite(Number(result.longitude)))return null;
- return {lat:Number(result.latitude),lng:Number(result.longitude),label:result.postcode||postcode,source:"postcode"}
+ return {lat:Number(result.latitude),lng:Number(result.longitude),label:result.postcode||postcode,source:"postcode",country:String(result.country||"")}
+}
+// Nation comes from the postcodes.io country for the site postcode (no question is asked).
+// England, Scotland and Wales only; anything else (including Northern Ireland) clears the stored value.
+function recordSiteNation(p,country){
+ if(!p||!country)return;
+ const facts=projectFacts(p),nation=["England","Scotland","Wales"].includes(country)?country:"";
+ if(nation){if(facts.regsNation!==nation){facts.regsNation=nation;save()}}
+ else if(facts.regsNation){delete facts.regsNation;save()}
 }
 async function resolveProposedSite(p){
  const address=String(p.address||"").trim();
  if(!address)return null;
+ const postcode=siteLayoutPostcode(p);
+ let country="";
+ if(postcode){try{const byPostcode=await geocodeSitePostcode(postcode);if(byPostcode)country=byPostcode.country}catch(e){}}
  try{
   const full=await geocode(address);
-  if(full)return {lat:parseFloat(full.lat),lng:parseFloat(full.lon),label:full.display_name||address,source:"address"}
+  if(full)return {lat:parseFloat(full.lat),lng:parseFloat(full.lon),label:full.display_name||address,source:"address",country}
  }catch(e){}
- const postcode=siteLayoutPostcode(p);
  if(postcode){
   try{const byPostcode=await geocodeSitePostcode(postcode);if(byPostcode)return byPostcode}catch(e){}
   try{
    const fallback=await geocode(postcode);
-   if(fallback)return {lat:parseFloat(fallback.lat),lng:parseFloat(fallback.lon),label:fallback.display_name||postcode,source:"postcode"}
+   if(fallback)return {lat:parseFloat(fallback.lat),lng:parseFloat(fallback.lon),label:fallback.display_name||postcode,source:"postcode",country}
   }catch(e){}
  }
  return null
@@ -95,7 +105,7 @@ if(main){
  main.textContent=step==='building'?'Confirm building position':step==='boundaries'?'Confirm site layout':'Continue to Building Design'
 }
 const count=document.querySelector('#siteLayoutBoundaryCount');
-if(count)count.textContent=activeSiteLayoutBoundaries.length?activeSiteLayoutBoundaries.length+' boundar'+(activeSiteLayoutBoundaries.length===1?'y':'ies')+' marked.':'No boundaries marked (optional).';
+if(count)count.textContent=activeSiteLayoutBoundaries.length?activeSiteLayoutBoundaries.length+' boundar'+(activeSiteLayoutBoundaries.length===1?'y':'ies')+' marked.':'No boundaries marked yet. A side left unmarked shows as need info.';
 const finish=document.querySelector('#finishSiteLayoutBoundaryBtn');
 if(finish)finish.disabled=activeSiteLayoutBoundaryDraft.length<2;
 const undo=document.querySelector('#undoSiteLayoutBoundaryBtn');
@@ -142,7 +152,7 @@ function updateSiteLayoutBuildingGeometry(){
 }
 function siteLayoutStepHint(){
  const step=siteLayoutStep();
- return step==='building'?'Drag the green handle to move. Drag ↻ to rotate.':step==='boundaries'?'Boundaries are optional.':'Saved.'
+ return step==='building'?'Drag the green handle to move. Drag ↻ to rotate.':step==='boundaries'?'Mark every site boundary.':'Saved.'
 }
 function updateSiteLayoutReadouts(){
  const building=normaliseSiteLayoutAngle(activeSiteLayoutAngle);
@@ -290,6 +300,7 @@ try{
  const best=await resolveProposedSite(p);
  if(!best){if(status)status.textContent='Site not found. Tap the map to place the building.';mapEl?.classList.remove('is-locating');return}
  activeSiteLayoutOrigin={lat:best.lat,lng:best.lng};
+ recordSiteNation(p,best.country);
  if(status)status.textContent=best.source==='address'?'Site located.':'Site located from postcode.';
  if(placeInitial){
   activeSiteLayoutMap.jumpTo({center:[activeSiteLayoutOrigin.lng,activeSiteLayoutOrigin.lat],zoom:19});
@@ -323,7 +334,7 @@ save();
 activeSiteLayoutBuildingConfirmed=true;
 configureSiteLayoutMapInteractions();
 siteLayoutStatus('Building confirmed.');
-siteLayoutBoundaryStatus('Tap the map to mark a boundary (optional).');
+siteLayoutBoundaryStatus('Tap the map to mark every site boundary, then Done.');
 refreshSiteLayoutBoundaryUI();
 document.querySelector('#siteLayoutBoundaryStep')?.scrollIntoView({behavior:'smooth',block:'nearest'})
 }
@@ -364,7 +375,7 @@ function confirmSiteLayout(id,skip){
 const p=getP(id),dims=siteLayoutDims(p);
 if(!p||!dims.ready)return alert('Building length and width are required.');
 if(!activeSiteLayoutBuildingConfirmed||!p.facts.buildingFootprint?.center)return alert('Confirm the building position first.');
-// Boundaries are optional: a finished-enough draft is kept, a stray single point is dropped.
+// A finished-enough draft is kept, a stray single point is dropped. Unmarked sides stay need info.
 if(activeSiteLayoutBoundaryDraft.length>=2)finishSiteLayoutBoundary();
 else if(activeSiteLayoutBoundaryDraft.length){activeSiteLayoutBoundaryDraft=[];redrawSiteLayoutBoundaries()}
 if(skip)activeSiteLayoutBoundaries=[];
@@ -413,7 +424,7 @@ const changedDimensions=restoreSavedBuilding&&!savedMatches;
 app.innerHTML=`<main class="container stage1-workspace site-layout-page site-layout-workspace site-layout-redesign">
 ${projectJourneyNav(p,"siteLayout","stage1Confirm")}
 <section class="stage1-technical-header site-layout-intro site-layout-redesign-hero" aria-labelledby="siteLayoutTitle">
- <div><div class="eyebrow">Stage 1 · Site Layout</div><h1 id="siteLayoutTitle">Position your building</h1><p>Place the footprint, then optionally mark nearby boundaries.</p></div>
+ <div><div class="eyebrow">Stage 1 · Site Layout</div><h1 id="siteLayoutTitle">Position your building</h1><p>Place the footprint, then mark every site boundary.</p></div>
  <dl class="site-layout-project-summary"><div><dt>Site</dt><dd>${esc(addressText||'No address')}</dd></div><div><dt>Building</dt><dd class="site-layout-dimensions"><strong>${esc(String(dims.length))} m × ${esc(String(dims.width))} m</strong></dd></div></dl>
 </section>
 ${stage1SteelSiteMarkup(p)}
@@ -437,9 +448,9 @@ ${stage1SteelSiteMarkup(p)}
  <p class="site-layout-disclaimer">Approximate layout only, not surveyed or approved.</p>
 </section>
 <section id="siteLayoutBoundaryStep" class="stage1-tech-card site-layout-boundary-card" ${activeSiteLayoutBuildingConfirmed?'':'hidden'}>
- <h2>Boundaries <small>(optional)</small></h2>
+ <h2>Mark every site boundary</h2>
  <p id="siteLayoutBoundaryCount" class="map-status"></p>
- <p id="siteLayoutBoundaryStatus" class="map-status">Tap the map to mark a boundary, then Done.</p>
+ <p id="siteLayoutBoundaryStatus" class="map-status">Tap the map to mark each boundary, then Done.</p>
  <div class="site-layout-boundary-controls"><button id="undoSiteLayoutBoundaryBtn" class="btn secondary" onclick="undoSiteLayoutBoundaryPoint()">Undo</button><button id="finishSiteLayoutBoundaryBtn" class="btn secondary" onclick="finishSiteLayoutBoundary()">Done</button><button class="btn secondary" onclick="skipSiteLayoutBoundaries('${esc(id)}')">Skip</button></div>
 </section>
 <div class="site-layout-sticky-actions">
