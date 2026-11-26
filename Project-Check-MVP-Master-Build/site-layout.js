@@ -25,8 +25,9 @@ async function geocodeSitePostcode(postcode){
 function recordSiteNation(p,country){
  if(!p||!country)return;
  const facts=projectFacts(p),nation=["England","Scotland","Wales"].includes(country)?country:"";
- if(nation){if(facts.regsNation!==nation){facts.regsNation=nation;save()}}
- else if(facts.regsNation){delete facts.regsNation;save()}
+ const rerun=()=>{if(p.backgroundChecks&&p.backgroundChecks.regsChecker&&typeof runRegsChecker==='function')runRegsChecker(p);};
+ if(nation){if(facts.regsNation!==nation){facts.regsNation=nation;rerun();save()}}
+ else if(facts.regsNation){delete facts.regsNation;rerun();save()}
 }
 async function resolveProposedSite(p){
  const address=String(p.address||"").trim();
@@ -330,6 +331,8 @@ p.facts.siteLayoutStatus='in_progress';
 p.facts.siteLayoutSiteAddress=String(p.address||'').trim();
 p.history.push({at:now(),text:'Proposed building position confirmed in Site Layout ('+dims.width+' m × '+dims.length+' m, '+Math.round(activeSiteLayoutAngle)+'°)'});
 if(typeof pcBuildingRegsRun==='function')pcBuildingRegsRun(p);
+// Re-run any saved regs-checker results so boundary findings follow the new layout.
+if(p.backgroundChecks&&p.backgroundChecks.regsChecker&&typeof runRegsChecker==='function')runRegsChecker(p);
 save();
 activeSiteLayoutBuildingConfirmed=true;
 configureSiteLayoutMapInteractions();
@@ -389,6 +392,8 @@ p.facts.siteLayoutUiVersion='figma-site-layout-redesign-2026-11-02';
 p.facts.siteLayoutConfirmedAt=now();
 p.history.push({at:now(),text:'Site Layout confirmed '+(count?'with '+count+' boundar'+(count===1?'y':'ies'):'without boundaries')});
 if(typeof pcBuildingRegsRun==='function')pcBuildingRegsRun(p);
+// Re-run any saved regs-checker results so boundary findings follow the new layout.
+if(p.backgroundChecks&&p.backgroundChecks.regsChecker&&typeof runRegsChecker==='function')runRegsChecker(p);
 save();
 siteLayoutBoundaryStatus('Saved.');
 refreshSiteLayoutBoundaryUI()

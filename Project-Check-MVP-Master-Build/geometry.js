@@ -22,7 +22,7 @@ function doorLabel(d) {
 // geometry check (validateGeometry() above) could reuse the exact same rule as a
 // live, warn-only advisory. Both live call sites have now been removed (see the
 // "RETIRED from live behaviour" comment in validateGeometry() above and the
-// personnelDoors question comment in app.js's stage1Questions) following the Coveris
+// personnelDoors question comment in app.js's stage1Questions) following the Job B
 // fire-strategy evidence review — see EVIDENCE-INTELLIGENCE-SPEC.md § "Recorded
 // project evidence" and MASTER-SPEC.md § "Personnel doors / means-of-escape
 // responsibility split". This function is deliberately preserved, unaltered and
@@ -314,13 +314,13 @@ function validateGeometry(geom) {
       }
     });
   });
-  // RETIRED from live behaviour 2026-08-26 (Coveris fire-strategy evidence — see
+  // RETIRED from live behaviour 2026-08-26 (Job B fire-strategy evidence — see
   // EVIDENCE-INTELLIGENCE-SPEC.md § "Recorded project evidence" and MASTER-SPEC.md §
   // "Personnel doors / means-of-escape responsibility split"). This block used to push
   // a Stage 2 geometry-panel warning here whenever the customer's recorded personnel-door
   // count fell below suggestedPersonnelDoorAllowance(width,length) (perimeter ÷ 32 m,
   // rounded up) — i.e. a Stage 2 "fire/escape" warning generated solely from that
-  // formula. The Coveris evidence demonstrates a real means-of-escape assessment turns on
+  // formula. The Job B evidence demonstrates a real means-of-escape assessment turns on
   // travel distance, occupancy and exit direction, not a perimeter/32 calculation, so this
   // is no longer an acceptable live compliance signal and has been removed from
   // validateGeometry()'s output entirely (not merely reworded). suggestedPersonnelDoorAllowance()

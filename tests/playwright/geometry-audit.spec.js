@@ -317,7 +317,7 @@ test('Stage 1 hint: malformed/non-finite width suppresses the advisory', async (
 // 128m -> 128/32=4). That banner — and its "Use suggested value" button —
 // was deliberately, permanently removed from app.js on 2026-08-26
 // ("Personnel-door question corrected; perimeter ÷ 32 m rule retired from
-// live behaviour", following the Coveris fire-strategy evidence review —
+// live behaviour", following the Job B fire-strategy evidence review —
 // see CHANGELOG.md/MASTER-SPEC.md). It is not a regression and not
 // incomplete Stage 1 Question Reduction/consolidated-input migration —
 // the removal predates both of those tasks by days and is an intentional,

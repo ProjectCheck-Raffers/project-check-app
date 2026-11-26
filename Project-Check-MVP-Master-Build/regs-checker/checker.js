@@ -8,7 +8,14 @@
 (function (root) {
   var WALLS = ['A', 'B', 'C', 'D'];
   var HEATED = 'Ambient working temperature \u2014 heated', UNHEATED = 'Ambient storage \u2014 unheated';
+  var OTHER_TEMP = 'Other temperature requirement';
   var NEED = 'need info', PROBLEM = 'potential problem', OK = 'ok', NOTE = 'note';
+  // L_ENERGY: building uses inside the ADL low-energy-demand exemption when unheated (industrial sites, workshops,
+  // non-residential agricultural). Storage and distribution are not named in ADL, so they get the check line (Stuart, 26 Nov 2026). Options are BUILDING_USE_OPTIONS in app.js; free text (older projects) uses the word test.
+  var USE_OPTIONS = ['Warehousing and general storage', 'Distribution and logistics', 'Manufacturing or factory use', 'Workshop or vehicle repair', 'Vehicle or plant wash facility', 'Timber or materials storage', 'Food production or chilled storage', 'Spray room or process enclosure', 'Indoor sports or leisure use', 'Other industrial or commercial use'];
+  var USE_EXEMPT = ['Manufacturing or factory use', 'Workshop or vehicle repair'];
+  var USE_EXEMPT_TEXT = /industrial|manufactur|factory|workshop|agricultur|\bfarm|\bbarn\b/i;
+  var USE_NOT_EXEMPT_TEXT = /storage|warehous|\bstores?\b|distribut|logistic|sport|leisure|padel|cricket|tennis|gym|fitness|office|retail|\bshop\b|showroom|resident|dwelling|school|church|community|chill|cold|freez|food|spray|commercial/i;
 
   function num(v) { if (v === '' || v === null || v === undefined) return null; var n = Number(v); return isFinite(n) ? n : null; }
   function fill(t, v) { return String(t || '').replace(/\{(\w+)\}/g, function (m, k) { return v && v[k] !== undefined ? v[k] : m; }); }
@@ -36,6 +43,10 @@
       existingArea: num(f.regsExistingArea), existingHeight: num(f.regsExistingHeight),
       use: String(f.buildingUse || f.use || ''), W: W, L: L, eaves: eaves, ridge: ridge, doors: doors,
       distances: regs && regs.boundaryDistances ? regs.boundaryDistances : (f.regsBoundaryDist && typeof f.regsBoundaryDist === 'object' ? f.regsBoundaryDist : null),
+      // Fire boundary rules (ADB 13.5): each wall measured to the boundary it faces only. Never falls back to the
+      // nearest-line-anywhere distances above (they give false flags on side walls and a false ok on unmarked sides).
+      facing: regs && regs.facingBoundaryDistances ? regs.facingBoundaryDistances : (f.regsBoundaryDist && typeof f.regsBoundaryDist === 'object' ? f.regsBoundaryDist : null),
+      base: f.base === 'Existing building' ? 'Existing building / structure' : String(f.base || ''),
       postcode: String(p.postcode || f.postcode || ''), altitude: num(f.regsAltitude), exposure: String(f.regsExposure || ''), solar: f.regsSolar || '',
       buildingType: String(f.buildingType || f.structure || ''), adjacent: String(f.adjacentExistingBuilding || ''),
       detached: f.regsDetached || '', sleeping: f.regsSleeping || '', tempDays: num(f.regsTempDays),
@@ -87,17 +98,18 @@
   var CHECKS = {
     B_BOUNDARY: function (r, i) {
       // Distance only. The cladding fire rating is not asked; standard PIR is never treated as unprotected by default.
+      // Each wall is measured to the boundary it faces (background-checks.js pcBgFacingBoundaryDistances). No facing boundary marked = need info.
       return WALLS.map(function (w) {
-        var d = i.distances ? num(i.distances[w]) : null, m = { elevation: w, distance: d };
-        if (d === null) return entry(r, NEED, m);
+        var d = i.facing ? num(i.facing[w]) : null, m = { elevation: w, distance: d };
+        if (d === null) return entry(r, NEED, m, { elevation: w });
         if (d >= 25) return entry(r, OK, m);
         return entry(r, PROBLEM, m, { elevation: w, distance: r1(d) });
       });
     },
     B_BOUNDARY_1M: function (r, i) {
       return WALLS.map(function (w) {
-        var d = i.distances ? num(i.distances[w]) : null, m = { elevation: w, distance: d };
-        if (d === null) return entry(r, NEED, m);
+        var d = i.facing ? num(i.facing[w]) : null, m = { elevation: w, distance: d };
+        if (d === null) return entry(r, NEED, m, { elevation: w });
         return entry(r, d < 1 ? PROBLEM : OK, m, { elevation: w, distance: r1(d) });
       });
     },
@@ -138,13 +150,24 @@
       return [entry(r, people > r.limits.maxPeopleOneExit && exits < 2 ? PROBLEM : OK, { people: people, exits: exits })];
     },
     L_ENERGY: function (r, i) {
-      // Uses the Building Design services answer (heating, toilets, offices or any services). 'Not sure' or no answer = need info.
-      if (i.services === 'Yes') return [entry(r, NOTE, { services: i.services })];
-      if (i.services === 'No') return [entry(r, OK, { services: i.services })];
-      return [entry(r, NEED)];
+      // ADL Vol 2: the test is fixed heating or cooling (2021 para 0.11 / 2026 para 0.12, and 2.27-2.29 / 2.26-2.28).
+      // Reads the Stage 1 heated / temperature answer, the Building Design services answer and the building use.
+      // - heated, other temperature (heating or cooling) or services Yes = note (energy calculation may be needed)
+      // - unheated, services No, and a use inside the exemption (industrial, workshop, agricultural) = ok
+      // - unheated, services No, any other use (e.g. storage, distribution, sports or leisure) = check line, never an all-clear
+      // - anything unknown (heated answer, services answer or use) = need info, never ok
+      var m = { heating: i.heating, services: i.services, use: i.use };
+      if (i.services === 'Yes' || i.heating === HEATED || i.heating === OTHER_TEMP) return [entry(r, NOTE, m)];
+      var missing = [];
+      if (i.heating !== UNHEATED) missing.push(r.needInfoHeating);
+      if (i.services !== 'No') missing.push(r.needInfo);
+      if (!String(i.use).trim()) missing.push(r.needInfoUse);
+      if (missing.length) { var e = entry(r, NEED, m); e.needInfo = missing.filter(Boolean).join('; '); return [e]; }
+      var use = String(i.use), exempt = USE_EXEMPT.indexOf(use) !== -1 || (USE_OPTIONS.indexOf(use) === -1 && USE_EXEMPT_TEXT.test(use) && !USE_NOT_EXEMPT_TEXT.test(use));
+      return [entry(r, exempt ? OK : PROBLEM, m, { use: use })];
     },
 
-    // ---- Added rules (all approved:false). Fact keys are documented in README.md. ----
+    // ---- Added rules (approved:false unless rules.json says otherwise). Fact keys are documented in README.md. ----
     // Permitted development, England, GPDO 2015 Sch 2 Part 7 Class H. Reads Building Design / Site Layout data.
     // measured.status: 'not-pd' (reasons with figures), 'unknown' (missing list) or 'likely-pd'. Never "no planning needed".
     PLAN_PD: function (r, i) {
@@ -246,7 +269,14 @@
       if (!i.vehiclesWet) return [entry(r, NEED)];
       return [entry(r, i.vehiclesWet === 'Yes' ? NOTE : OK)];
     },
-    H_DRAINAGE_QUOTE: function (r) { return [entry(r, NOTE)]; },
+    H_DRAINAGE_QUOTE: function (r, i) {
+      // Built inside an existing building (Stage 1 base answer 'Existing building / structure', or a use that says
+      // inside/within an existing building): no gutters or surface water connection, so only the services line is kept.
+      var internal = i.base === 'Existing building / structure' || /\b(inside|within)\s+(an?\s+|the\s+)?existing\b/i.test(i.use);
+      var e = entry(r, NOTE, { internal: internal });
+      if (internal) e.stage1Note = r.stage1NoteInternal || e.stage1Note;
+      return [e];
+    },
     L_2027_HEATED: function (r, i) {
       // Heated jobs only: a customer-scope note. No dates are asked.
       if (!i.heating || i.heating === 'Not sure yet') return [entry(r, NEED)];
@@ -331,7 +361,10 @@
       return out;
     },
     L_ROOFLIGHT_U_QUOTE: function (r, i, res) { return res[0].result === NOTE ? ['Heated building: rooflights U-value 2.2 W/m2K maximum.'] : []; },
-    H_DRAINAGE_QUOTE: function () { return ['Gutters and downpipes are by the building supplier.', 'The surface water connection is customer scope (not by the building supplier).']; },
+    H_DRAINAGE_QUOTE: function (r, i, res) {
+      if (res[0].measured && res[0].measured.internal) return []; // inside an existing building: no gutters or surface water connection
+      return ['Gutters and downpipes are by the building supplier.', 'The surface water connection is customer scope (not by the building supplier).'];
+    },
     L_2027_HEATED: function (r, i, res) { return res[0].result === NOTE ? ['Heated building, 2027 rules (AD L 2026 edition): personnel doors at U-value 1.6 W/m2K maximum.'] : []; }
   };
 

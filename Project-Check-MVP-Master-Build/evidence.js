@@ -589,8 +589,8 @@ function sentenceAround(text, index, length) {
 // ---------------------------------------------------------------------------
 // Extraction rule table. Each rule is intentionally generic (real-world
 // phrasing patterns), not a lookup keyed to one fixed literal string — it is
-// exercised against the Kingspan validation fixtures (see
-// evidence-fixtures.kingspan-*.txt, loaded through the same File.text() path
+// exercised against the Job L validation fixtures (see
+// evidence-fixtures.job-l-*.txt, loaded through the same File.text() path
 // a real upload uses) but is not written to only match those exact fixtures.
 // `flagInternalInconsistency: true` marks subjects checked for a document
 // contradicting itself elsewhere in the same text (see extractFactsFromText).
@@ -1331,7 +1331,7 @@ function classifyFactScope(sentence) {
 // produced by entirely separate rules from RESPONSIBLE_FOR/DESIGNED_BY/
 // SUPPLIED_BY/INSTALLED_BY — there is no code path that reads an assistance/
 // information relationship and promotes it to a responsibility one. A party
-// merely NAMED in a multi-topic document (the Dan Housego/Wokingham pattern
+// merely NAMED in a multi-topic document (the Job D pattern
 // — document possession/collation is not technical responsibility) with no
 // matching explicit-relationship pattern produces NO relationship record at
 // all for that party in that document — never a guessed RESPONSIBLE_FOR.
@@ -2237,7 +2237,7 @@ const MISSING_EVIDENCE_RULES = [
     // no requirement on this project has reached CLOSED/APPARENTLY_SATISFIED
     // for Building Control (built by Part 2 above) — deliberately does NOT
     // infer completion merely from a completion NOTICE/handover/inspection
-    // existing (the Wokingham/Dan Housego pattern: paperwork != completion).
+    // existing (the Job D pattern: paperwork != completion).
     applies: (p) => anyDocHasFunction(p.evidence, 'HANDOVER_RECORD') || anyTextMentions(p.evidence, /completion notice/i),
     // Deliberately scoped to a requirement whose OWN text is genuinely about
     // completion — an unrelated Building Control requirement being accepted
@@ -3094,7 +3094,7 @@ const STAGE2_FINDING_STATUS = {
   NO_ISSUE_IDENTIFIED_FROM_CURRENT_EVIDENCE: 'NO_ISSUE_IDENTIFIED_FROM_CURRENT_EVIDENCE'
 };
 
-// A record whose extracted_value plainly negates a problem (real Kingspan
+// A record whose extracted_value plainly negates a problem (real Job L
 // example: "did not identify concentrations exceeding...", "no asbestos was
 // identified", "not within a designated flood zone") is a reassuring
 // confirmed fact, not a risk — used only for the 3 categories below where a

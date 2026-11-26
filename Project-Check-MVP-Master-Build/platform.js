@@ -32,13 +32,27 @@ function profileFromUser(user,overrides={}){
  const m=user.user_metadata||{},first=(...values)=>{const found=values.find(hasText);return found?found.trim():""};
  return {id:user.id,full_name:first(overrides.name,m.full_name),company_name:first(overrides.company,m.company_name),company_address:first(overrides.companyAddress,m.company_address),business_email:first(overrides.email,user.email),mobile_number:first(overrides.mobile,m.mobile_number),updated_at:new Date().toISOString()};
 }
+// project_events must stay small: the full project already lives in
+// projects.project_data, so an update event records only WHICH fields changed
+// (names, capped), never their values, document text or map images.
+const EVENT_NAME_CAP=40,EVENT_LIST_CAP=25;
+const sameValue=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
+function changedNames(old,next){
+ const names=[],keys=new Set([...Object.keys(old||{}),...Object.keys(next||{})]);
+ for(const k of keys)if(!sameValue(old?.[k],next?.[k]))names.push(String(k).slice(0,EVENT_NAME_CAP));
+ return names;
+}
+function changeSummary(old,next){
+ const top=changedNames(old,next),facts=changedNames(old?.facts,next?.facts);
+ return {changed:top.slice(0,EVENT_LIST_CAP),facts_changed:facts.slice(0,EVENT_LIST_CAP),more:Math.max(0,top.length-EVENT_LIST_CAP)+Math.max(0,facts.length-EVENT_LIST_CAP),stage:next?.stage||null};
+}
 function chronologicalChanges(previous,next){
  const events=[],at=new Date().toISOString(),before=previous||{projects:[]};
  const oldProjects=new Map((before.projects||[]).map(p=>[p.id,p]));
  for(const p of next.projects||[]){
   const old=oldProjects.get(p.id);
   if(!old)events.push({project_id:p.id,event_type:"project.created",occurred_at:p.created||at,payload:{name:p.name,address:p.address||"",stage:p.stage}});
-  else if(JSON.stringify(old)!==JSON.stringify(p))events.push({project_id:p.id,event_type:"project.updated",occurred_at:at,payload:{before:old,after:p}});
+  else if(JSON.stringify(old)!==JSON.stringify(p))events.push({project_id:p.id,event_type:"project.updated",occurred_at:at,payload:changeSummary(old,p)});
  }
  return events;
 }

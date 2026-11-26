@@ -451,6 +451,54 @@ function pcBgBoundaryDistances(p) {
   return out;
 }
 
+// Building Regulations (ADB Vol 2 13.5, Diagram 13.2): each wall is measured only to the
+// boundary it FACES. Uses the same faces test as pcBgBoundaryDistances (pcBgWallHasBoundary),
+// applied to each boundary segment on its own, plus the 80 degree rule: a segment at more than
+// 80 degrees to the wall does not count. The distance is measured at right angles from the wall
+// to the part of each facing segment that lies straight out from the wall, so a line passing a
+// corner is not measured diagonally to that corner. A side with no facing segment is null
+// (need info), never "far enough". Returns null when boundaries are not confirmed or none exist.
+function pcBgFacingBoundaryDistances(p) {
+  const facts = (p && p.facts) || {}, fp = facts.buildingFootprint || {};
+  if (facts.siteBoundaryStatus !== 'confirmed') return null;
+  const lines = (Array.isArray(facts.relevantBoundaries) ? facts.relevantBoundaries : []).filter(line => Array.isArray(line) && line.length >= 2);
+  const corners = pcFireExitFootprintCorners(fp);
+  if (!lines.length || !corners) return null;
+  const origin = { lat: corners.reduce((t, c) => t + c.lat, 0) / 4, lng: corners.reduce((t, c) => t + c.lng, 0) / 4 };
+  const local = corners.map(c => pcFireExitLocal(c, origin));
+  const walls = [['A', local[0], local[1]], ['B', local[1], local[2]], ['C', local[2], local[3]], ['D', local[3], local[0]]];
+  const segs = [];
+  lines.forEach(line => { for (let i = 0; i < line.length - 1; i++) segs.push([pcFireExitLocal(line[i], origin), pcFireExitLocal(line[i + 1], origin)]); });
+  const maxAngle = 80 * Math.PI / 180;
+  const out = {};
+  walls.forEach(([letter, a, b]) => {
+    const dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy);
+    if (!len) { out[letter] = null; return; }
+    const ux = dx / len, uy = dy / len;
+    let nx = -uy, ny = ux;
+    if (nx * (a.x + b.x) / 2 + ny * (a.y + b.y) / 2 < 0) { nx = -nx; ny = -ny; } // outward (centroid at 0,0)
+    let min = Infinity;
+    segs.forEach(([q1, q2]) => {
+      const sx = q2.x - q1.x, sy = q2.y - q1.y, sl = Math.hypot(sx, sy);
+      if (!sl) return;
+      const angle = Math.acos(Math.min(1, Math.abs(sx * ux + sy * uy) / sl)); // 0 = parallel
+      if (angle > maxAngle + 1e-9) return;
+      if (!pcBgWallHasBoundary(a, b, { x: 0, y: 0 }, [[q1, q2]])) return;
+      // Clip the segment to the strip straight out from the wall (0 <= l <= len, t >= 0) and take the smallest t.
+      const P1 = { l: (q1.x - a.x) * ux + (q1.y - a.y) * uy, t: (q1.x - a.x) * nx + (q1.y - a.y) * ny };
+      const P2 = { l: (q2.x - a.x) * ux + (q2.y - a.y) * uy, t: (q2.x - a.x) * nx + (q2.y - a.y) * ny };
+      let t0 = 0, t1 = 1;
+      const clip = (pv, qv) => { if (qv === 0) return pv >= 0; const r = -pv / qv; if (qv > 0) { if (r > t1) return false; if (r > t0) t0 = r; } else { if (r < t0) return false; if (r < t1) t1 = r; } return true; };
+      const dl = P2.l - P1.l, dt = P2.t - P1.t;
+      if (!(clip(P1.l, dl) && clip(len - P1.l, -dl) && clip(P1.t, dt) && t0 <= t1)) return;
+      const d = Math.min(P1.t + dt * t0, P1.t + dt * t1);
+      if (d < min) min = d;
+    });
+    out[letter] = Number.isFinite(min) ? Math.round(Math.max(0, min) * 100) / 100 : null;
+  });
+  return out;
+}
+
 // ---- Fingerprint: building, openings and site the checks were run against ----
 function pcFireExitHash(text) { let h = 5381; for (let i = 0; i < text.length; i++) h = ((h << 5) + h + text.charCodeAt(i)) | 0; return (h >>> 0).toString(36); }
 function pcBgSourceFingerprint(p) {
@@ -565,7 +613,7 @@ function pcBackgroundChecksFor(p) {
 //   fireExits (confirmed design only) | null,
 //   clearSpace { clearance, note, exits[], flags[] }
 // }
-var PC_BG_REGS_VERSION = 'bregs-20261114';
+var PC_BG_REGS_VERSION = 'bregs-20261126';
 var PC_BG_CLEAR_SPACE_M = 1.8;
 var PC_BG_CLEAR_SPACE_NOTE = 'Keep 1.8 m clear outside each exit.';
 function pcBuildingRegsDims(p) {
@@ -661,6 +709,8 @@ function pcBuildingRegsCompute(p, fireExits) {
     designConfirmed: pcFireExitDesignConfirmed(p),
     boundaryDistances: b.distances,
     boundaryContact: b.contact,
+    // Per wall, to the boundary that wall faces (null = no facing boundary marked). Read by the regs checker.
+    facingBoundaryDistances: pcBgFacingBoundaryDistances(p),
     travel: W > 0 && L > 0 ? pcBuildingRegsTravel(W, L, doors, null) : null,
     fireExits: fe ? { count: fe.length, maxPerimeterGap: fireExits.maxPerimeterGap, doors: fe, personnelDoorsAsFireExits: Boolean(fireExits.personnelDoorsAsFireExits) } : null,
     clearSpace: pcBuildingRegsClearSpace(site, b.distances, doors, fe)
@@ -673,7 +723,10 @@ function pcBuildingRegsRun(p) {
   if (pcFireExitDesignConfirmed(p)) return pcFireExitRefresh(p).buildingRegs;
   const regs = pcBuildingRegsCompute(p, null);
   regs.designConfirmed = false;
+  // Keep the saved regs-checker results (the caller re-runs them); only the building-regs block is replaced.
+  const keepRegsChecker = p.backgroundChecks && p.backgroundChecks.regsChecker;
   p.backgroundChecks = { buildingRegs: regs };
+  if (keepRegsChecker) p.backgroundChecks.regsChecker = keepRegsChecker;
   return regs;
 }
 
@@ -786,5 +839,5 @@ function pcBackgroundChecksRender(p, options) {
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { pcBuildingRegsCompute, pcBuildingRegsTravel, pcBuildingRegsRun, pcFireExitPlace, pcFireExitRollerPicks, PC_FIRE_EXIT_PD_NOTE, pcFireExitDefaultColumns, pcFireExitLoopT, pcFireExitIsIndustrial, pcBgBoundaryDistances, pcBgOtherFlags, pcFireExitMaxDistance, pcFireExitGrid, PC_FIRE_EXIT_NOTE };
+  module.exports = { pcBuildingRegsCompute, pcBuildingRegsTravel, pcBuildingRegsRun, pcFireExitPlace, pcFireExitRollerPicks, PC_FIRE_EXIT_PD_NOTE, pcFireExitDefaultColumns, pcFireExitLoopT, pcFireExitIsIndustrial, pcBgBoundaryDistances, pcBgFacingBoundaryDistances, pcBgOtherFlags, pcFireExitMaxDistance, pcFireExitGrid, PC_FIRE_EXIT_NOTE };
 }

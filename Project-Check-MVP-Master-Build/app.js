@@ -1502,7 +1502,7 @@ const stage1Questions=[
 // p.facts.rollerDoors on saved projects still loads and still seeds the drawing.
 // REMOVED 2026-11-14: the Stage 1 'rollerCount' (vehicle doors) question page. Vehicle
 // doors are set in Building Design; legacy p.facts.rollerCount still loads and seeds the drawing.
-// Wording corrected 2026-08-26 (Coveris fire-strategy evidence — see
+// Wording corrected 2026-08-26 (Job B fire-strategy evidence — see
 // EVIDENCE-INTELLIGENCE-SPEC.md § "Recorded project evidence" and MASTER-SPEC.md §
 // "Personnel doors / means-of-escape responsibility split"): this captures ONLY the
 // customer's requested normal-access personnel-door quantity. It is not, and must
@@ -1843,12 +1843,12 @@ const statusLabel={ASSUMED_IN_DOCUMENT:'stated as an assumption in a document',P
 hint+=`<div class="banner evidence-assist"><b>Context from your uploaded documents</b>${assist.contextRecords.map(r=>`<div class="meta" style="margin-top:6px">"${esc(r.extracted_value)}" — ${esc(statusLabel[r.evidence_status]||r.evidence_status)}. Source: ${esc(r.source_file)} — ${esc(r.source_page_or_section)}.</div>`).join('')}<div class="meta" style="margin-top:6px">This is not a confirmed answer — please answer based on what you actually know.</div></div>`
 }
 }
-// REMOVED 2026-08-26 (Coveris fire-strategy evidence — see EVIDENCE-INTELLIGENCE-SPEC.md
+// REMOVED 2026-08-26 (Job B fire-strategy evidence — see EVIDENCE-INTELLIGENCE-SPEC.md
 // § "Recorded project evidence" and MASTER-SPEC.md § "Personnel doors / means-of-escape
 // responsibility split"): this question no longer shows a "preliminary personnel/fire
 // door allowance" banner derived from building perimeter ÷ 32 m. That calculation
 // blurred customer-requested personnel doors, means-of-escape exit provision and
-// fire-resisting doors into one invented number, which the Coveris evidence shows is
+// fire-resisting doors into one invented number, which the Job B evidence shows is
 // not how a real means-of-escape assessment works (travel distance/occupancy/exit
 // direction, not perimeter ÷ 32). The customer's answer to this question is now stored
 // exactly as given, with no suggested/calculated value offered or substituted. The old
@@ -1972,8 +1972,9 @@ p.facts.buildingFootprint={center:fp.center,width:d.width,length:d.length,angle:
 p.history.push({at:now(),text:`Building footprint re-derived on Map 1 after a dimension change (now ${d.width} m × ${d.length} m) — position and rotation retained.`})
 }
 }
-// Building-regs calculation re-runs after any building size change.
+// Building-regs calculation (and any saved regs-checker results) re-run after any building size change.
 if(typeof pcBuildingRegsRun==='function')pcBuildingRegsRun(p);
+if(p.backgroundChecks&&p.backgroundChecks.regsChecker&&typeof runRegsChecker==='function')runRegsChecker(p);
 }
 function saveStage1(id,idx){
 let p=getP(id),q=p&&stage1QuestionsFor(p)[idx],v;
@@ -2038,6 +2039,8 @@ if(old&&old!==v)p.history.push({at:now(),text:`Stage 1 answer changed: ${q[1]}`}
 // here), and the SAME helper the new consolidated page's save handler
 // calls, so there is exactly one re-derivation code path, not two.
 if(q[0]==='width'||q[0]==='length')reconcileFootprintWithCurrentDimensions(p);
+// Regs checker reads Stage 1 answers (heated, use, base): re-run saved results so they never go stale.
+if(p.backgroundChecks&&p.backgroundChecks.regsChecker&&typeof runRegsChecker==='function')runRegsChecker(p);
 save();
 advanceStage1(id,idx,p)
 }
@@ -2174,7 +2177,6 @@ if(specialistLowTemperatureFlag)add('The stated internal temperature is below 2�
 if(!risks.length)add(steel?'No immediate high-level issue was triggered by the information supplied. The project still needs competent verification before firm commitments.':'No immediate high-level issue was triggered by the information supplied, but Stage 2 evidence is still required before major commitments.','issue','general');
 let actions=[steel?'Resolve the evidence gaps and obtain competent checks before making a firm supplier commitment.':'Complete Stage 2 before relying on the project as ready for firm supplier commitment.'];
 if(projectReuseNeedsEvidenceAnswer(f)&&!p.evidence.length)actions.push('Upload any available topographical, utility, drainage, slab/foundation, ground-investigation or existing-site information for review.');
-if(f.closeBoundary!=='No')actions.push('Review boundary/fire/access constraints before design is frozen.');
 if(f.buildingPositionStatus==='skipped'||f.siteBoundaryStatus!=='confirmed')actions.push('Confirm the building position and site boundary on a map as soon as possible.');
 if(projectReuseIntention(f)==='Yes — assess it for reuse')actions.push('Verify the existing surface against the proposed support reactions, anchoring requirements, levels, drainage and services before reuse is assumed.');
 if(specialistLowTemperatureFlag)actions.push('Obtain specialist review of the envelope, floor, doors, vapour control and temperature-control requirements.');

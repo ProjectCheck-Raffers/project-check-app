@@ -19,13 +19,13 @@ function ll(x, y) {
 }
 
 function projectFixture(id, use, withBoundaries) {
-  const address = 'Unit 15, Cotes Park Industrial Estate, Alfreton DE55 4RF';
+  const address = 'Unit 15, Example Industrial Estate, Exampleton AB1 2CD';
   return {
     id,
     owner: 'user-bg-checks',
-    name: id === PROJECT_ID ? 'Alfreton Distribution Building' : 'Leisure hall',
+    name: id === PROJECT_ID ? 'Exampleton Distribution Building' : 'Leisure hall',
     address,
-    postcode: 'DE55 4RF',
+    postcode: 'AB1 2CD',
     status: 'Active',
     stage: 'Stage 1',
     created: '2026-11-14T09:00:00.000Z',

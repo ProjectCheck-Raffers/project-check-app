@@ -10,14 +10,14 @@ const ID = '33333333-3333-4333-8333-0000000000f1';
 const CENTER = { lat: 53.1027, lng: -1.3702 };
 const user = { id: 'fire-toggle-user', email: 'fire-toggle@example.invalid', name: 'Test Reviewer' };
 const project = {
-  id: ID, owner: user.id, name: 'Fire Exit Toggle Test', address: 'Unit 15, Demonstration Estate, DE55 4RF', postcode: 'DE55 4RF',
+  id: ID, owner: user.id, name: 'Fire Exit Toggle Test', address: 'Unit 15, Demonstration Estate, AB1 2CD', postcode: 'AB1 2CD',
   status: 'Active', stage: 'Stage 1', created: '2026-11-14T09:00:00.000Z',
   facts: {
     role: 'Managing Director', buildingUse: 'Warehousing and general storage', buildingType: 'Free-standing building',
     length: '50', width: '30', height: '6', roofPitch: '10',
     rollerDoors: [{ width: '4.6', height: '4', access: 'HGV loading' }],
     buildingPositionStatus: 'confirmed', siteLayoutStatus: 'confirmed', siteBoundaryStatus: 'skipped',
-    siteLayoutSiteAddress: 'Unit 15, Demonstration Estate, DE55 4RF', siteLayoutConfirmedAt: '2026-11-14T10:00:00.000Z',
+    siteLayoutSiteAddress: 'Unit 15, Demonstration Estate, AB1 2CD', siteLayoutConfirmedAt: '2026-11-14T10:00:00.000Z',
     buildingFootprint: { center: CENTER, width: 30, length: 50, angle: 0 }, relevantBoundaries: [],
     siteLayoutMapView: { center: CENTER, zoom: 19, bearing: 0, baseLayer: 'satellite' },
   },
