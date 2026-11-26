@@ -1552,3 +1552,44 @@ body:is([data-page="signin"],[data-page="create"]) .home-footer{max-width:1040px
 .drawer-journey-item.next .drawer-journey-dot{border-color:#c27618;background:#fff}
 .drawer-journey-item.next .drawer-journey-status{color:#b66e13;font-weight:700}
 .site-drawer.has-guest-journey .drawer-nav{margin-top:10px;padding-top:12px;border-top:1px solid #d8dee3}
+
+/* Simple first-contact pages (landing, report, paid-stage panel). Mobile first. */
+.simple-home{background:#fbfcfb}
+.simple-hero,.simple-section{width:100%;max-width:880px;margin:0 auto;padding:24px 16px}
+.simple-hero{display:flex;flex-direction:column;align-items:flex-start;gap:14px}
+.simple-hero .home-figma-hero-logo{width:180px;height:auto}
+.simple-hero h1{margin:0;font-size:28px;line-height:1.2;overflow-wrap:anywhere}
+.simple-lead{margin:0;font-size:17px;line-height:1.5;color:#344054}
+.simple-section h2{margin:0 0 12px;font-size:22px}
+.simple-list{margin:0;padding:0 0 0 20px;display:grid;gap:10px;font-size:16px;line-height:1.5}
+.simple-steps{display:grid;gap:14px}
+.simple-step{padding:16px;border:1px solid #d9e0db;border-radius:14px;background:#fff}
+.simple-step h3{margin:6px 0;font-size:18px}
+.simple-step p{margin:0;line-height:1.5}
+.simple-step-num{display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;border-radius:50%;background:var(--green);color:#fff;font-weight:800}
+.simple-cta-row{display:flex;flex-direction:column;gap:10px;width:100%}
+.simple-cta-row .btn{width:100%;min-height:46px;font-size:16px}
+.simple-cta-alt{border-color:var(--green);color:var(--green)}
+.simple-closing{text-align:left}
+.simple-problem-list{margin:12px 0 0;padding:0;list-style:none;counter-reset:p;display:grid;gap:12px}
+.simple-problem-list li{counter-increment:p;position:relative;padding:12px 12px 12px 48px;border:1px solid #e1e7e3;border-radius:10px;background:#fff;display:grid;gap:4px;overflow-wrap:anywhere}
+.simple-problem-list li::before{content:counter(p);position:absolute;left:12px;top:12px;width:26px;height:26px;border-radius:50%;background:var(--green2);color:var(--green);font-weight:800;display:flex;align-items:center;justify-content:center}
+.simple-problem-list span{color:#475467;line-height:1.45}
+.simple-actions{margin-top:18px}
+.simple-told{margin:0;display:grid;gap:8px}
+.simple-told div{display:flex;flex-direction:column;gap:2px}
+.simple-told dt{font-weight:700}
+.simple-told dd{margin:0;overflow-wrap:anywhere}
+.simple-report .card{max-width:100%;overflow-wrap:anywhere}
+.simple-paid{max-width:720px;margin:0 auto;padding:24px 16px}
+.simple-paid-card h1{margin:6px 0 10px;font-size:26px}
+.simple-paid-card h2{font-size:18px;margin:18px 0 8px}
+@media(min-width:768px){
+.simple-hero{padding-top:48px}
+.simple-hero h1{font-size:40px}
+.simple-steps{grid-template-columns:1fr 1fr}
+.simple-cta-row{flex-direction:row}
+.simple-cta-row .btn{width:auto;min-width:200px}
+.simple-told div{flex-direction:row;gap:12px}
+.simple-told dt{flex:0 0 240px}
+}

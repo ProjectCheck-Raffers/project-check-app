@@ -7,8 +7,8 @@
       "part": "B",
       "regsRef": "ADB Vol 2 Section 13",
       "trigger": "Per elevation: distance to the drawn site boundary that wall faces (ADB 13.5 / Diagram 13.2: faces test plus the 80 degree rule, measured at right angles from the wall) under 25 m. Distances from background-checks.js pcBgFacingBoundaryDistances. The cladding fire rating is not asked; standard PIR is never treated as unprotected by default. No facing boundary marked = need info, never ok.",
-      "stage1Problem": "A fire-rated wall may be needed on elevation {elevation} – the building supplier to confirm.",
-      "stage1WhyItMatters": "Walls close to a boundary are limited in how much fire can spread to the neighbouring site.",
+      "stage1Problem": "A fire-rated wall may be needed on elevation {elevation}. Your building supplier should confirm.",
+      "stage1WhyItMatters": "A wall close to a boundary has to limit how far fire can spread to your neighbour's land.",
       "stage2Solution": "Stuart to write",
       "approved": true,
       "needInfo": "Boundary on elevation {elevation} not marked (mark every site boundary in Site Layout)"
@@ -18,8 +18,8 @@
       "part": "B",
       "regsRef": "ADB Vol 2 13.8",
       "trigger": "Per elevation: distance to the boundary that wall faces (same facing distances as B_BOUNDARY) under 1 m. A line passing a corner is measured at right angles from the wall, not diagonally to the corner. No facing boundary marked = need info.",
-      "stage1Problem": "Elevation {elevation} is under 1 m from the boundary – strict fire rules apply to this wall.",
-      "stage1WhyItMatters": "Very close walls face the tightest fire limits, which can affect the wall and any openings in it.",
+      "stage1Problem": "Elevation {elevation} is under 1 m from the boundary, so the strictest fire rules apply to this wall.",
+      "stage1WhyItMatters": "Walls this close face the tightest limits. This can affect the wall and any doors or windows in it.",
       "stage2Solution": "Stuart to write",
       "approved": true,
       "needInfo": "Boundary on elevation {elevation} not marked (mark every site boundary in Site Layout)"
@@ -29,8 +29,8 @@
       "part": "B",
       "regsRef": "ADB Vol 2 13.21",
       "trigger": "Mean roof height ((eaves + ridge) / 2) over 10 m.",
-      "stage1Problem": "Your building height may need a specialist fire assessment.",
-      "stage1WhyItMatters": "Taller buildings are treated differently for fire spread and may need a specialist assessment.",
+      "stage1Problem": "Your building may need a fire safety check because of its height.",
+      "stage1WhyItMatters": "Taller buildings are judged differently for fire spread.",
       "stage2Solution": "Stuart to write",
       "approved": false,
       "needInfo": "The building height"
@@ -40,8 +40,8 @@
       "part": "B",
       "regsRef": "ADB Vol 2 Table 12.1 / Diagram D4",
       "trigger": "Mean roof height ((eaves + ridge) / 2) over 18 m - same height definition as B_HEIGHT_10M, not ridge height.",
-      "stage1Problem": "Your building height (measured to mid-roof) is over 18 m - stricter external wall rules may apply.",
-      "stage1WhyItMatters": "Taller buildings face tighter fire safety requirements.",
+      "stage1Problem": "Your building is over 18 m high (measured to mid-roof), so stricter wall rules may apply.",
+      "stage1WhyItMatters": "Taller buildings face tighter fire safety rules.",
       "stage2Solution": "Stuart to write",
       "approved": false,
       "needInfo": "The building height"
@@ -56,15 +56,15 @@
       "stage2Solution": "Stuart to write",
       "approved": false,
       "scope": "customer",
-      "stage1Note": "Fire engine access – get professional support"
+      "stage1Note": "Fire engine access – ask a professional to check"
     },
     {
       "id": "A_FRAME_BOUNDARY",
       "part": "A",
       "regsRef": "ADB Vol 2 13.16",
       "trigger": "B_BOUNDARY flagged AND eaves height over 7 m.",
-      "stage1Problem": "The frame and foundations near the boundary may need extra design checks.",
-      "stage1WhyItMatters": "A tall wall close to a boundary can affect how the frame and foundations are designed.",
+      "stage1Problem": "The frame and base near the boundary may need extra checks.",
+      "stage1WhyItMatters": "A tall wall close to a boundary can change how the frame and base are designed.",
       "stage2Solution": "Stuart to write",
       "approved": false,
       "needInfo": "Boundary distances and the building height"
@@ -85,8 +85,8 @@
         }
       },
       "factor": 1.5,
-      "stage1Problem": "The furthest point is about {travel} m from an exit – this may be over the limit.",
-      "stage1WhyItMatters": "People inside need to reach an exit within a set distance if there is a fire.",
+      "stage1Problem": "The furthest point is about {travel} m from an exit. This may be too far.",
+      "stage1WhyItMatters": "People inside must be able to reach an exit within a set distance if there is a fire.",
       "stage2Solution": "Stuart to write",
       "approved": false,
       "needInfo": "Personnel exits in Building Design, and what will be stored"
@@ -102,7 +102,7 @@
         "maxPeopleOneExit": 60
       },
       "stage1Problem": "Your building may need more fire exits.",
-      "stage1WhyItMatters": "A building this size can hold more people than a single exit is allowed to serve.",
+      "stage1WhyItMatters": "A building this size can hold more people than one exit is allowed to serve.",
       "stage2Solution": "Stuart to write",
       "approved": false,
       "needInfo": "The building use, width and length"
@@ -112,13 +112,13 @@
       "part": "L",
       "regsRef": "Approved Document L Vol 2 (2021: para 0.11, 2.27–2.29; 2026 edition: para 0.12, 2.26–2.28)",
       "trigger": "Test is fixed heating or cooling. Heated, other temperature requirement, or services answer Yes = note. Unheated (Stage 1 heated answer) AND services No AND use inside the exemption (industrial, workshop, agricultural) = ok. Unheated AND services No AND any other use (e.g. storage, distribution, sports or leisure) = check line (never ok). Heated answer, services answer or use unknown = need info (never ok).",
-      "stage1Problem": "Unheated building used for {use} – a Part L (energy) statement for Building Control may be needed. Get professional support.",
-      "stage1WhyItMatters": "The Part L exemption for unheated buildings only names industrial sites, workshops and non-residential agricultural buildings. Storage is not named.",
+      "stage1Problem": "Building Control may ask for an energy assessment for this unheated {use} building. Ask a professional to check.",
+      "stage1WhyItMatters": "The energy exemption for unheated buildings does not clearly cover storage.",
       "stage2Solution": "Stuart to write",
       "approved": true,
       "scope": "customer",
-      "stage1Note": "With heating, cooling, toilets, offices or other services, an energy calculation for Building Control may be needed. Get professional support.",
-      "needInfo": "Whether the building will have heating, toilets, offices or any services",
+      "stage1Note": "If the building has heating, cooling, toilets, offices or other services, Building Control may ask for an energy assessment. Ask a professional to check.",
+      "needInfo": "Whether the building will have heating, toilets, offices or other services",
       "needInfoHeating": "Whether the building will be heated or cooled",
       "needInfoUse": "The building use"
     },
@@ -138,8 +138,8 @@
       },
       "anyNation": true,
       "scope": "customer",
-      "stage1Problem": "Full planning permission is likely to be needed – get professional support.",
-      "stage1WhyItMatters": "Permitted development limits on size, boundary distance and height look to be exceeded.",
+      "stage1Problem": "Full planning permission is likely to be needed. Ask a planning professional to check.",
+      "stage1WhyItMatters": "The size, height or distance to the boundary looks too big for the simpler planning route.",
       "stage2Solution": "Stuart to write",
       "approved": false
     },
@@ -155,7 +155,7 @@
       "scope": "customer",
       "stage1Problem": "",
       "stage1WhyItMatters": "",
-      "stage1Note": "This building may be exempt from building regs. Get professional support to confirm.",
+      "stage1Note": "This building may be exempt from Building Regulations. Ask a professional to confirm.",
       "stage2Solution": "Stuart to write",
       "approved": false,
       "needInfo": "Whether the building is detached, has sleeping accommodation, or is temporary"
@@ -207,7 +207,7 @@
       "limits": {
         "boundaryM": 6
       },
-      "stage1Problem": "Rooflights near a boundary or fire wall are limited.",
+      "stage1Problem": "There are limits on rooflights near a boundary or fire wall.",
       "stage1WhyItMatters": "Rooflights close to a boundary or fire wall face limits on size and position.",
       "stage2Solution": "Stuart to write",
       "approved": false,
@@ -229,11 +229,11 @@
       "part": "M",
       "regsRef": "Approved Document M Vol 2",
       "trigger": "Heating/toilets/offices/services = Yes (fact regsServices).",
-      "stage1Problem": "Accessible access rules (Part M) apply to this building.",
+      "stage1Problem": "Rules on access for disabled people apply to this building.",
       "stage1WhyItMatters": "Buildings with staff facilities must be reachable and usable by disabled people.",
       "stage2Solution": "A level threshold and an accessible door are needed.",
       "approved": false,
-      "needInfo": "Whether the building will have heating, toilets, offices or any services"
+      "needInfo": "Whether the building will have heating, toilets, offices or other services"
     },
     {
       "id": "F_CONDENSATION",
@@ -255,7 +255,7 @@
       "scope": "customer",
       "stage1Problem": "",
       "stage1WhyItMatters": "",
-      "stage1Note": "Surface water drainage connection, and any services or drainage within the footprint (these may affect the building position, foundations or programme) – get professional support.",
+      "stage1Note": "Rainwater drainage, and any drains or services under the building, can change where it can go, how the base is built and how long the job takes. Ask a professional to check.",
       "stage1NoteInternal": "Any services or drainage within the footprint (these may affect the building position, foundations or programme) – get professional support.",
       "stage2Solution": "Stuart to write",
       "approved": true
@@ -276,7 +276,7 @@
       "stage2Solution": "Personnel doors at U 1.6. Energy calculation favours low-carbon heating.",
       "approved": false,
       "scope": "customer",
-      "stage1Note": "Heated building – the 2027 energy rules may apply. Get professional support.",
+      "stage1Note": "The building will be heated, so newer energy rules (2027) may apply. Ask a professional to check.",
       "needInfo": "Whether the building is heated"
     },
     {
@@ -295,8 +295,8 @@
         "Existing building / structure",
         "Mixed"
       ],
-      "stage1Problem": "The visible surface does not by itself confirm a suitable structural foundation or slab – get professional support.",
-      "stage1ProblemNotSure": "Existing surface/base information is incomplete, so foundation and slab suitability cannot yet be relied upon – get professional support.",
+      "stage1Problem": "What is on the ground now does not prove it can carry the building. A structural engineer should check.",
+      "stage1ProblemNotSure": "We don't yet know if the ground can take the building. A structural engineer should check.",
       "stage1WhyItMatters": "",
       "stage2Solution": "Stuart to write",
       "approved": true
@@ -309,8 +309,8 @@
       "reportSection": "stage1-answers",
       "category": "cost",
       "discipline": "civils",
-      "stage1Problem": "Levels may affect base design, drainage, thresholds and installation.",
-      "needInfo": "Site level/gradient: recorded as \"No\" (not level) — treat as unconfirmed.",
+      "stage1Problem": "Uneven or unknown ground levels can affect the base, drainage, door thresholds and fitting the building.",
+      "needInfo": "Ground levels: you said the site is not level, so we treat this as unconfirmed.",
       "stage1WhyItMatters": "",
       "stage2Solution": "Stuart to write",
       "approved": true
@@ -323,7 +323,7 @@
       "reportSection": "stage1-answers",
       "category": "programme",
       "discipline": "general",
-      "stage1Problem": "The requested programme is compressed relative to the approvals, design, civils, manufacture and installation stages that may still be required.",
+      "stage1Problem": "Your timescale is tight. Approvals, design, groundworks, manufacture and fitting all take time.",
       "stage1WhyItMatters": "",
       "stage2Solution": "Stuart to write",
       "approved": false
