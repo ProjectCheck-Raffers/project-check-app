@@ -64,3 +64,16 @@ A boundary side with no marked boundary line facing it (Site Layout) has no dist
 ### Report honesty (2026-11-25)
 
 Each rule can carry `needInfo` (plain words for what is missing). The Stage 1 report and PDF list `need info` items under "Need info" and never print "No potential issues found" while any is listed. Customer-scope items (`scope:"customer"`) are listed under "Get professional support". `PLAN_PD` has its own Permitted development section and is left out of this list.
+
+### Stage 1 answer checks (2026-11-26)
+
+The old separate Stage 1 check files were moved in here. Rules with `"reportSection": "stage1-answers"` read the customer's Stage 1 answers and map status, run for every nation, and are run by `stage1AnswerChecks(project)` in `checker.js` (not by `runChecks`). Their lines appear in the Stage 1 report and PDF flag sections (`category` / `discipline`) and in the missing-information list, not under "Potential issues to review". They are `approved:true` because they were already showing on the live report; set `approved:false` to hide one. Wording is edited here in `rules.json`.
+
+| Rule | What it does |
+| --- | --- |
+| `FOUNDATION_BASE` | Existing surface answer in `triggerValues` = `stage1Problem`; "Not sure" = `stage1ProblemNotSure`. Customer scope ("get professional support"). Concrete slab = nothing. |
+| `SITE_LEVELS` | Level answer No / Not sure = `stage1Problem`; No = also `needInfo`. |
+| `PROGRAMME` | Programme "0–3 months" = `stage1Problem`. |
+| `MAP_NOT_CONFIRMED` | Building position not confirmed = `needInfoPosition`; site boundary not confirmed = `needInfoBoundary`. Need info only, one line each. |
+
+Dropped as duplicates: the old close-boundary flag (covered by `B_BOUNDARY`, `B_BOUNDARY_1M`, `B_BOUNDARY_FIRERATED_QUOTE`, `A_FRAME_BOUNDARY`), the old heated-building flag (`L_ENERGY`, `L_2027_HEATED`) and the old services/drainage flag (folded into the `H_DRAINAGE_QUOTE` note). The browser loads `rules.json` as soon as `checker.js` loads; the Stage 1 report redraws once if it was opened before the rules arrived. Default roller door sizes now live in `building-layout.js` (`pcDoorSizeDefault`).

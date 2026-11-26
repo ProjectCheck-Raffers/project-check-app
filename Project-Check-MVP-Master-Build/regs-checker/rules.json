@@ -10,7 +10,7 @@
       "stage1Problem": "A fire-rated wall may be needed on elevation {elevation} – the building supplier to confirm.",
       "stage1WhyItMatters": "Walls close to a boundary are limited in how much fire can spread to the neighbouring site.",
       "stage2Solution": "Stuart to write",
-      "approved": false,
+      "approved": true,
       "needInfo": "Boundary on elevation {elevation} not marked (mark every site boundary in Site Layout)"
     },
     {
@@ -21,7 +21,7 @@
       "stage1Problem": "Elevation {elevation} is under 1 m from the boundary – strict fire rules apply to this wall.",
       "stage1WhyItMatters": "Very close walls face the tightest fire limits, which can affect the wall and any openings in it.",
       "stage2Solution": "Stuart to write",
-      "approved": false,
+      "approved": true,
       "needInfo": "Boundary on elevation {elevation} not marked (mark every site boundary in Site Layout)"
     },
     {
@@ -115,7 +115,7 @@
       "stage1Problem": "",
       "stage1WhyItMatters": "",
       "stage2Solution": "Stuart to write",
-      "approved": false,
+      "approved": true,
       "scope": "customer",
       "stage1Note": "With heating, toilets, offices or other services, an energy calculation for Building Control may be needed. Get professional support.",
       "needInfo": "Whether the building will have heating, toilets, offices or any services"
@@ -249,13 +249,13 @@
       "id": "H_DRAINAGE_QUOTE",
       "part": "H",
       "regsRef": "Approved Document H",
-      "trigger": "Always (England). Quote request: gutters and downpipes by the building supplier; surface water connection is customer scope.",
+      "trigger": "Always (England). Quote request: gutters and downpipes by the building supplier; surface water connection is customer scope. Also covers services or drainage within the footprint (was the separate services/drainage check).",
       "scope": "customer",
       "stage1Problem": "",
       "stage1WhyItMatters": "",
-      "stage1Note": "Surface water drainage connection – get professional support.",
+      "stage1Note": "Surface water drainage connection, and any services or drainage within the footprint (these may affect the building position, foundations or programme) – get professional support.",
       "stage2Solution": "Stuart to write",
-      "approved": false
+      "approved": true
     },
     {
       "id": "L_2027_HEATED",
@@ -275,6 +275,68 @@
       "scope": "customer",
       "stage1Note": "Heated building – the 2027 energy rules may apply. Get professional support.",
       "needInfo": "Whether the building is heated"
+    },
+    {
+      "id": "FOUNDATION_BASE",
+      "part": "Stage 1 answers",
+      "regsRef": "Stage 1 question: what is on the area where the building will sit (customer scope)",
+      "trigger": "Existing surface answer is Tarmac / asphalt, Hardcore / stone, Soil / grass, Existing building / structure or Mixed = surface does not confirm a slab. Answer Not sure = base information incomplete. Concrete slab = nothing shown. Old saved answer 'Existing building' counts as 'Existing building / structure'.",
+      "scope": "customer",
+      "reportSection": "stage1-answers",
+      "category": "cost",
+      "discipline": "civils",
+      "triggerValues": [
+        "Tarmac / asphalt",
+        "Hardcore / stone",
+        "Soil / grass",
+        "Existing building / structure",
+        "Mixed"
+      ],
+      "stage1Problem": "The visible surface does not by itself confirm a suitable structural foundation or slab – get professional support.",
+      "stage1ProblemNotSure": "Existing surface/base information is incomplete, so foundation and slab suitability cannot yet be relied upon – get professional support.",
+      "stage1WhyItMatters": "",
+      "stage2Solution": "Stuart to write",
+      "approved": true
+    },
+    {
+      "id": "SITE_LEVELS",
+      "part": "Stage 1 answers",
+      "regsRef": "Stage 1 answer: is the site level",
+      "trigger": "Level answer No or Not sure = levels warning. Level answer No = also a need-info line. (The level question is not currently asked, so this only fires on older projects that have an answer.)",
+      "reportSection": "stage1-answers",
+      "category": "cost",
+      "discipline": "civils",
+      "stage1Problem": "Levels may affect base design, drainage, thresholds and installation.",
+      "needInfo": "Site level/gradient: recorded as \"No\" (not level) — treat as unconfirmed.",
+      "stage1WhyItMatters": "",
+      "stage2Solution": "Stuart to write",
+      "approved": true
+    },
+    {
+      "id": "PROGRAMME",
+      "part": "Stage 1 answers",
+      "regsRef": "Stage 1 answer: programme",
+      "trigger": "Programme answer is exactly '0–3 months' = short-programme warning.",
+      "reportSection": "stage1-answers",
+      "category": "programme",
+      "discipline": "general",
+      "stage1Problem": "The requested programme is compressed relative to the approvals, design, civils, manufacture and installation stages that may still be required.",
+      "stage1WhyItMatters": "",
+      "stage2Solution": "Stuart to write",
+      "approved": true
+    },
+    {
+      "id": "MAP_NOT_CONFIRMED",
+      "part": "Stage 1 answers",
+      "regsRef": "Site Layout map: building position and site boundary",
+      "trigger": "Building position not confirmed on the map = one need-info line. Site boundary not confirmed on the map = one need-info line. Anything other than 'confirmed' (skipped, blank, old values) counts as not confirmed.",
+      "reportSection": "stage1-answers",
+      "needInfoPosition": "Building position not yet confirmed on a site map.",
+      "needInfoBoundary": "Site boundary not yet confirmed on a site map.",
+      "stage1Problem": "",
+      "stage1WhyItMatters": "",
+      "stage2Solution": "Stuart to write",
+      "approved": true
     }
   ]
 }
