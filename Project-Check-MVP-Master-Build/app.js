@@ -65,22 +65,16 @@ let users=Array.isArray(clean.users)?cleanArr(clean.users).map(cleanUser).filter
 // read straight out of stored project data, not the URL, so render()'s own
 // UUID guard never sees it; a tampered id could break out of that
 // attribute the same way the route id and door ids could before their
-// equivalent fixes. p.downloads is also read as a plain {s1,s2} number
-// pair everywhere the two-free-download limit is shown or enforced, with
-// no guard of its own — and a malformed value throws while rendering the
-// *whole* dashboard project list (not just this one project), since that
-// happens inside the same Array.map() template literal. p.name is passed
+// equivalent fixes. p.name is passed
 // through esc() everywhere it's *displayed* (esc() coerces safely via
 // String(s??'')), but downloadReport()'s PDF filename does
 // p.name.replace(/\W+/g,'-') directly with no such coercion — a
-// non-string name throws there and aborts the download. All three are
+// non-string name throws there and aborts the download. Both are
 // normalized here, healing rather than crashing.
 let cleanProject=p=>{
 let id=typeof p.id==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(p.id)?p.id:crypto.randomUUID();
-let d=p.downloads&&typeof p.downloads==='object'?p.downloads:{};
-// Download counts are informational only (no cap) — kept as whole, non-negative numbers.
+// Whole, non-negative numbers.
 let clampDl=v=>Number.isFinite(v)?Math.max(0,Math.trunc(v)):0;
-let downloads={s1:clampDl(d.s1),s2:clampDl(d.s2)};
 // Uploads are counted per stage per project (limit 2 each) and never decrease,
 // so removing a file does not free a slot. Existing projects are seeded from the
 // evidence already on record so the limit applies fairly to them too.
@@ -89,7 +83,7 @@ let ev=Array.isArray(p.evidence)?p.evidence:[];
 let evKey=e=>{let t=e&&e.stage;return t==='Stage 1'?'s1':(typeof t==='string'&&/^Stage (1 complete|2)/.test(t))?'s2':null};
 let uploads={s1:Math.max(clampDl(u.s1),ev.filter(e=>evKey(e)==='s1').length),s2:Math.max(clampDl(u.s2),ev.filter(e=>evKey(e)==='s2').length)};
 let name=typeof p.name==='string'&&p.name?p.name:'Untitled project';
-return {...p,id,name,downloads,uploads};
+return {...p,id,name,uploads};
 };
 let projects=Array.isArray(clean.projects)?cleanArr(clean.projects).map(cleanProject):defaultState.projects;
 // `typeof x==='object'` alone also admits arrays and objects missing the
@@ -191,7 +185,7 @@ PC_BUILDING_REPORT_DATA_URL=await new Promise((resolve,reject)=>{let reader=new 
 }catch(e){/* reference image optional at runtime; PDF simply omits it */}
 }
 loadBuildingReportDataUrl();
-const SITE_SHELL_ROUTES=new Set(["home","signin","create","createProject","pricing","dashboard","project","projectSettings","projectDocuments","stage1Workspace","stage1","stage1Summary","stage1Confirm","siteLayout","buildingLayout","stage2","stage2Summary","profile","profileEdit","terms","privacy"]);
+const SITE_SHELL_ROUTES=new Set(["home","signin","create","createProject","dashboard","project","projectSettings","projectDocuments","stage1Workspace","stage1","stage1Summary","stage1Confirm","siteLayout","buildingLayout","stage2","stage2Summary","profile","profileEdit","terms","privacy"]);
 let drawerReturnFocus=null;
 function route(name,id){const next=id?`${name}/${id}`:name;if(location.hash.slice(1)===next)render();else location.hash=next}
 function closeSiteDrawer(restoreFocus=true){
@@ -236,13 +230,13 @@ if(!visible){
 journey.innerHTML=`
   <div class="drawer-stage-heading">Stage 1 · Initial Project Check</div>
   ${DRAWER_STAGE1_STEPS.map(label=>drawerJourneyItem(label,"To do","todo","","",false,false,false,true)).join("")}
-  ${drawerJourneyItem("Stage 2","Locked","locked","","",false,true)}
+  ${drawerJourneyItem("Stage 2","After your free report","locked","","",false,true)}
 `;
 journey.querySelectorAll("[data-guest-step]").forEach(button=>button.onclick=drawerGuestStep);
 const startButton=document.querySelector("#drawerGuestStart");if(startButton)startButton.onclick=drawerGuestStart;
 return;
 }
-const facts=projectFacts(p),steel=projectIsSteelFreeStanding(facts);
+const facts=projectFacts(p);
 const questions=stage1QuestionsFor(p),answered=questions.filter(question=>stage1QuestionAnswered(p,question)).length,total=questions.length;
 const documents=stage1EvidenceCount(p);
 const detailsComplete=[facts.role,facts.buildingUse,facts.buildingType,p.address,facts.length,facts.width,facts.height].every(stage1HasValue)&&projectSteelRequirementsComplete(facts);
@@ -251,7 +245,7 @@ const questionsStatus=total>0?(questionsComplete?"Complete":`${answered} of ${to
 const siteLayoutComplete=facts.siteLayoutStatus==="confirmed";
 const buildingDesignComplete=siteLayoutComplete&&facts.buildingDesignStatus==="confirmed";
 const currentKey=currentRoute==="project"?"stage1Workspace":currentRoute;
-const summaryComplete=steel?Boolean(p.stage1SummaryConfirmed):p.stage1Complete;
+const summaryComplete=Boolean(p.stage1SummaryConfirmed);
 const reportComplete=Boolean(p.stage1Complete);
 const steps=[
   {key:"projectSettings",label:"Project Details",done:detailsComplete,hint:"Details to add"},
@@ -261,7 +255,7 @@ const steps=[
   {key:"siteLayout",label:"Site Layout",done:siteLayoutComplete,hint:"Site not laid out yet"},
   {key:"buildingLayout",label:"Building Design",done:buildingDesignComplete,hint:"Building not designed yet"}
 ];
-if(steel)steps.push({key:"stage1Summary",label:"Stage 1 Free Report",done:reportComplete,hint:"Not generated yet"});
+steps.push({key:"stage1Summary",label:"Stage 1 Free Report",done:reportComplete,hint:"Not generated yet"});
 const doneCount=steps.filter(step=>step.done).length;
 const readiness=reportComplete?100:Math.max(0,Math.min(100,Math.round(doneCount/steps.length*100)))||0;
 const nextKey=steps.find(step=>!step.done)?.key||"";
@@ -272,7 +266,7 @@ journey.innerHTML=`
   <div class="drawer-stage-heading">Stage 1 · Initial Project Check</div>
   ${drawerJourneyItem("Project Overview",reportComplete?"Complete":`${doneCount} of ${steps.length} steps done`,reportComplete?"complete":"pending","stage1Workspace",p.id,currentKey==="stage1Workspace")}
   ${steps.map(step=>drawerJourneyItem(step.label,step.done?(step.status||"Complete"):step.hint,step.done?(step.tone||"complete"):"todo",step.key,p.id,currentKey===step.key,false,step.key===nextKey)).join("")}
-  ${drawerJourneyItem("Stage 2","Locked","locked","",p.id,false,true)}
+  ${drawerJourneyItem("Stage 2","After your free report","locked","",p.id,false,true)}
 `;
 }
 
@@ -314,7 +308,7 @@ setTimeout(restorePlatformSession,0);
 // that, the emoji (📋🔍📄🤝) used in the first Homepage Rebuild pass —
 // both fully superseded now. Reused for both the hero-card mini-journey
 // and the four detailed cards below, and by PRICING_ICONS further down
-// for the pricing page's matching journey/cards.
+// (the Pricing page has been removed).
 const HOMEPAGE_JOURNEY_ICONS={
 check:'<img src="assets/project-check-icon-check.png" alt="Clipboard with checklist, representing Check">',
 understand:'<img src="assets/project-check-icon-understand.png" alt="Magnifying glass over a bar chart, representing Understand">',
@@ -328,102 +322,26 @@ moveforward:'<img src="assets/project-check-icon-moveforward.png" alt="Handshake
 // string here is unchanged, locked wording carried over verbatim from the
 // 2026-08-29 Homepage Rebuild.
 const HOMEPAGE_JOURNEY=[
-{icon:'check',label:'Check',badge:'Stage 1 · Free',desc:'Establish your project and identify what’s missing.',detail:'Establish your project and identify gaps.'},
-{icon:'understand',label:'Understand',badge:'Stage 2 · Free',desc:'Understand what could affect your project.',detail:'Reveal risks, missing information and cost or programme issues.'},
-{icon:'decide',label:'Decide',badge:'Stage 3 · Solutions',desc:'Turn project information into informed decisions.',detail:'Bring local planning insight, Building Regulations requirements and drawing evidence together into clear actions.'},
-{icon:'moveforward',label:'Move forward',badge:'Support',desc:'Keep the project organised and moving forward.',detail:'Review new drawings and supplier information, resolve questions and keep decisions organised.'}
+{icon:'check',label:'Stage 1 · Free – shows the problems',detail:'Describe your project and site. Project Check shows the problems, the missing information and the items that need professional support.'},
+{icon:'decide',label:'Stage 2 · Paid – shows the solutions',detail:'Bring planning, Building Regulations and drawing evidence together into clear solutions.'}
 ];
 function home(){
-const journeyStepsHtml=HOMEPAGE_JOURNEY.map(j=>`<article class="journey-step"><div class="journey-icon">${HOMEPAGE_JOURNEY_ICONS[j.icon]}</div><div class="journey-copy"><div class="eyebrow">${j.label}</div><span class="pill">${j.badge}</span></div></article>`).join('');
-const journeyCardsHtml=HOMEPAGE_JOURNEY.map(j=>`<article class="stagecard"><div class="stagecard-id"><div class="journey-icon">${HOMEPAGE_JOURNEY_ICONS[j.icon]}</div><div><div class="eyebrow">${j.label}</div><span class="pill">${j.badge}</span></div></div><div class="stagecard-body"><p>${j.detail}</p></div></article>`).join('');
+const journeyStepsHtml=HOMEPAGE_JOURNEY.map(j=>`<article class="journey-step"><div class="journey-icon">${HOMEPAGE_JOURNEY_ICONS[j.icon]}</div><div class="journey-copy"><div class="eyebrow">${j.label}</div></div></article>`).join('');
+const journeyCardsHtml=HOMEPAGE_JOURNEY.map(j=>`<article class="stagecard"><div class="stagecard-id"><div class="journey-icon">${HOMEPAGE_JOURNEY_ICONS[j.icon]}</div><div><div class="eyebrow">${j.label}</div></div></div><div class="stagecard-body"><p>${j.detail}</p></div></article>`).join('');
 const startAction=state.user?"route('dashboard')":"authModal('create')";
-const heroButtons=`<div class="home-action-row"><button class="home-action home-action-primary" onclick="${startAction}"><img src="assets/home-start-project.svg" alt="" aria-hidden="true">Start a project</button><button class="home-action home-action-secondary" data-route="pricing"><img src="assets/home-see-pricing.svg" alt="" aria-hidden="true">See pricing</button></div>`;
+const heroButtons=`<div class="home-action-row"><button class="home-action home-action-primary" onclick="${startAction}"><img src="assets/home-start-project.svg" alt="" aria-hidden="true">Start a project</button></div>`;
 app.innerHTML=`<div class="figma-homepage">
 <section class="home-figma-hero" aria-label="Project Check introduction"><img class="home-hero-circle" src="assets/home-hero-circle.svg" alt="" aria-hidden="true"><div class="home-hero-dots" aria-hidden="true"></div><img class="home-hero-lines" src="assets/home-hero-building-lines.svg" alt="" aria-hidden="true"><img class="home-figma-hero-logo" src="assets/project-check-logo.png" alt="Project Check — Know before you build."><span class="home-divider" aria-hidden="true"></span><p class="home-hero-statement">Understand the risks, requirements and missing information before you commit to your industrial building project.</p>${heroButtons}</section>
 <div class="home-prefab-layout"><figure class="home-building-card"><img src="assets/project-check-building-homepage.png" alt="Modern prefabricated industrial building with loading doors and a glazed entrance"></figure><article class="home-info-card"><div class="home-info-heading"><h2>Need more space for your business?</h2></div><p>Prefabricated buildings can provide storage, workshop or production space sooner than traditional construction.</p><p>They are manufactured off site and assembled at your premises. Some systems need less foundation work, and an existing concrete slab may be suitable once checked by an engineer.</p><div class="home-info-callout">Installation can take weeks. Getting the site ready is often what takes longer.</div><p class="home-qualification">Planning permission, ground conditions, drainage and access can all affect the work needed before installation.</p><p class="home-final-statement">Project Check helps you understand what your project needs before you commit.</p></article></div>
 <section class="home-journey-overview"><h2><span>From idea to</span> informed decision.</h2><span class="home-divider" aria-hidden="true"></span><div class="home-journey-list">${journeyStepsHtml}</div></section>
 <section class="home-how"><h2>How Project Check works</h2><span class="home-divider" aria-hidden="true"></span><div class="home-stage-grid">${journeyCardsHtml}</div></section>
-<section class="home-closing"><p class="home-closing-eyebrow">Independent of building suppliers</p><h2>Know before you build.</h2><span class="home-divider" aria-hidden="true"></span>${heroButtons}</section>
-<footer class="home-footer"><img src="assets/project-check-banner-logo.png" alt="Project Check — Know before you build."><nav aria-label="Homepage footer"><button data-route="home">Home</button><button data-route="pricing">Pricing</button><button onclick="${state.user?"logout()":"authModal()"}">${state.user?'Sign out':'Sign in'}</button></nav><span></span><div class="home-footer-legal"><div><button onclick="showTerms()">Terms &amp; Conditions</button><button onclick="showPrivacy()">Privacy Policy</button></div><small>© 2026 Project Check</small></div></footer>
+<section class="home-closing"><h2>Know before you build.</h2><span class="home-divider" aria-hidden="true"></span>${heroButtons}</section>
+<footer class="home-footer"><img src="assets/project-check-banner-logo.png" alt="Project Check — Know before you build."><nav aria-label="Homepage footer"><button data-route="home">Home</button><button onclick="${state.user?"logout()":"authModal()"}">${state.user?'Sign out':'Sign in'}</button></nav><span></span><div class="home-footer-legal"><div></div><small>© 2026 Project Check</small></div></footer>
 </div>`}
-// Pricing Page Golden Reference Implementation (2026-08-29) — matches the
-// approved/LOCKED "Rev 2 Complete.png" reference exactly: headline, four
-// pricing cards (icon/title/badge/price/features/CTA), the DECIDE card's
-// green-bordered featured emphasis, and the supplier-quotations banner
-// below. Icons are a separate, pricing-only constant (PRICING_ICONS) —
-// deliberately not shared with the homepage's own locked HOMEPAGE_JOURNEY_
-// ICONS/HOMEPAGE_JOURNEY constants above, so this page can never
-// accidentally couple to (or be broken by) a future homepage-only icon
-// change, and vice versa. Same green line-art/pale-green-circle treatment
-// (reuses the existing .journey-icon class as-is — no changes to it or to
-// anything homepage-related). Content/copy/order are locked to the
-// reference; do not reinterpret without a further explicit instruction.
-const PRICING_ICONS={
-// Approved Four-Icon Set (2026-08-30): check/understand/decide/
-// moveforward now reuse the exact same approved asset files as
-// HOMEPAGE_JOURNEY_ICONS above (one source of truth per icon, shared
-// across homepage and pricing so both pages show visually identical
-// symbols per stage, as required) — replacing the pricing page's earlier,
-// different icon concepts (magnifying-glass-for-CHECK/eye-for-UNDERSTAND/
-// scales-for-DECIDE) entirely. `document` (the unrelated supplier-
-// quotations banner icon) is untouched.
-check:'<img src="assets/project-check-icon-check.png" alt="Clipboard with checklist, representing Check">',
-understand:'<img src="assets/project-check-icon-understand.png" alt="Magnifying glass over a bar chart, representing Understand">',
-decide:'<img src="assets/project-check-icon-decide.png" alt="Document with a checkmark, representing Decide">',
-moveforward:'<img src="assets/project-check-icon-moveforward.png" alt="Handshake, representing Move forward / Support">',
-document:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h7l4 4v14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"></path><path d="M14 3v4h4"></path><line x1="8" y1="12" x2="15" y2="12"></line><line x1="8" y1="15" x2="15" y2="15"></line><line x1="8" y1="9" x2="10" y2="9"></line></svg>'
-};
-// Pricing Rev 3 governance note (2026-08-30): PRICING_CARDS' title/badge/
-// features/cta strings below are the PROTECTED, previously-approved
-// content (actual stage names, £0/£0/£99/£249 pricing, approved feature
-// wording, existing routes/actions) and are UNCHANGED from the Rev 2
-// implementation — the Rev 3 reference's own illustrative wording for
-// these fields ("STAGE 1"/"STAGE 4" badges, a second "Project Check"/
-// "Risk Report"/"Solutions"/"Project Support" sub-title per card, shorter
-// generic feature bullets, shorter CTA labels) was deliberately NOT
-// adopted, since Project Check has no "Stage 4" (Support is not a stage)
-// and the existing feature/CTA wording is the approved content, not the
-// mockup's placeholder text. `pillClass`/`priceSub`/`caption`/`popular`
-// are NEW fields added only to drive the Rev 3 VISUAL treatment (badge
-// colour-coding, price sub-label, journey-strip caption, "POPULAR"
-// emphasis) — visual-only, no protected content changed.
-const PRICING_CARDS=[
-{icon:'check',title:'CHECK',badge:'Stage 1 · Free',pillClass:'neutral',price:'£0',priceSub:'Free',caption:'Capture the facts',features:['Project and site questions','Building system and use','Initial site understanding','Early risks and actions','Stage 1 PDF report','Download and share'],cta:'Start your free Project Check',btnClass:'outline-green'},
-{icon:'understand',title:'UNDERSTAND',badge:'Stage 2 · Free',pillClass:'neutral',price:'£0',priceSub:'Free',caption:'See the risks early',features:['Deeper site and substrate','Planning and regs status','Evidence uploads','Deeper risks and actions','Deeper risk report','2 report downloads'],cta:'Continue free',btnClass:'outline-green'},
-// "Comparable options" wording (2026-08-30, DECIDE Wording Correction) —
-// see the matching comment on HOMEPAGE_JOURNEY's 'decide' entry above;
-// same governed proposition, same reason, applied here to the pricing
-// card's own feature list for the Stage 3 · Solutions (£99) card.
-{icon:'decide',title:'DECIDE',badge:'Stage 3 · Solutions',pillClass:'green-solid',price:'£99',priceSub:'One-off payment',caption:'Get solutions',features:['Organised solutions','Comparable options','Prioritised actions','Unlimited potential uploads','Stage 3 solutions report','Download and share'],cta:'Choose Solutions £99',btnClass:'green',featured:true,popular:true},
-{icon:'moveforward',title:'MOVE FORWARD',badge:'Project Support',pillClass:'dark-solid',price:'£249',priceSub:'Per project',caption:'With support',features:['Unlimited uploads','2 hours Teams support','Continued review of supplier drawings','Continued review of civils/foundation drawings','Site attendance available separately by location'],cta:'Choose Support £249',btnClass:'dark'},
-];
+// Two-stage journey shared by the homepage and the sign-in sidebar.
 // Green line-art shield/check icon for the new "confidence strip" (Rev 3)
-// — same stroke family as PRICING_ICONS above.
+// — same stroke family as the auth icons above.
 const PRICING_SHIELD_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v6c0 4.5-3 8-7 9-4-1-7-4.5-7-9V6z"></path><path d="M9 12l2 2 4-4"></path></svg>';
-function pricing(){
-// CEO Master 40:30: guided route pricing, requested 20 September 2026.
-const startAction=state.user?"route('dashboard')":"authModal('create')";
-app.innerHTML=`<div class="figma-homepage ceo-guided-pricing">
-<div class="ceo-pricing-body">
-<section class="pricing-hero" aria-label="Pricing introduction"><div class="eyebrow">GUIDED ROUTE</div><h1>Start with the project.<br>Decide the support later.</h1><p>A calmer, step-by-step pricing story for customers who do not yet know whether they need planning, Building Regulations, civils or structural input.</p></section>
-<section class="pricing-card" aria-labelledby="pricing-route-title"><h2 id="pricing-route-title">Follow the project</h2><p class="pricing-card-intro">Four decisions, in the order they become useful.</p><div class="pricing-steps">
-<div class="pricing-step-row"><h3 class="pricing-step-title">1 Share the facts · FREE</h3><p class="pricing-step-desc">Site, building use, system and available evidence</p></div>
-<div class="pricing-step-row"><h3 class="pricing-step-title">2 Reveal the risks · FREE</h3><p class="pricing-step-desc">Missing information, constraints and early actions</p></div>
-<div class="pricing-step-row"><h3 class="pricing-step-title">3 Choose a route · £99 if needed</h3><p class="pricing-step-desc">Organised solutions and specialist pathway</p></div>
-<div class="pricing-step-row"><h3 class="pricing-step-title">4 Move forward · £249 if needed</h3><p class="pricing-step-desc">Direct support and continued drawing review</p></div>
-</div></section>
-<section class="pricing-card pricing-appointments" aria-labelledby="pricing-appointments-title"><h2 id="pricing-appointments-title">Possible next appointments</h2><p class="pricing-card-intro">Project Check helps identify which are relevant—not all projects need all of them.</p><div class="pricing-appointments-list">
-<div class="pricing-appointment-row"><h3 class="pricing-appointment-name">Planning consultant</h3><p class="pricing-appointment-desc">Application strategy and supporting information</p></div>
-<div class="pricing-appointment-row"><h3 class="pricing-appointment-name">Building Control</h3><p class="pricing-appointment-desc">Building Regulations route and compliance</p></div>
-<div class="pricing-appointment-row"><h3 class="pricing-appointment-name">Civil or drainage engineer</h3><p class="pricing-appointment-desc">Access, levels, drainage and ground interfaces</p></div>
-<div class="pricing-appointment-row"><h3 class="pricing-appointment-name">Structural engineer</h3><p class="pricing-appointment-desc">Frame, loads, foundations and calculations</p></div>
-<div class="pricing-appointment-row"><h3 class="pricing-appointment-name">Building supplier</h3><p class="pricing-appointment-desc">System proposal, scope and exclusions</p></div>
-</div></section>
-<section class="pricing-card"><h2>You stay in control</h2><p class="pricing-card-intro">No specialist is appointed and no external fee is incurred until the scope and price are clear.</p></section>
-<div class="pricing-cta-section"><button class="pricing-cta-full" onclick="${startAction}">Start free and reveal my route</button></div>
-</div>
-<footer class="home-footer"><img src="assets/project-check-banner-logo.png" alt="Project Check — Know before you build."><nav aria-label="Pricing footer"><button data-route="home">Home</button><button data-route="pricing">Pricing</button><button data-route="signin">Sign in</button></nav><span></span><div class="home-footer-legal"><div><button onclick="showTerms()">Terms &amp; Conditions</button><button onclick="showPrivacy()">Privacy Policy</button></div><small>© 2026 Project Check</small></div></footer>
-</div>`}
 // Account / Sign-in Experience (2026-08-30, Approved Visual Reference task)
 // — replaces the earlier single combined guess-the-intent form with two
 // explicit, clearly separated views (EXISTING CUSTOMER sign in / NEW
@@ -478,8 +396,7 @@ function closeAuthModal(d,previousBodyOverflow){document.body.style.overflow=pre
 // Small, self-contained green line-art icons for this modal only (lock /
 // building) — new supporting icons for new UI elements, distinct from the
 // four APPROVED journey icons (Check/Understand/Decide/Move forward),
-// which this modal reuses unmodified via PRICING_ICONS/PRICING_CARDS
-// below rather than redrawing or re-extracting them.
+// which this modal reuses unmodified via HOMEPAGE_JOURNEY_ICONS.
 const AUTH_LOCK_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>';
 const AUTH_BUILDING_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="1"></rect><path d="M9 21v-3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"></path><line x1="8" y1="7" x2="8" y2="7.01"></line><line x1="12" y1="7" x2="12" y2="7.01"></line><line x1="16" y1="7" x2="16" y2="7.01"></line><line x1="8" y1="11" x2="8" y2="11.01"></line><line x1="12" y1="11" x2="12" y2="11.01"></line><line x1="16" y1="11" x2="16" y2="11.01"></line></svg>';
 // Accessible show/hide password icons (2026-09-10, Stuart's explicit
@@ -496,14 +413,13 @@ function authModal(initialPanel='signin',embedded=false){
 if(['signin','create'].includes(initialPanel)&&!embedded){route(initialPanel);return;}
 let previousBodyOverflow=document.body.style.overflow;if(!embedded)document.body.style.overflow='hidden';
 let d=document.createElement('div');d.className=embedded?'signin-screen':'modal';
-const journeyHtml=PRICING_CARDS.map(c=>`<div class="journey-step"><div class="journey-icon">${PRICING_ICONS[c.icon]}</div><div><div class="eyebrow">${c.title}</div><div class="journey-desc">${c.caption}</div></div></div>`).join('');
+const journeyHtml=HOMEPAGE_JOURNEY.map(j=>`<div class="journey-step"><div class="journey-icon">${HOMEPAGE_JOURNEY_ICONS[j.icon]}</div><div><div class="eyebrow">${j.label}</div></div></div>`).join('');
 d.innerHTML=`<div class="card auth-modal">
 <div class="auth-main">
 <div class="auth-modal-header"><img class="auth-logo" src="assets/project-check-logo.png" alt="Project Check — Know before you build."><button type="button" class="auth-close" id="authClose" aria-label="Close">&times;</button></div>
 <div class="auth-panel" id="authPanelSignin">
 <div class="auth-intro"><span class="auth-badge">Secure sign in</span><h2>Welcome back</h2><p class="meta auth-center">Sign in to continue your Project Check.</p></div>
-<button class="btn green full" id="adminQuickBtn">CEO Admin Access</button>
-<p class="field-note auth-center">One-tap access on this trusted device</p>
+<button class="btn green full" id="adminQuickBtn" hidden>CEO Admin Access</button>
 <div class="field"><label for="siEmail">Business email</label><input id="siEmail" type="email" autocomplete="email" placeholder="name@company.com"></div>
 <div class="field"><label for="siPass">Password</label><div class="password-field"><input id="siPass" type="password" autocomplete="current-password" placeholder="Enter your password"><button type="button" class="pw-toggle" data-target="siPass" aria-label="Show password">${AUTH_EYE_ICON}</button></div></div>
 <p class="field-note"><button type="button" class="linklike" id="showRecovery">Forgot your password?</button></p>
@@ -531,7 +447,7 @@ d.innerHTML=`<div class="card auth-modal">
 <div class="field"><label for="caEmail">Business email</label><input id="caEmail" type="email" autocomplete="email" placeholder="name@company.com"></div>
 <div class="field"><label for="caMobile">Mobile number</label><input id="caMobile" type="tel" inputmode="tel" autocomplete="tel" required placeholder="e.g. 07700 900000"></div>
 <div class="field"><label for="caPass">Password</label><div class="password-field"><input id="caPass" type="password" autocomplete="new-password" placeholder="Create a password"><button type="button" class="pw-toggle" data-target="caPass" aria-label="Show password">${AUTH_EYE_ICON}</button></div></div>
-<div class="consent-row"><input type="checkbox" id="caTerms"><label for="caTerms">I agree to the <button type="button" class="linklike" data-route="terms">Terms &amp; Conditions</button></label></div>
+<div class="consent-row"><input type="checkbox" id="caTerms"><label for="caTerms">I agree to the <button type="button" class="linklike" data-route="terms">Terms &amp; Conditions</button> and <button type="button" class="linklike" data-route="privacy">Privacy Policy</button></label></div>
 <div class="consent-row"><input type="checkbox" id="caMarketing"><label for="caMarketing">I'm happy to receive occasional marketing updates about Project Check <span class="meta">(optional)</span></label></div>
 <button class="btn green full" id="createBtn">Create account &amp; start free</button>
 <p class="auth-switch">Already have an account? <button type="button" class="linklike" id="showSignin">Sign in</button></p>
@@ -543,14 +459,14 @@ d.innerHTML=`<div class="card auth-modal">
 <p class="meta">Your Project Record stays with you from start to finish.</p>
 <div class="journey-steps auth-journey">${journeyHtml}</div>
 </div>
-<div class="auth-footer">See our <button type="button" class="linklike" data-route="privacy">Privacy Policy</button>. <span class="meta">Secure test-platform authentication. Access is by invitation.</span></div>
+<div class="auth-footer"><span class="meta">Secure test-platform authentication. Access is by invitation.</span></div>
 </div>`;
 if(embedded){
 app.replaceChildren(d);
 d.querySelector('.auth-modal-header').hidden=true;
 d.querySelector('.auth-sidebar').hidden=true;
 const footer=document.createElement('footer');footer.className='home-footer';
-footer.innerHTML='<img src="assets/project-check-banner-logo.png" alt="Project Check — Know before you build."><nav aria-label="Account footer"><button data-route="home">Home</button><button data-route="pricing">Pricing</button><button data-route="signin">Sign in</button></nav><span></span><div class="home-footer-legal"><div><button data-route="terms">Terms &amp; Conditions</button><button data-route="privacy">Privacy Policy</button></div><small>© 2026 Project Check</small></div>';
+footer.innerHTML='<img src="assets/project-check-banner-logo.png" alt="Project Check — Know before you build."><nav aria-label="Account footer"><button data-route="home">Home</button><button data-route="signin">Sign in</button></nav><span></span><div class="home-footer-legal"><div></div><small>© 2026 Project Check</small></div>';
 app.appendChild(footer);
 }else document.body.appendChild(d);
 // Customer registration stays visible on the secure test platform. The existing\n// Create a free account control opens the established registration panel.
@@ -654,7 +570,7 @@ state.users.push(u);state.user={id:u.id,email:u.email};save();closeAuthModal(d,p
 const li=(items)=>`<ul>${items.map(x=>`<li>${x}</li>`).join('')}</ul>`;
 const ol=(items)=>`<ol>${items.map(x=>`<li>${x}</li>`).join('')}</ol>`;
 const TERMS_SECTIONS=[
-[1,'About Project Check','<p>1.1 Project Check is an independent project-assessment, risk-identification and project-support service for industrial building projects.</p><p>1.2 Project Check is intended to help businesses identify potential project issues earlier, gather relevant information and evidence, understand what requires further investigation and make better-informed decisions before and during an industrial building project.</p><p>1.3 Depending on the service being used, Project Check may provide:</p>'+li(['project questions and assessments','document review and analysis','preliminary plans and elevations','risk identification','recommended actions','project evidence records','Stage 1, Stage 2 and Stage 3 outputs','project-support services','review of developing project information','supplier identification and comparison','and access to protected supplier-payment arrangements'])+'<p>1.4 Project Check does not replace appropriately qualified professional advisers, contractors or statutory authorities.</p>'],
+[1,'About Project Check','<p>1.1 Project Check is an independent project-assessment, risk-identification and project-support service for industrial building projects.</p><p>1.2 Project Check is intended to help businesses identify potential project issues earlier, gather relevant information and evidence, understand what requires further investigation and make better-informed decisions before and during an industrial building project.</p><p>1.3 Depending on the service being used, Project Check may provide:</p>'+li(['project questions and assessments','document review and analysis','preliminary plans and elevations','risk identification','recommended actions','project evidence records','Stage 1 and Stage 2 outputs','project-support services','review of developing project information','supplier identification and comparison','and access to protected supplier-payment arrangements'])+'<p>1.4 Project Check does not replace appropriately qualified professional advisers, contractors or statutory authorities.</p>'],
 [2,'Business users only','<p>2.1 Project Check is provided exclusively for business use.</p><p>2.2 By creating an account, purchasing a service or using Project Check, you confirm that you are acting wholly or mainly for purposes relating to your trade, business, craft or profession and not as a consumer.</p><p>2.3 Where you use Project Check for a company or other organisation, you confirm that you have authority to act on its behalf.</p>'],
 [3,'How Project Check assesses a project','<p>3.1 Project Check assesses available project information to identify potential risks, requirements, inconsistencies and matters requiring further investigation.</p><p>3.2 Project Check may use:</p>'+li(['information provided by you','documents uploaded by you','mapping and site information','third-party information',"Project Check's knowledge, rules and assessment systems",'automated analysis','and human review and relevant project experience'])+'<p>3.3 Project Check may identify matters that should subsequently be reviewed or determined by an appropriately qualified professional, contractor or statutory body.</p><p>3.4 Identification of a matter by Project Check is not itself formal professional certification, approval or statutory determination.</p><p>3.5 Depending on the project, the information Project Check reviews may relate to a number of different disciplines, including where applicable:</p>'+li(['planning','site constraints','building specification','supplier building information','structural information and structural reactions','foundations','civils','drainage','levels','surveys','ground/geotechnical information','utilities and services','Building Regulations and Building Control information','fire and access information','specialist layouts','quotations','and programme/project information'])+'<p>3.6 Project Check may identify a possible relationship, interface or dependency between different items of project information — for example, that structural information may be relevant to foundation information, or that a change in one project package may potentially affect another.</p><p>3.7 Identifying a possible interface or dependency is not, and must not be treated as, Project Check independently certifying structural adequacy, foundation adequacy, geotechnical suitability, drainage adequacy, Building Regulations compliance or any other professional design matter. Professional responsibility for those matters remains with the appropriately appointed party.</p><p>3.8 Reviewing information relating to a discipline listed in clause 3.5 does not make Project Check the appointed professional for that discipline.</p>'],
 [4,'What Project Check does not do','<p>4.1 Unless expressly appointed under a separate written agreement, Project Check does not:</p>'+li(['approve or certify a building, site or design','provide structural, civil or geotechnical engineering certification','provide planning permission','provide Building Regulations approval','undertake Building Control functions','certify structural calculations','certify foundations or slabs','undertake physical site investigations or surveys','undertake topographical, drainage, utilities or geotechnical surveys','provide professional fire-engineering certification','guarantee regulatory compliance','guarantee planning approval','guarantee supplier performance','guarantee project cost or programme','or guarantee that every possible project risk has been identified'])+'<p>4.2 Project Check identifies and flags matters requiring attention. Where professional investigation, design, certification or statutory determination is required, that work must be undertaken by the appropriate competent person.</p><p>4.3 The absence of a Project Check warning does not mean that no project risk exists.</p>'],
@@ -663,9 +579,9 @@ const TERMS_SECTIONS=[
 [7,'Uploaded documents','<p>7.1 Project Check may receive information uploaded or otherwise supplied by you, by people acting for you, or — where relevant to the project — by suppliers, prospective suppliers, appointed consultants, professional advisers, contractors or other authorised project participants.</p><p>7.2 Uploaded or supplied material may include:</p>'+li(['drawings','CAD or PDF exports','surveys','calculations','reports','specifications','quotations','photographs','site information','structural reactions','foundation information','civils information','drainage information','correspondence','approval or authority documents','specialist layouts','supplier documents','revised or superseding project evidence','and other relevant project information'])+'<p>7.3 You confirm that you have the right or authority to provide those documents to Project Check for the purposes of the project, including where a document originates from, or relates to, a third party such as a supplier, consultant or contractor.</p><p>7.4 Ownership of source documents remains with you or the applicable third-party owner.</p><p>7.5 You grant Project Check permission to store, process, analyse and use those documents to the extent reasonably necessary to provide the Project Check service.</p><p>7.6 Where you ask Project Check to obtain supplier quotations or progress supplier discussions, you authorise Project Check to share project information reasonably necessary for that purpose with the relevant potential suppliers.</p>'],
 [8,'Document status, provenance and evidence certainty','<p>8.1 The person who uploads a document is not necessarily the person who created or issued it (the <b>originator</b>), and uploading a document does not by itself establish that the uploader is its originator.</p><p>8.2 A document being uploaded to Project Check does not by itself establish that the document is approved, current, construction-ready, professionally certified or authority-approved.</p><p>8.3 Where reasonably possible, Project Check may seek to classify or assess uploaded information by reference to available evidence such as title blocks, document references, revision or status information, provenance, transmittals, authority decisions or professional confirmations. Project Check does not guarantee that this classification is complete or correct, and a customer should not rely on it in place of confirming document status directly with the relevant originator or authority.</p><p>8.4 Project Check may distinguish between information that is directly observed or stated in the evidence provided, information that is inferred from available evidence, and information that is confirmed by stronger documentary, professional or authority evidence.</p><p>8.5 Project Check does not represent an inference of this kind as professional certification, and a matter recorded as inferred or possible should not be treated as confirmed unless and until stronger evidence is obtained.</p>'],
 [9,'How Project Check may analyse uploaded information','<p>9.1 As part of providing the service, Project Check may, where technically possible and appropriate, process uploaded evidence to:</p>'+li(['extract text','identify document metadata','identify drawing or document references','identify revision or status information','extract structured project facts','identify geometry or dimensions where technically supported','compare information against the existing project record','identify inconsistencies','identify potential missing information','identify possible dependencies between items of project information','identify potentially superseded information','and support the identification of risks and recommended actions'])+'<p>9.2 Project Check does not claim that every drawing or document can be automatically interpreted, and does not claim that automated drawing or geometry analysis is available for every document type or format.</p><p>9.3 Project Check’s current data-intelligence capability is under active development. Project Check does not currently represent that it:</p>'+li(['trains artificial-intelligence models on customer project information','permanently retains extracted project intelligence for reuse across other customers’ projects','anonymises and commercially reuses all uploaded information','automatically deletes source files once information has been extracted from them','operates a complete, general-purpose dependency-identification engine across every project discipline','operates a complete drawing-geometry extraction engine for every drawing type','or continuously monitors every revision to every item of project information without limitation'])+'<p>9.4 If Project Check later introduces a capability that retains or reuses information or intelligence derived from customer, supplier or professional evidence beyond the individual project it was provided for, Project Check will review and document the legal, confidentiality and data-protection basis for doing so — including purpose, lawful basis, transparency, de-identification, retention, data minimisation, customer/supplier rights and security — before that capability is introduced, and will update these Terms and the Privacy Notice accordingly where required.</p>'],
-[10,'Stage 1, Stage 2, Stage 3 and Project Support','<p>10.1 Project Check may support an evolving project record for an industrial building project across Stage 1 (early project identification and initial assessment), Stage 2 (deeper investigation of project information and evidence), Stage 3 (solutions, resolution and paid Project Check services where applicable) and Project Support (continued support as the live project develops).</p><p>10.2 The precise functionality, questions and outputs available within each stage may develop and be reviewed as Project Check is improved. No particular question, question set or sequence within a stage is fixed or final, and Project Check may add, remove, reorder or reword questions or workflow steps from time to time.</p><p>10.3 Project Check may progressively assess and maintain project information as the project develops, rather than treating each stage as a one-off, disconnected exercise.</p><p>10.4 Any paid service will be identified before you incur a charge.</p>'],
-[11,'Stage 3 Project Check Report and Assessment','<p>11.1 Stage 3 is a paid Project Check report and assessment service.</p><p>11.2 Before purchasing Stage 3, you may already have:</p>'+li(['supplied project information','answered Project Check questions','uploaded documents','and received earlier Project Check findings or outputs'])+'<p>11.3 Stage 3 provides further processing, assessment, analysis and generation of the applicable report and associated service.</p><p>11.4 Current intended Stage 3 service options include services priced at <b>£99 and £249</b>.</p><p>11.5 The precise scope and price of the Stage 3 service selected will be displayed before purchase.</p><p>11.6 The Stage 3 fee relates to Project Check’s report, assessment and associated service. It is not payment for a supplier introduction or building contract.</p>'],
-[12,'Stage 3 payment and refunds','<p>12.1 Payment is required before substantive Stage 3 processing and report generation begins.</p><p>12.2 Once substantive Stage 3 assessment, processing or report generation has commenced, the Stage 3 fee is non-refundable.</p><p>12.3 This reflects the fact that Project Check has commenced providing the purchased service.</p><p>12.4 If Project Check is unable to provide the purchased Stage 3 service and the relevant substantive service has not been delivered, Project Check will provide an appropriate refund.</p><p>12.5 The Stage 3 fee is separate from any later supplier quotation, supplier appointment or building contract.</p><p>12.6 The Stage 3 fee is not refundable merely because:</p>'+li(['you choose not to proceed with a building','no supplier is appointed','you decide not to proceed with a supplier presented by Project Check','you appoint another supplier','or the project subsequently changes'])],
+[10,'Stage 1 and Stage 2','<p>10.1 Project Check may support an evolving project record for an industrial building project across Stage 1 (free – shows the problems) and Stage 2 (paid – shows the solutions).</p><p>10.2 The precise functionality, questions and outputs available within each stage may develop and be reviewed as Project Check is improved. No particular question, question set or sequence within a stage is fixed or final, and Project Check may add, remove, reorder or reword questions or workflow steps from time to time.</p><p>10.3 Project Check may progressively assess and maintain project information as the project develops, rather than treating each stage as a one-off, disconnected exercise.</p><p>10.4 Any paid service will be identified before you incur a charge.</p>'],
+[11,'Stage 2 Project Check Report and Assessment','<p>11.1 Stage 2 is a paid Project Check report and assessment service.</p><p>11.2 Before purchasing Stage 2, you may already have:</p>'+li(['supplied project information','answered Project Check questions','uploaded documents','and received earlier Project Check findings or outputs'])+'<p>11.3 Stage 2 provides further processing, assessment, analysis and generation of the applicable report and associated service.</p><p>11.4 Stage 2 is the paid stage of Project Check.</p><p>11.5 The precise scope and price of the Stage 2 service selected will be displayed before purchase.</p><p>11.6 The Stage 2 fee relates to Project Check’s report, assessment and associated service. It is not payment for a supplier introduction or building contract.</p>'],
+[12,'Stage 2 payment and refunds','<p>12.1 Payment is required before substantive Stage 2 processing and report generation begins.</p><p>12.2 Once substantive Stage 2 assessment, processing or report generation has commenced, the Stage 2 fee is non-refundable.</p><p>12.3 This reflects the fact that Project Check has commenced providing the purchased service.</p><p>12.4 If Project Check is unable to provide the purchased Stage 2 service and the relevant substantive service has not been delivered, Project Check will provide an appropriate refund.</p><p>12.5 The Stage 2 fee is separate from any later supplier quotation, supplier appointment or building contract.</p><p>12.6 The Stage 2 fee is not refundable merely because:</p>'+li(['you choose not to proceed with a building','no supplier is appointed','you decide not to proceed with a supplier presented by Project Check','you appoint another supplier','or the project subsequently changes'])],
 [13,'Supplier identification','<p>13.1 Where appropriate, Project Check may identify potential industrial building suppliers based on the project information available.</p><p>13.2 Project Check will normally seek to present <b>three suitable supplier options</b>.</p><p>13.3 There may be circumstances where fewer than three suitable options are reasonably available.</p><p>13.4 The final decision whether to progress with or appoint any supplier belongs to you.</p><p>13.5 Project Check does not guarantee that a supplier presented will:</p>'+li(['be the cheapest supplier available','accept the project','maintain an initial price indefinitely','meet every requirement without further development','obtain necessary approvals','remain financially solvent','or perform its contract without delay, defect or dispute'])+'<p>13.6 You remain entitled to undertake whatever commercial, financial, technical and legal due diligence you consider appropriate before appointing a supplier.</p>'],
 [14,'Supplier relationships','<p>14.1 Project Check works with independent industrial building suppliers and may have separate commercial arrangements with suppliers participating in the Project Check supplier network.</p><p>14.2 Any supplier quotation presented to you will show the price offered for your project before you decide whether to proceed.</p><p>14.3 Project Check assesses potential suppliers against the requirements and information available for your project. A separate commercial relationship with a supplier does not alter Project Check’s project findings or the supplier’s responsibility for its own quotation and contract.</p><p>14.4 You remain free to decide whether to proceed with any supplier presented by Project Check.</p>'],
 [15,'Supplier quotations and contracts','<p>15.1 Each supplier is responsible for its own quotation and contractual terms.</p><p>15.2 Supplier terms may cover matters including:</p>'+li(['scope','specification','exclusions','price','payment milestones','programme','detailed design','manufacturing','procurement','delivery','installation','warranties','snagging','and completion'])+'<p>15.3 Project Check does not impose a universal supplier payment schedule.</p><p>15.4 Payment arrangements will vary between suppliers and projects.</p><p>15.5 You must review and accept the selected supplier’s quotation and contract before proceeding.</p><p>15.6 Unless expressly agreed otherwise, the contract for the design, manufacture, supply and/or installation of the building will be between:</p><p><b>you and the selected supplier.</b></p><p>15.7 Project Check does not become the building supplier, manufacturer or contractor merely because it identified or introduced that supplier.</p>'],
@@ -675,7 +591,7 @@ const TERMS_SECTIONS=[
 [19,'Protected Payment Service','<p>19.1 For certain supplier appointments, Project Check intends to offer a protected payment arrangement through an appropriately authorised, regulated or otherwise legally suitable third-party payment provider.</p><p>19.2 The exact form of the payment arrangement will depend upon the provider selected and the transaction structure.</p><p>19.3 Project Check will not describe a payment arrangement as regulated escrow unless that description is legally appropriate for the service being provided.</p><p>19.4 Before making the relevant payment, you will be told:</p>'+li(['the identity of the payment provider','the amount to be paid','any applicable payment-provider charge','the applicable release process','and any separate terms you must accept'])+'<p>19.5 Supplier-project funds handled through the payment provider are not treated as ordinary Project Check trading receipts merely because Project Check facilitates the transaction.</p>'],
 [20,'First supplier payment','<p>20.1 Where the Protected Payment Service applies, the first payment required under the selected supplier’s contract will ordinarily be made through the applicable payment arrangement.</p><p>20.2 The amount of the first payment is determined by the supplier’s contract and is not fixed by Project Check.</p><p>20.3 Funds will be held, safeguarded, processed or released in accordance with the terms of the payment provider and the applicable supplier transaction.</p><p>20.4 Project Check does not intend routinely to receive the whole supplier payment into its ordinary operating account and then forward the supplier’s money itself.</p><p>20.5 Different arrangements may apply to unusual or larger projects where expressly documented.</p>'],
 [21,'Five-Day Supplier Confirmation Period','<p>21.1 Where the Protected Payment Service applies, the first supplier payment will ordinarily be subject to a <b>5-Day Supplier Confirmation Period</b>.</p><p>21.2 The purpose of this period is to allow you and the selected supplier to communicate directly before the protected supplier payment is released.</p><p>21.3 During this period:</p>'+li(['you may speak directly with the supplier','the supplier may clarify its quotation, scope and working arrangements','Project Check may support those discussions where appropriate','protected supplier funds remain unreleased','and the supplier must not commence chargeable design, procurement or manufacturing work in reliance upon those unreleased funds'])+'<p>21.4 Direct communication between you and the selected supplier does not alter the contractual or commercial arrangements governing the Project Check introduction or supplier transaction.</p><p>21.5 The 5-Day Supplier Confirmation Period is a contractual business-to-business process and is not a statutory consumer cooling-off period.</p><p>21.6 Once you confirm that you wish to proceed and the applicable payment conditions have been satisfied, the protected supplier payment may be released.</p>'],
-[22,'Deciding not to proceed during the Supplier Confirmation Period','<p>22.1 If you decide not to proceed with the selected supplier during the applicable Supplier Confirmation Period, unreleased supplier-project funds will be dealt with in accordance with the applicable supplier and payment-provider terms.</p><p>22.2 Any unavoidable non-refundable third-party transaction cost will be disclosed before the relevant payment is made.</p><p>22.3 The separate Stage 3 Project Check fee remains governed by clause 12.</p><p>22.4 Where appropriate, Project Check may continue helping you consider another supplier option.</p>'],
+[22,'Deciding not to proceed during the Supplier Confirmation Period','<p>22.1 If you decide not to proceed with the selected supplier during the applicable Supplier Confirmation Period, unreleased supplier-project funds will be dealt with in accordance with the applicable supplier and payment-provider terms.</p><p>22.2 Any unavoidable non-refundable third-party transaction cost will be disclosed before the relevant payment is made.</p><p>22.3 The separate Stage 2 Project Check fee remains governed by clause 12.</p><p>22.4 Where appropriate, Project Check may continue helping you consider another supplier option.</p>'],
 [23,'Subsequent supplier payments','<p>23.1 After the first payment process has completed, subsequent supplier payments are governed by the selected supplier’s contract.</p><p>23.2 Project Check does not require all future project payments to pass through Project Check.</p><p>23.3 Depending on the project, later payments may be made directly to the supplier or through another agreed mechanism.</p><p>23.4 The supplier remains responsible for satisfying the contractual requirements associated with its payment milestones.</p>'],
 [24,'Project Check after supplier appointment','<p>24.1 Project Check’s involvement does not necessarily end when a supplier is appointed.</p><p>24.2 You may continue using Project Check as the project develops and additional information becomes available.</p><p>24.3 This may include:</p>'+li(['supplier drawings','elevations','structural reactions','engineering information','ground-investigation reports','topographical information','drainage information','utilities information','civils information','foundation information','slab information','revised project information','site discoveries','and other developing project evidence'])+'<p>24.4 Depending on the service available, Project Check may compare new information against the existing project record and identify:</p>'+li(['changed assumptions','inconsistencies','new risks','missing information','and matters requiring further professional or supplier action'])+'<p>24.5 As Project Support, Project Check may help you: maintain the project evidence record; identify new or revised information; identify apparent inconsistencies; understand outstanding actions or information; coordinate relevant project interfaces; and identify matters requiring supplier or professional attention.</p><p>24.6 Project Support does not automatically make Project Check your project manager, contract administrator, structural engineer, civil engineer, architect, Quantity Surveyor, Principal Designer, Principal Contractor or Building Control body, unless Project Check is separately appointed to that role under a legally appropriate written agreement.</p><p>24.7 Continued Project Check involvement does not make Project Check responsible for the selected supplier’s contractual obligations.</p>'],
 [25,'Quantity Surveyors, project managers and professional advisers','<p>25.1 You may appoint your own Quantity Surveyor, project manager, engineer, architect or other professional adviser.</p><p>25.2 Project Check is intended to complement rather than replace properly appointed professionals.</p><p>25.3 Where a Quantity Surveyor, project manager or other professional is appointed, that person may take responsibility under their own appointment for matters such as:</p>'+li(['commercial management','payment assessment','programme management','package coordination','and contract administration'])+'<p>25.4 Project Check does not become the project’s Quantity Surveyor, contract administrator, engineer or project manager merely because it continues to review information relating to the project.</p><p>25.5 Project Check may work alongside your professional team and may receive or review information provided by them where authorised.</p>'],
@@ -700,7 +616,7 @@ const TERMS_SECTIONS=[
 [44,'Third-party rights','<p>44.1 Unless expressly stated otherwise, a person who is not a party to the relevant Project Check agreement has no right to enforce these Terms under the Contracts (Rights of Third Parties) Act 1999.</p>'],
 [45,'Governing law and jurisdiction','<p>45.1 These Terms are intended to be governed by the laws of England and Wales.</p><p>45.2 Subject to confirmation of the final Project Check legal entity and formal legal review, the courts of England and Wales will have exclusive jurisdiction.</p>'],
 [46,'Project Check legal details','<p>The following information must be completed before production launch:</p><p><b>Legal entity:</b> [TO BE CONFIRMED]<br><b>Trading name:</b> Project Check<br><b>Company number:</b> [TO BE CONFIRMED]<br><b>Registered office:</b> [TO BE CONFIRMED]<br><b>Country of registration:</b> [TO BE CONFIRMED]<br><b>VAT number:</b> [IF APPLICABLE]<br><b>Contact email:</b> [TO BE CONFIRMED]<br><b>Telephone:</b> [TO BE CONFIRMED]</p>'],
-[47,'Required work before production launch','<p>Before these Terms are issued as final production Terms, Project Check must confirm:</p>'+ol(["Project Check’s operating legal entity",'VAT registration and accounting treatment','final Stage 3 £99/£249 service definitions','the separate Project Check Supplier Agreement','supplier introduction and non-circumvention protection','supplier commercial arrangements','the protected-payment provider and legal payment structure','FCA/payment-services treatment','payment-provider charges','any Project Check transaction-administration charge','treatment of unusual or QS-managed larger projects','Project Check insurance',"Project Check’s liability cap",'the final Privacy Notice','data-retention and erasure procedures','the legal/privacy review required before any future cross-project data-intelligence or evidence-reuse capability (see clause 9.4) is introduced','and independent review and approval by an appropriately qualified UK solicitor'])+'<p><b>END OF DRAFT</b></p>']
+[47,'Required work before production launch','<p>Before these Terms are issued as final production Terms, Project Check must confirm:</p>'+ol(["Project Check’s operating legal entity",'VAT registration and accounting treatment','final Stage 2 service definition','the separate Project Check Supplier Agreement','supplier introduction and non-circumvention protection','supplier commercial arrangements','the protected-payment provider and legal payment structure','FCA/payment-services treatment','payment-provider charges','any Project Check transaction-administration charge','treatment of unusual or QS-managed larger projects','Project Check insurance',"Project Check’s liability cap",'the final Privacy Notice','data-retention and erasure procedures','the legal/privacy review required before any future cross-project data-intelligence or evidence-reuse capability (see clause 9.4) is introduced','and independent review and approval by an appropriately qualified UK solicitor'])+'<p><b>END OF DRAFT</b></p>']
 ];
 function termsPage(){
 app.innerHTML=`<div class="container"><div class="pagehead"><div><div class="eyebrow">Legal</div><h1>Project Check — Business Terms &amp; Conditions</h1><p class="meta">Version: Draft 5 · Date: 27 August 2026</p></div></div>
@@ -727,7 +643,7 @@ const PRIVACY_SECTIONS=[
 [4,'How this prototype/review build stores information','<p><b>The current Project Check prototype/review build does not use the intended production account, database or file-storage architecture.</b></p><p>Account details, project answers and uploaded-file metadata are currently stored only within your own browser’s local storage on the device you use.</p><p>They are not currently stored in a Project Check production server or cloud database.</p><p>The production Project Check service will move authentication, account storage, project data and file handling to appropriate server-side systems before public launch.</p><p>The production infrastructure, processors, security controls, retention arrangements and international data-transfer position must be confirmed and reflected in this Privacy Policy before launch.</p><p>You should not treat this prototype/review build as production-grade data storage or security.</p>'],
 [5,'Uploaded documents may contain other people’s personal data','<p>Business project files that you or others upload to Project Check may contain names, contact information or other personal data relating to people such as suppliers, consultants, engineers, employees, contractors or other project contacts.</p><p>If you upload or authorise the upload of a document that contains another person’s personal data, you confirm that you have an appropriate basis and authority to provide that information to Project Check for the purposes of the project.</p><p>Where Project Check becomes aware that uploaded material contains personal data relating to a third party, that data is handled in accordance with this Privacy Policy in the same way as other personal data described here.</p>'],
 [6,'How uploaded information may be processed','<p>Where technically possible and appropriate, uploaded information may be read, parsed, analysed, classified, structured and compared in order to:</p>'+li(['identify project facts','identify revisions or status information','identify inconsistencies or dependencies','and generate Project Check outputs such as reports, findings and recommended actions'])+'<p>Project Check does not claim that every uploaded drawing or document is automatically understood, and processing capability varies by document type and format. Further detail on how Project Check may analyse project information is set out in the Project Check Terms &amp; Conditions.</p>'],
-[7,'Why we use your information','<p>We may use your information to:</p>'+li(['create and operate your Project Check account','provide the Stage 1 assessment','provide the Stage 2 deeper risk assessment and associated project outputs','provide Stage 3 Solutions where requested or purchased','provide Project Support as the project develops','generate Project Check reports, drawings and other project outputs','respond to information, evidence or documents you submit','review project evidence you or others provide','provide support that you request','administer purchases of Project Check services','maintain appropriate transaction and customer-service records','identify potential project issues, risks, information gaps and possible next steps','help identify appropriate suppliers where this forms part of a service you request','facilitate supplier introductions or quotation requests where you ask us to do so','support supplier, customer and project interfaces where relevant','progress your project following your instructions','communicate with you about your account or project','protect the security and integrity of Project Check and prevent fraud','deal with complaints, disputes or legal claims','comply with legal and regulatory requirements','improve and administer the service where this is lawful and appropriately governed','and send marketing communications where we are legally permitted to do so'])+'<p>Using Project Check does not make Project Check the supplier or contractor for your building project merely because we assess your project, identify possible solutions, introduce suppliers or assist with quotation requests.</p><p>Where you later enter into a contract with a supplier, that supplier’s quotation, contract and terms govern the goods, works or services that supplier provides.</p>'],
+[7,'Why we use your information','<p>We may use your information to:</p>'+li(['create and operate your Project Check account','provide the Stage 1 assessment','provide the Stage 2 solutions report and associated project outputs','generate Project Check reports, drawings and other project outputs','respond to information, evidence or documents you submit','review project evidence you or others provide','provide support that you request','administer purchases of Project Check services','maintain appropriate transaction and customer-service records','identify potential project issues, risks, information gaps and possible next steps','help identify appropriate suppliers where this forms part of a service you request','facilitate supplier introductions or quotation requests where you ask us to do so','support supplier, customer and project interfaces where relevant','progress your project following your instructions','communicate with you about your account or project','protect the security and integrity of Project Check and prevent fraud','deal with complaints, disputes or legal claims','comply with legal and regulatory requirements','improve and administer the service where this is lawful and appropriately governed','and send marketing communications where we are legally permitted to do so'])+'<p>Using Project Check does not make Project Check the supplier or contractor for your building project merely because we assess your project, identify possible solutions, introduce suppliers or assist with quotation requests.</p><p>Where you later enter into a contract with a supplier, that supplier’s quotation, contract and terms govern the goods, works or services that supplier provides.</p>'],
 [8,'Our lawful bases for using personal information','<p>The lawful basis will depend on why we are using your information.</p><p>Our intended production bases may include:</p><p><b>Contract</b> — where processing is necessary to provide a Project Check service you have requested or purchased, operate your account, respond to your service request or take steps at your request before entering into a contract.</p><p><b>Legitimate interests</b> — where reasonably necessary for legitimate business purposes such as administering Project Check, maintaining appropriate project and transaction records, improving the service, protecting the platform, preventing misuse and managing or defending legal claims, provided those interests are not overridden by your rights and interests.</p><p><b>Legal obligation</b> — where we need to retain, use or disclose information to comply with applicable law, regulation, taxation, accounting or other legal obligations.</p><p><b>Consent</b> — where we specifically ask for consent and consent is the appropriate lawful basis, including certain marketing activities.</p><p>The exact lawful-basis mapping must be reviewed against the final production system and customer journey before public launch.</p>'],
 [9,'Service and project communications','<p>We may contact you where necessary in connection with:</p>'+li(['your Project Check account','an assessment you have started or completed','information or evidence you have submitted','a Project Check service you have requested or purchased','support you have requested','a supplier introduction or quotation process you have asked us to progress','security or important service information','or your existing Project Check project'])+'<p>These communications are service or project communications and are separate from optional marketing communications.</p>'],
 [10,'Marketing communications','<p>Marketing is separate from accepting the Project Check Terms &amp; Conditions and separate from the communications required to provide the Project Check service.</p><p>Where consent is required for marketing, we will ask for it separately. Marketing consent will not be a condition of using Project Check.</p><p>You can withdraw marketing consent or unsubscribe from marketing communications at any time.</p><p>Where applicable law permits marketing without consent in specific circumstances, Project Check will still provide the required opportunity to opt out.</p><p>Project Check must comply with applicable UK data-protection and electronic-marketing requirements when operating the production service.</p>'],
@@ -773,7 +689,7 @@ const PROJECT_ROOF_PITCH_MAX=22;
 const PROJECT_ROOF_PITCH_DEFAULT=10;
 const BUILDING_USE_OPTIONS=["Warehousing and general storage","Distribution and logistics","Manufacturing or factory use","Workshop or vehicle repair","Vehicle or plant wash facility","Timber or materials storage","Food production or chilled storage","Spray room or process enclosure","Indoor sports or leisure use","Other industrial or commercial use"];
 const BUILDING_TYPE_OPTIONS=["Free-standing building","Extension to an existing building","Building linked to existing premises","Loading or dispatch canopy","Covered loading bay","Service-yard canopy","Enclosed workshop or process building","Temporary or demountable building","Other building type"];
-function projectFacts(p){if(!p.facts||typeof p.facts!=="object")p.facts={};return p.facts}
+function projectFacts(p){if(!p.facts||typeof p.facts!=="object")p.facts={};if(p.facts.regsNation==="Northern Ireland")delete p.facts.regsNation;return p.facts}
 function extractProjectPostcode(value){
  const match=String(value||"").toUpperCase().match(/\b([A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2})\b/);
  return match?match[1].replace(/\s+/g," ").replace(/^(.*?)(\d[A-Z]{2})$/,(_,outward,inward)=>outward.trim()+" "+inward):""
@@ -803,17 +719,17 @@ app.innerHTML=`<div class="container customer-area workspace-dashboard" data-cus
 ${p?`<h2 class="dashboard-active-name">${esc(p.name)}</h2><div class="stage-progress" aria-label="Stage 1 progress: ${progress(p)} percent"><span style="width:${progress(p)}%"></span></div><div class="workspace-progress-label"><span>Stage 1 progress · ${progress(p)}%</span><strong>${status(p)}</strong></div><ol class="dashboard-journey" aria-label="Your project journey">${["Check","Understand","Decide","Move forward"].map((name,i)=>`<li ${i===(p.stage2Complete?2:p.stage1Complete?1:0)?'aria-current="step"':""}><span>${i+1}</span>${name}</li>`).join("")}</ol>`:`<p class="meta">Your customer workspace is ready. Create your first project when you have its name, building use and site location.</p><button class="btn secondary" onclick="newProject()">Create project</button>`}</section>
 ${p?`<section class="card dashboard-next"><div class="eyebrow">Your next step</div><h2>Continue your project check</h2><p>Review your saved project details, edit anything that has changed and upload drawings you already have. Then continue when you are ready.</p><button class="btn green" onclick="route('stage1Workspace','${p.id}')">Open project overview</button></section>`:""}
 <section class="workspace-section"><div class="eyebrow">Your projects</div><div class="project-list">${ps.length?ps.map(function(item){return `<article class="project-summary card"><div><h2>${esc(item.name||"Untitled project")}</h2><p>${esc(item.address||"Site address not added")}</p><p class="meta">${lastSaved(item)}</p><p class="project-file-count">${(item.evidence||[]).length} project document(s)</p></div><div class="project-summary-actions"><strong>${status(item)} · Stage 1: ${progress(item)}%</strong></div></article>`}).join(""):`<article class="project-summary project-summary-empty card"><div><h2>No projects yet</h2><p>Your first project will appear here after you create it.</p></div><button class="btn green" onclick="newProject()">Create project</button></article>`}</div></section>
-<details class="card dashboard-guide"><summary>Stage 1 guide <span>View guide</span></summary><ol><li><strong>Check your project details.</strong> Open your Project Overview and use Edit to update your building information.</li><li><strong>Add any drawings you have.</strong> Upload drawings or supporting information from Project Overview. You can add them later if they are not ready.</li><li><strong>Continue Stage 1.</strong> Review your Project Summary, then use Site Layout to position the building and mark the nearby boundaries that matter.</li></ol></details></div><footer class="home-footer"><img src="assets/project-check-banner-logo.png" alt="Project Check — Know before you build."><nav aria-label="Account footer"><button data-route="home">Home</button><button data-route="pricing">Pricing</button><button data-route="signin">Sign in</button></nav><span></span><div class="home-footer-legal"><div><button data-route="terms">Terms &amp; Conditions</button><button data-route="privacy">Privacy Policy</button></div><small>© 2026 Project Check</small></div></footer>`;
+<details class="card dashboard-guide"><summary>Stage 1 guide <span>View guide</span></summary><ol><li><strong>Check your project details.</strong> Open your Project Overview and use Edit to update your building information.</li><li><strong>Add any drawings you have.</strong> Upload drawings or supporting information from Project Overview. You can add them later if they are not ready.</li><li><strong>Continue Stage 1.</strong> Review your Project Summary, then use Site Layout to position the building and mark the nearby boundaries that matter.</li></ol></details></div><footer class="home-footer"><img src="assets/project-check-banner-logo.png" alt="Project Check — Know before you build."><nav aria-label="Account footer"><button data-route="home">Home</button><button data-route="signin">Sign in</button></nav><span></span><div class="home-footer-legal"><div></div><small>© 2026 Project Check</small></div></footer>`;
 }
 function projectBriefModal(existingId,openUpload,embedded=false){
 if(!requireUser())return;if(existingId)return route('projectDocuments',existingId);const account=accountRecord()||{};let d=document.createElement('div');d.className=embedded?'create-project-screen':'modal';
 d.innerHTML=`<div class="card project-flow-modal"><div class="project-flow-head"><img src="assets/project-check-banner-logo.png" alt="Project Check — Know before you build."><button class="auth-close" id="npClose" aria-label="Close">&times;</button></div><div class="project-flow-intro"><div class="eyebrow">New project</div><h2>Start with the project</h2><p class="meta">Add the main facts first. Drawings can be added from Project Documents after the project is created.</p></div>
 <div id="briefFields"><div class="field"><label for="npName">Project name</label><input id="npName" placeholder="Enter your project name"></div><div class="field"><label for="npRole">Your role in this project</label><input id="npRole" placeholder="e.g. Managing Director, Facilities Manager or Project Manager"><p class="field-note">Use the role you have on this project. You can change it later.</p></div><div class="field"><label for="npUse">Building use</label><select id="npUse"><option value="">Select building use</option><option>Warehousing and general storage</option><option>Distribution and logistics</option><option>Manufacturing or factory use</option><option>Workshop or vehicle repair</option><option>Vehicle or plant wash facility</option><option>Timber or materials storage</option><option>Food production or chilled storage</option><option>Spray room or process enclosure</option><option>Indoor sports or leisure use</option><option>Other industrial or commercial use</option></select></div><div class="field"><label for="npType">Building type</label><select id="npType"><option value="">Select building type</option><option>Free-standing building</option><option>Extension to an existing building</option><option>Building linked to existing premises</option><option>Loading or dispatch canopy</option><option>Covered loading bay</option><option>Service-yard canopy</option><option>Enclosed workshop or process building</option><option>Temporary or demountable building</option><option>Other building type</option></select></div><fieldset class="field project-address-choice"><legend>Is the proposed building at your company address?</legend><label><input type="radio" name="npSiteSame" value="yes"> Yes — use company address</label><label><input type="radio" name="npSiteSame" value="no"> No — enter a different site address</label><p class="field-note">Company address: ${esc(account.companyAddress||"Not added")}</p></fieldset><div class="field" id="npAddressField" hidden><label for="npAddress">Proposed building site address</label><input id="npAddress" autocomplete="street-address" placeholder="Enter the full proposed site address including postcode"><p class="field-note">This address is saved to this project and used for Site Layout.</p></div><div class="dimensions-grid"><div class="field"><label for="npLength">Length (m)</label><input id="npLength" type="number" min="0"></div><div class="field"><label for="npWidth">Width (m)</label><input id="npWidth" type="number" min="0"></div><div class="field"><label for="npHeight">Clear height needed (m)</label><input id="npHeight" type="number" min="0"></div></div></div>
-<div class="actions"><button class="btn secondary" id="npCancel">Cancel</button><button class="btn green" id="npCreate">Create project</button></div></div>`;if(embedded){app.replaceChildren(d);const footer=document.createElement('footer');footer.className='home-footer';footer.innerHTML="<img src=\"assets/project-check-banner-logo.png\" alt=\"Project Check — Know before you build.\"><nav aria-label=\"Account footer\"><button data-route=\"home\">Home</button><button data-route=\"pricing\">Pricing</button><button data-route=\"signin\">Sign in</button></nav><span></span><div class=\"home-footer-legal\"><div><button data-route=\"terms\">Terms &amp; Conditions</button><button data-route=\"privacy\">Privacy Policy</button></div><small>© 2026 Project Check</small></div>";app.appendChild(footer)}else document.body.appendChild(d);
+<div class="actions"><button class="btn secondary" id="npCancel">Cancel</button><button class="btn green" id="npCreate">Create project</button></div></div>`;if(embedded){app.replaceChildren(d);const footer=document.createElement('footer');footer.className='home-footer';footer.innerHTML="<img src=\"assets/project-check-banner-logo.png\" alt=\"Project Check — Know before you build.\"><nav aria-label=\"Account footer\"><button data-route=\"home\">Home</button><button data-route=\"signin\">Sign in</button></nav><span></span><div class=\"home-footer-legal\"><div></div><small>© 2026 Project Check</small></div>";app.appendChild(footer)}else document.body.appendChild(d);
 const close=()=>{if(embedded)route('dashboard');else d.remove()};d.querySelector('#npClose').onclick=close;d.querySelector('#npCancel').onclick=close;
 const updateSiteAddressChoice=()=>{const choice=d.querySelector('input[name="npSiteSame"]:checked')?.value;d.querySelector('#npAddressField').hidden=choice!=="no"};
 d.querySelectorAll('input[name="npSiteSame"]').forEach(input=>input.onchange=updateSiteAddressChoice);
-d.querySelector('#npCreate').onclick=()=>{let name=d.querySelector('#npName').value.trim(),role=d.querySelector('#npRole').value.trim(),use=d.querySelector('#npUse').value,type=d.querySelector('#npType').value,siteChoice=d.querySelector('input[name="npSiteSame"]:checked')?.value;if(!name||!role||!use||!type||!siteChoice)return alert('Enter the project name, your role in this project, building use, building type and whether the site is your company address.');let address=siteChoice==='yes'?String(account.companyAddress||'').trim():d.querySelector('#npAddress').value.trim();if(siteChoice==='yes'&&!address)return alert('Your company address is not yet added. Choose "No" and enter the proposed building site address, or update your Profile first.');if(!address)return alert('Enter the proposed building site address.');let postcode=extractProjectPostcode(address);if(['npLength','npWidth','npHeight'].some(id=>{const v=d.querySelector('#'+id).value;return v!==''&&(!Number.isFinite(Number(v))||Number(v)<=0)}))return alert('Enter positive building dimensions, or leave unknown dimensions blank.');let p={id:crypto.randomUUID(),owner:state.user.id,name,address,postcode,status:'Active',stage:'Stage 1',created:now(),facts:{role,buildingUse:use,buildingType:type,length:d.querySelector('#npLength').value,width:d.querySelector('#npWidth').value,height:d.querySelector('#npHeight').value,roofPitch:String(PROJECT_ROOF_PITCH_DEFAULT)},stage2:{},evidence:[],quotes:[],supplierRequest:null,risks1:[],actions1:[],risks2:[],actions2:[],history:[{at:now(),text:'Project created'}],downloads:{s1:0,s2:0},stage1Complete:false,stage2Complete:false,plan:null};state.projects.push(p);save();close();route('stage1Workspace',p.id)};
+d.querySelector('#npCreate').onclick=()=>{let name=d.querySelector('#npName').value.trim(),role=d.querySelector('#npRole').value.trim(),use=d.querySelector('#npUse').value,type=d.querySelector('#npType').value,siteChoice=d.querySelector('input[name="npSiteSame"]:checked')?.value;if(!name||!role||!use||!type||!siteChoice)return alert('Enter the project name, your role in this project, building use, building type and whether the site is your company address.');let address=siteChoice==='yes'?String(account.companyAddress||'').trim():d.querySelector('#npAddress').value.trim();if(siteChoice==='yes'&&!address)return alert('Your company address is not yet added. Choose "No" and enter the proposed building site address, or update your Profile first.');if(!address)return alert('Enter the proposed building site address.');let postcode=extractProjectPostcode(address);if(['npLength','npWidth','npHeight'].some(id=>{const v=d.querySelector('#'+id).value;return v!==''&&(!Number.isFinite(Number(v))||Number(v)<=0)}))return alert('Enter positive building dimensions, or leave unknown dimensions blank.');let p={id:crypto.randomUUID(),owner:state.user.id,name,address,postcode,status:'Active',stage:'Stage 1',created:now(),facts:{role,buildingUse:use,buildingType:type,length:d.querySelector('#npLength').value,width:d.querySelector('#npWidth').value,height:d.querySelector('#npHeight').value,roofPitch:String(PROJECT_ROOF_PITCH_DEFAULT)},stage2:{},evidence:[],quotes:[],supplierRequest:null,risks1:[],actions1:[],risks2:[],actions2:[],history:[{at:now(),text:'Project created'}],stage1Complete:false,stage2Complete:false,plan:null};state.projects.push(p);save();close();route('stage1Workspace',p.id)};
 }
 function newProject(){route('createProject')}
 function uploadDrawings(id){route('projectDocuments',id)}
@@ -927,9 +843,8 @@ app.innerHTML=`<div class="container project-page"><div class="pagehead"><div cl
 <div class="card"><span class="pill warn">Suppliers</span><h3>Quotations</h3><p>${p.quotes.length} quotation(s) recorded. ${p.supplierRequest?"Three-supplier request recorded.":"Request three suitable quotations after Stage 2."}</p><button class="btn" ${p.stage2Complete?"":"disabled"} onclick="route('quotes','${p.id}')">Supplier quotations</button></div>
 </div>
 <div class="grid3" style="margin-top:18px">
-<div class="card"><h3>Reports</h3><p>Stage 1: ${p.downloads.s1}<br>Stage 2: ${p.downloads.s2}</p><div class="actions"><button class="btn" ${p.stage1Complete?"":"disabled"} onclick="downloadReport('${p.id}','s1')">Stage 1 PDF</button><button class="btn" ${p.stage2Complete?"":"disabled"} onclick="downloadReport('${p.id}','s2')">Stage 2 PDF</button></div></div>
+<div class="card"><h3>Reports</h3><div class="actions"><button class="btn" ${p.stage1Complete?"":"disabled"} onclick="downloadReport('${p.id}','s1')">Stage 1 PDF</button><button class="btn" ${p.stage2Complete?"":"disabled"} onclick="downloadReport('${p.id}','s2')">Stage 2 PDF</button></div></div>
 <div class="card"><h3>Project Documents</h3><p class="meta">${(p.evidence||[]).length} document(s) recorded. Upload drawings, check revisions and keep the project document register together.</p><button class="btn secondary" onclick="route('projectDocuments','${p.id}')">Open Project Documents</button></div>
-<div class="card"><h3>Paid support</h3><p>${p.plan?`Selected: ${esc(p.plan)}`:"No paid support selected."}</p><div class="actions"><button class="btn" data-route="pricing">View £99 / £249</button><button class="btn secondary" onclick="requestHumanSupport('${p.id}')">Request human support</button>${p.plan?`<button class="btn green" onclick="route('stage3','${esc(id)}')">View Stage 3 actions</button>`:""}</div></div>
 </div>
 <div class="card" style="margin-top:20px"><h3>Project activity</h3><table><thead><tr><th>Date</th><th>Activity</th></tr></thead><tbody>${[...p.history].reverse().map(h=>`<tr><td>${new Date(h.at).toLocaleString()}</td><td>${esc(h.text)}</td></tr>`).join("")}</tbody></table></div></div>`;
 }
@@ -1038,7 +953,7 @@ function stage1SteelEnvelope(facts){
     'Warehousing and general storage':' Check the goods’ temperature and moisture limits.'
   }[use]||'';
   if(condition==='Other temperature requirement'&&stage1HasValue(facts.requiredTemperatureC)&&Number.isFinite(Number(facts.requiredTemperatureC))){
-    if(Number(facts.requiredTemperatureC)<2)return {label:'Potential issue identified',text:'Below 2°C: specialist controlled-temperature and envelope review is needed.'+useNote};
+    if(Number(facts.requiredTemperatureC)<2)return {label:'Get professional support',text:'Below 2°C: specialist controlled-temperature and envelope review is needed.'+useNote};
     return {label:'Needs checking',text:'Check the envelope and temperature control against the specified internal temperature and building use.'+useNote};
   }
   if(condition==='Ambient working temperature — heated')return {label:'Needs checking',text:'Allow for an insulated envelope at concept stage. Check the heating and insulation requirements for the intended use.'+useNote};
@@ -1090,16 +1005,59 @@ const STAGE1_ADJACENT_JUNCTION_NOTES=[
   'This should be agreed with the designer and installer before the building is ordered.'
 ];
 function stage1AdjacentJunctionApplies(p){const facts=projectFacts(p);return projectIsSteelFreeStanding(facts)&&projectAdjacentBuildingNeedsJunction(facts)}
-function stage1RegsCheckerMarkup(p){
+// Permitted development (England, Class H) wording, from the saved regs checker record. Never says "no planning needed".
+function stage1PermittedDevelopment(p){
   const saved=p.backgroundChecks&&p.backgroundChecks.regsChecker;
-  if(!saved||!saved.nation)return '';
+  if(typeof describePermittedDevelopment==='function')return describePermittedDevelopment(saved);
+  return {status:'unknown',text:"We can't yet say whether this is permitted development. Missing: the permitted development check. Get professional support."}
+}
+// What the regs checker found, for the Stage 1 report and PDF. Returns null when nothing has been run.
+// Only approved rules are ever in the saved results. Customer-scope items read "get professional support",
+// missing data is listed as need info, and "no potential issues" is only said when nothing is need info.
+function stage1RegsFindings(p){
+  const saved=p.backgroundChecks&&p.backgroundChecks.regsChecker;
+  if(!saved)return null;
+  const results=(saved.results||[]).filter(item=>item.ruleId!=='PLAN_PD');
+  if(saved.nation==='Scotland'||saved.nation==='Wales')return {problems:[],support:[saved.nation+' has different rules. These checks cover England only \u2013 get professional support.'],needInfo:[],allClear:false};
+  if(!results.length)return null;
+  const withSupport=text=>/professional support/i.test(text)?text:text.replace(/[.\s]*$/,'')+' \u2013 get professional support.';
+  const problems=results.filter(item=>item.result==='potential problem'&&item.scope!=='customer').map(item=>({text:item.stage1Problem,why:item.stage1WhyItMatters}));
+  const support=[...new Set(results.filter(item=>item.scope==='customer'&&(item.result==='note'||item.result==='potential problem')).map(item=>withSupport(item.stage1Note||item.stage1Problem||'')).filter(Boolean))];
+  const needInfo=[...new Set(results.filter(item=>item.result==='need info'&&item.needInfo).map(item=>item.needInfo))];
+  if(!saved.nation)needInfo.unshift('The site country (set from the postcode in Site Layout)');
+  return {problems,support,needInfo,allClear:!problems.length&&!support.length&&!needInfo.length}
+}
+function stage1RegsCheckerMarkup(p){
+  const found=stage1RegsFindings(p);
+  if(!found)return '';
   const head='<h2>Potential issues to review</h2>';
-  const foot='<p class="meta">Guide only – confirm with Building Control.</p>';
-  if(saved.nation&&saved.nation!=='England')return `<section class="stage1-tech-card stage1-regs-checker" aria-label="Potential issues to review">${head}<p>Checks cover England only</p>${foot}</section>`;
-  if(!(saved.results||[]).length)return '';
-  const issues=(saved.results||[]).filter(item=>item.result==='potential problem');
-  const body=issues.length?`<ul class="stage1-regs-list">${issues.map(item=>`<li><strong>${esc(item.stage1Problem)}</strong><br>${esc(item.stage1WhyItMatters)}<br><em>Your Stage 2 report explains the solutions.</em></li>`).join('')}</ul>`:'<p>No potential issues found from the information given.</p>';
-  return `<section class="stage1-tech-card stage1-regs-checker" aria-label="Potential issues to review">${head}${body}${foot}</section>`
+  const foot='<p class="meta">Guide only \u2013 confirm with Building Control.</p>';
+  const parts=[];
+  if(found.problems.length)parts.push(`<ul class="stage1-regs-list">${found.problems.map(item=>`<li><strong>${esc(item.text)}</strong><br>${esc(item.why)}</li>`).join('')}</ul>`);
+  if(found.support.length)parts.push(`<h3>Get professional support</h3><ul class="stage1-regs-list stage1-regs-support">${found.support.map(text=>`<li>${esc(text)}</li>`).join('')}</ul>`);
+  if(found.needInfo.length)parts.push(`<h3>Need info</h3><p>We can't check these yet. Missing:</p><ul class="stage1-regs-list stage1-regs-need">${found.needInfo.map(text=>`<li>${esc(text)}</li>`).join('')}</ul>`);
+  if(found.allClear)parts.push('<p>No potential issues found from the information given.</p>');
+  return `<section class="stage1-tech-card stage1-regs-checker" aria-label="Potential issues to review">${head}${parts.join('')}${foot}</section>`
+}
+// Regs and planning answers still missing, for the Project Summary. Read from the project facts only.
+function stage1RegsMissingInfo(p){
+  const facts=projectFacts(p),missing=[];
+  if(!facts.regsNation)missing.push('Building Regulations and planning: the site country (set from the postcode in Site Layout)');
+  if(facts.siteBoundaryStatus!=='confirmed'||!(Array.isArray(facts.relevantBoundaries)&&facts.relevantBoundaries.length))missing.push('Building Regulations and planning: every site boundary marked in Site Layout');
+  if(!facts.regsStored)missing.push('Building Regulations and planning: what will be stored (Building Design)');
+  if(!facts.regsServices||facts.regsServices==='Not sure')missing.push('Building Regulations and planning: whether the building will have heating, toilets, offices or any services (Building Design)');
+  if(typeof buildingDesignLinksExisting==='function'&&buildingDesignLinksExisting(facts)){
+    if(!stage1HasValue(facts.regsExistingArea))missing.push('Building Regulations and planning: existing building floor area (Building Design)');
+    if(!stage1HasValue(facts.regsExistingHeight))missing.push('Building Regulations and planning: existing building height (Building Design)')
+  }
+  return missing
+}
+// Personnel doors come from Building Design (the saved drawing), not the retired Stage 1 question.
+function stage1PersonnelDoorsText(p){
+  const doors=Array.isArray(p.geometry&&p.geometry.doors)?p.geometry.doors.filter(Boolean):null;
+  if(!doors)return 'Not yet set in Building Design';
+  const single=doors.filter(door=>stage1SummaryDoorKind(door)==='personnel').length,double=doors.filter(door=>stage1SummaryDoorKind(door)==='double').length;
+  return `${single} single${double?`, ${double} double`:''} (from Building Design)`
 }
 function stage1AdjacentJunctionMarkup(p){
   if(!stage1AdjacentJunctionApplies(p))return '';
@@ -1201,27 +1159,6 @@ function stage1RollerOpeningListMarkup(p,drawing=p.geometry,drawingLabel='Saved 
     <h3>${esc(drawingLabel)} · ${drawn?.length??'Not recorded'}</h3>${drawn?list(drawn):''}
     ${needsReview.length?`<p><strong>Needs checking</strong></p><ul>${needsReview.map(note=>`<li>${esc(note)}</li>`).join('')}</ul>`:''}</section>`;
 }
-const REGS_QUESTION_OPTIONS={
-  regsStored:[['general','General storage'],['flammable','Flammable liquids, gases or spirits']],
-  regsCladding:[['rated','Fire rated'],['not rated','Not fire rated'],['unknown','Not sure']],
-  regsNation:[['England','England'],['Wales','Wales'],['Scotland','Scotland'],['Northern Ireland','Northern Ireland']]
-};
-function regsQuestionSelect(id,label,key,facts){
-  return `<div class="field"><label for="${id}">${label}</label><select id="${id}"><option value="">Choose…</option>${REGS_QUESTION_OPTIONS[key].map(([value,text])=>`<option value="${esc(value)}" ${facts[key]===value?'selected':''}>${esc(text)}</option>`).join('')}</select></div>`
-}
-function regsQuestionsMarkup(facts){
-  return `<div class="project-requirement-card" id="psRegsCard">
-<h3>Building Regulations information</h3>
-${regsQuestionSelect('psRegsNation','Which nation is the building in?','regsNation',facts)}
-<p class="field-note" id="psRegsNationNote" ${facts.regsNation&&facts.regsNation!=='England'?'':'hidden'}>Checks cover England only</p>
-${regsQuestionSelect('psRegsStored','What will be stored?','regsStored',facts)}
-${regsQuestionSelect('psRegsCladding','What is the fire rating of the cladding?','regsCladding',facts)}
-<div class="field"><label for="psRegsBcDate">Building Control application date (planned or actual)</label><input id="psRegsBcDate" type="date" value="${esc(facts.regsBcDate||'')}"></div>
-<div class="field" id="psRegsFireAccess"><label>Which elevations have a road or yard a fire engine can drive along?</label>
-${[['A','Elevation A (front)'],['B','Elevation B (right sidewall)'],['C','Elevation C (rear)'],['D','Elevation D (left sidewall)']].map(([v,t])=>`<div class="consent-row" style="padding:8px 0"><input type="checkbox" id="psRegsFire${v}" value="${v}" style="width:22px;height:22px" ${Array.isArray(facts.regsFireAccessElevations)&&facts.regsFireAccessElevations.includes(v)?'checked':''}><label for="psRegsFire${v}">${t}</label></div>`).join('')}
-<label for="psRegsFireWidth">Narrowest road width (m)</label><input id="psRegsFireWidth" type="number" step="0.1" inputmode="decimal" min="0" value="${esc(facts.regsFireAccessWidth??'')}"></div>
-</div>`
-}
 function projectSettings(id){
 if(!requireUser())return;const p=getP(id);if(!p)return route("dashboard");const facts=projectFacts(p),pitch=projectRoofPitch(p),ridge=projectRidgeHeight(p),returnRoute=projectEditReturnRoute||"stage1Workspace";projectEditReturnRoute="stage1Workspace";
 const temperatureCondition=projectTemperatureCondition(facts),existingBase=projectExistingBase(facts),steelFree=projectIsSteelFreeStanding(facts);
@@ -1243,7 +1180,6 @@ app.innerHTML=`<div class="container customer-area project-management-page ceo-p
 <h3>Existing buildings nearby</h3>
 <div class="field"><label for="psAdjacentBuilding">Will the new building link to, or sit close to, an existing building?</label><select id="psAdjacentBuilding"><option value="">Choose… (optional)</option>${PROJECT_ADJACENT_BUILDING_OPTIONS.map(value=>`<option value="${esc(value)}" ${projectAdjacentExistingBuilding(facts)===value?'selected':''}>${esc(value)}</option>`).join('')}</select><p class="field-note">Optional. If it links to or sits close to another building, the report will flag the junction so water can be kept out.</p></div>
 </div>
-${regsQuestionsMarkup(facts)}
 </section>
 <div class="field"><label for="psAddress">Proposed building site address</label><input id="psAddress" autocomplete="street-address" value="${esc(p.address||"")}" placeholder="Enter the full proposed site address including postcode"><p class="field-note">This project address is used for Site Layout. Changing it requires the site layout to be confirmed again.</p></div><div class="field"><label for="psLength">Length (m)</label><input id="psLength" type="number" min="0.1" step="0.1" value="${esc(facts.length||"")}"></div><div class="field"><label for="psWidth">Width (m)</label><input id="psWidth" type="number" min="0.1" step="0.1" value="${esc(facts.width||"")}"></div><div class="field"><label for="psHeight">Clear height needed (m)</label><input id="psHeight" type="number" min="0.1" step="0.1" value="${esc(facts.height||"")}"></div><div class="field"><label for="psPitch">Roof pitch (degrees)</label><input id="psPitch" type="number" min="${PROJECT_ROOF_PITCH_MIN}" max="${PROJECT_ROOF_PITCH_MAX}" step="0.5" value="${pitch}" aria-describedby="psPitchHelp"><p class="field-note" id="psPitchHelp">Minimum 5° · standard 10° · maximum 22°.</p></div><div class="project-ridge-preview" aria-live="polite"><span>Calculated ridge height</span><strong id="psRidgeHeight">${ridge===null?"Add width and clear height":`${ridge.toFixed(2)} m`}</strong><p>Calculated from the customer dimensions and selected roof pitch.</p></div></div><div class="actions"><button class="btn green" id="saveProjectSettings">${returnRoute==="stage1Confirm"?"Save and return to Project Summary":"Save and return to overview"}</button><button class="btn secondary" id="cancelProjectSettings">Cancel</button></div></section>
 <section class="card management-card"><h2>Project Documents</h2><p class="meta">${(p.evidence||[]).length} document(s) are currently recorded for this project.</p><button class="btn secondary" onclick="openProjectDocuments('${p.id}','${returnRoute}')">Open Project Documents</button></section>
@@ -1266,7 +1202,6 @@ document.querySelector("#psSiteEvidenceWrap").hidden=!reuse||reuse==="No — a n
 document.querySelector("#saveProjectSettings").textContent=reuse&&reuse!=="No — a new base is planned"&&document.querySelector("#psSiteEvidence").value==="Yes — upload them now"?"Save and upload documents":`${returnRoute==="stage1Confirm"?"Save and return to Project Summary":"Save and return to overview"}`
 };
 document.querySelector("#psType").addEventListener("change",updateSteelRequirementVisibility);
-document.querySelector("#psRegsNation").addEventListener("change",()=>{const v=document.querySelector("#psRegsNation").value;document.querySelector("#psRegsNationNote").hidden=!v||v==="England"});
 document.querySelector("#psTemperatureCondition").addEventListener("change",updateTemperatureRequirementVisibility);
 document.querySelector("#psBaseReuse").addEventListener("change",updateSiteEvidenceVisibility);
 document.querySelector("#psSiteEvidence").addEventListener("change",updateSiteEvidenceVisibility);
@@ -1297,8 +1232,6 @@ nextFacts.heated=({"Ambient working temperature — heated":"Yes","Ambient stora
 if(temperatureCondition==="Other temperature requirement")nextFacts.requiredTemperatureC=requiredTemperatureC;else delete nextFacts.requiredTemperatureC;
 delete nextFacts.ambientProtectionNeeded;
 if(adjacentExistingBuilding)nextFacts.adjacentExistingBuilding=adjacentExistingBuilding;else delete nextFacts.adjacentExistingBuilding;
-[["regsNation","#psRegsNation"],["regsStored","#psRegsStored"],["regsCladding","#psRegsCladding"],["regsBcDate","#psRegsBcDate"]].forEach(([key,sel])=>{const value=document.querySelector(sel).value.trim();if(value)nextFacts[key]=value;else delete nextFacts[key]});
-{const fireEls=["A","B","C","D"].filter(v=>document.querySelector("#psRegsFire"+v)?.checked);if(fireEls.length)nextFacts.regsFireAccessElevations=fireEls;else delete nextFacts.regsFireAccessElevations;const fireW=(document.querySelector("#psRegsFireWidth")?.value||"").trim();if(fireW)nextFacts.regsFireAccessWidth=fireW;else delete nextFacts.regsFireAccessWidth}
 if(intendsToReuseExistingBase==="No — a new base is planned")delete nextFacts.siteEvidenceAvailability;else nextFacts.siteEvidenceAvailability=siteEvidenceAvailability;
 nextAssessments={...nextAssessments,specialistLowTemperatureFlag:temperatureCondition==="Other temperature requirement"&&Number(requiredTemperatureC)<2,baseSuitabilityStatus:intendsToReuseExistingBase==="No — a new base is planned"?"NOT_ASSESSED":"UNVERIFIED",anchoringSuitabilityStatus:"UNVERIFIED"}
 }
@@ -1404,7 +1337,6 @@ save();close();route('dashboard')
 }catch(e){confirm.disabled=false;confirm.textContent='Delete permanently';alert(e.message||'The project could not be deleted. Nothing else was changed.')}
 };
 }
-function requestHumanSupport(id){let p=getP(id);p.history.push({at:now(),text:'Human support requested'});save();alert('Support request recorded in this prototype.');project(id)}
 // Evidence Intelligence Batch 1 — INTERNAL/DEV REVIEW SURFACE ONLY, not a
 // customer-facing feature (see EVIDENCE-INTELLIGENCE-SPEC.md and
 // MASTER-SPEC.md § "Question, Evidence & Rule Development governance").
@@ -1633,48 +1565,21 @@ const stage1DetailsKeys=new Set(["address","structure","use","heated","base"]);
 const steelRemovedStage1Keys=new Set(["personnelDoors"]);
 const steelStage1Questions=stage1Questions.filter(([key])=>!stage1DetailsKeys.has(key)&&!steelRemovedStage1Keys.has(key));
 function stage1QuestionsFor(p){
-  return projectIsSteelFreeStanding(projectFacts(p))?steelStage1Questions:stage1Questions;
+  // One route for every building type: the details are collected in Project Details, Site Layout and Building Design.
+  return steelStage1Questions;
 }
 function stage1QuestionIndex(p,key){
   return stage1QuestionsFor(p).findIndex(question=>question[0]===key);
-}
-function stage1MapAfter(p,key){
-  const facts=projectFacts(p);
-  if(key==="personnelDoors"&&!stage1HasValue(facts.buildingPositionStatus))return buildingPositionMap;
-  const list=stage1QuestionsFor(p);
-  if(key===list[list.length-1][0]&&!stage1HasValue(facts.siteBoundaryStatus))return siteBoundaryMap;
-  return null;
-}
-function resumeStage1After(id,key){
-  const p=getP(id);
-  if(p)continueStage1From(id,Math.max(0,stage1QuestionIndex(p,key)));
-}
-function stage1ClientDetailsReady(p){
-const facts=projectFacts(p),account=accountRecord()||state.user||{},name=facts.name||p.customerName||account.name||"";
-return [name,facts.role,facts.width,facts.length,facts.height].every(stage1HasValue)
-}
-function continueStage1ClientDetails(id){
-const p=getP(id);if(!p)return;
-if(stage1ClientDetailsReady(p))return finalizeStage1(id);
-return stage1ClientInput(id)
 }
 function continueStage1From(id,startIdx=0){
 const p=getP(id);if(!p)return;
 const questions=stage1QuestionsFor(p);
 for(let idx=Math.max(0,startIdx);idx<questions.length;idx++){
-const question=questions[idx],key=question[0];
+const question=questions[idx];
 if(!stage1QuestionAnswered(p,question))return moveStage1(id,idx);
-const map=stage1MapAfter(p,key);
-if(map)return map(id);
 }
-if(projectIsSteelFreeStanding(projectFacts(p))){
-  // With no steel question pages left, the two Stage 1 maps run here instead.
-  const facts=projectFacts(p);
-  if(!stage1HasValue(facts.buildingPositionStatus))return buildingPositionMap(id);
-  if(!stage1HasValue(facts.siteBoundaryStatus))return siteBoundaryMap(id);
-  return route("stage1Confirm",id);
-}
-return continueStage1ClientDetails(id)
+// One route for every building type: Project Summary, then Site Layout, then Building Design.
+return route("stage1Confirm",id)
 }
 function continueStage1(id){
 const p=getP(id);if(!p)return;
@@ -1723,18 +1628,14 @@ const basisScore=Math.round((basis/basisValues.length)*45);
 const documentScore=Math.min(stage1EvidenceCount(p),2)*5;
 const questions=stage1QuestionsFor(p);
 const answered=questions.filter(question=>stage1QuestionAnswered(p,question)).length;
-if(projectIsSteelFreeStanding(facts)){
-  const checks=[
-    Boolean(p.stage1SummaryConfirmed), facts.siteLayoutStatus==='confirmed',
-    facts.siteLayoutStatus==='confirmed'&&facts.buildingDesignStatus==='confirmed'
-  ];
-  const detailsScore=Math.round(basis/basisValues.length*35);
-  const questionsScore=Math.round((questions.length?answered/questions.length:1)*40);
-  return p.stage1Complete&&stage1SteelReportGaps(p).length===0?100:
-    Math.min(99,detailsScore+questionsScore+Math.round(checks.filter(Boolean).length/3*24));
-}
-const questionScore=Math.round((questions.length?answered/questions.length:1)*45);
-return p.stage1Complete?100:Math.min(99,basisScore+documentScore+questionScore)
+const checks=[
+  Boolean(p.stage1SummaryConfirmed), facts.siteLayoutStatus==='confirmed',
+  facts.siteLayoutStatus==='confirmed'&&facts.buildingDesignStatus==='confirmed'
+];
+const detailsScore=Math.round(basis/basisValues.length*35);
+const questionsScore=Math.round((questions.length?answered/questions.length:1)*40);
+return p.stage1Complete&&stage1SteelReportGaps(p).length===0?100:
+  Math.min(99,detailsScore+questionsScore+Math.round(checks.filter(Boolean).length/3*24));
 }
 function stage1Workspace(id){
 if(!requireUser())return;let p=getP(id);if(!p)return route("dashboard");
@@ -1776,7 +1677,6 @@ ${basisItem("Project documents",`${stage1EvidenceCount(p)} file${stage1EvidenceC
 <article class="stage1-check-row ${basisComplete?"is-ready":"needs-input"}"><span aria-hidden="true"></span><div><strong>Project details ${basisComplete?"ready":"need information"}</strong><p>${basisComplete?"Use, type, location and dimensions are carried forward without re-entry.":"Use the Edit buttons above to add your missing details."}</p></div></article>
 <article class="stage1-check-row ${ridge===null?"needs-input":"is-ready"}"><span aria-hidden="true"></span><div><strong>Roof height estimate</strong><p>${ridge===null?"Add the clear span and clear height to calculate the ridge height.":`${pitch}° roof pitch produces an indicative ridge height of ${ridge.toFixed(2)} m for a ${projectMeasure(facts.width)} span.`}</p></div></article>
 </div></section>
-${projectIsSteelFreeStanding(facts)?`<section class="stage1-tech-card"><h2>Initial Questions</h2><p>${stage1QuestionsFor(p).filter(question=>stage1QuestionAnswered(p,question)).length} of ${stage1QuestionsFor(p).length} answered</p><button class="btn secondary" data-route="stage1" data-id="${esc(p.id)}">Open Initial Questions</button></section>`:""}
 <section class="stage1-workspace-action"><div><div class="eyebrow">Ready for the next step?</div><h2>Next: Project Summary</h2><p>Review everything Project Check already holds before you place the proposed building on the site.</p></div><button class="btn green" onclick="route('stage1Confirm','${p.id}')">Continue to Project Summary</button></section>
 </main>`;
 const upload=document.querySelector('#workspaceDocumentFiles');
@@ -1814,9 +1714,7 @@ return missing
 function stage1SteelReportGaps(p){
   const gaps=stage1ConfirmationOutstanding(p);
   const facts=projectFacts(p);
-  if(stage1QuestionsFor(p).some(question=>!stage1QuestionAnswered(p,question)))gaps.push('Initial Questions');
-  if(!facts.buildingPositionStatus)gaps.push('Building position step');
-  if(!facts.siteBoundaryStatus)gaps.push('Site boundary step');
+  if(!facts.buildingPositionStatus||!facts.siteBoundaryStatus)gaps.push('Site Layout');
   return gaps;
 }
 function confirmSteelStage1Summary(id,next){
@@ -1847,8 +1745,7 @@ function stage1Confirm(id){
 if(!requireUser())return;const p=getP(id);if(!p)return route("dashboard");
 document.body.dataset.page="stage1Confirm";
 const facts=projectFacts(p),account=accountRecord()||state.user||{},ridge=projectRidgeHeight(p);
-const steel=projectIsSteelFreeStanding(facts);
-const docs=(p.evidence||[]).filter(item=>item.stage==="Stage 1"),outstanding=steel?stage1SteelReportGaps(p):stage1ConfirmationOutstanding(p),evidenceNotices=stage1ConfirmationEvidenceNotices(p);
+const docs=(p.evidence||[]).filter(item=>item.stage==="Stage 1"),outstanding=[...stage1SteelReportGaps(p),...stage1RegsMissingInfo(p)],evidenceNotices=stage1ConfirmationEvidenceNotices(p);
 const tag=(label,type="customer")=>`<span class="stage1-source stage1-source--${type}"><span aria-hidden="true"></span>${esc(label)}</span>`;
 const valueOr=value=>stage1HasValue(value)?esc(value):'<span class="confirmation-missing">Still required</span>';
 const item=(label,value,sourceLabel="Customer entered",type="customer")=>`<div class="stage1-basis-item"><dt>${esc(label)}</dt><dd>${value}</dd>${tag(sourceLabel,type)}</div>`;
@@ -1897,7 +1794,7 @@ ${outstanding.length?`<ul>${outstanding.map(text=>`<li>${esc(text)}</li>`).join(
 
 <section class="stage1-workspace-action confirmation-actions"><div><div class="eyebrow">Ready for the site?</div><h2>Continue to Site Layout</h2><p>Next, place the building on the site using the dimensions already saved in this project.</p></div><div class="confirmation-action-buttons"><button class="btn secondary" onclick="route('stage1Workspace','${p.id}')">Back to Project Overview</button><button class="btn green" onclick="route('siteLayout','${p.id}')">Continue to Site Layout</button></div></section>
 </main>`;
-if(steel){
+{
   const actions=app.querySelector('.confirmation-action-buttons');
   actions.querySelector('.btn.green').onclick=()=>confirmSteelStage1Summary(id,'siteLayout');
   // "Open Stage 1 Free Report" lives on the Building Design page (buildingDesignFreeReportMarkup).
@@ -1920,7 +1817,7 @@ const questions=stage1QuestionsFor(p),savedQuestion=sessionStorage.getItem('s1q_
 if(!questions.length)return continueStage1From(id,0);
 const savedIndex=stage1QuestionIndex(p,savedQuestion);
 const legacyKey=savedQuestion!==null&&/^\d+$/.test(savedQuestion)?stage1Questions[Number(savedQuestion)]?.[0]:null;
-const firstUnanswered=questions.findIndex(question=>!stage1QuestionAnswered(p,question)||stage1MapAfter(p,question[0]));
+const firstUnanswered=questions.findIndex(question=>!stage1QuestionAnswered(p,question));
 const idx=[savedIndex,stage1QuestionIndex(p,legacyKey),firstUnanswered,0].find(index=>index>=0);
 const q=questions[idx],val=stage1KnownValue(p,q[0]);
 let hint='';
@@ -2034,22 +1931,7 @@ advanceStage1(id,idx,p)
 // file reads stage1Questions[idx][0] by fact key or stage1Questions.length
 // generically, so it already adapts automatically).
 function advanceStage1(id,idx,p){
-const key=stage1QuestionsFor(p)[idx]?.[0];
-const map=stage1MapAfter(p,key);
-if(map)return map(id);
 return continueStage1From(id,idx+1)
-}
-// Extracted from advanceStage1() (2026-09-02, Consolidated Client Input
-// Page) — identical logic, just now callable from the new page's save
-// handler (saveStage1ClientInput() below) instead of firing the instant
-// the last sequential question is answered.
-function finalizeStage1(id){
-let p=getP(id);if(!p)return;
-sessionStorage.removeItem('s1q_'+id);
-p.stage1Complete=true;p.stage='Stage 2 available';runStage1Risks(p);
-p.history.push({at:now(),text:'Stage 1 assessment completed'});
-save();
-return stage1Summary(id)
 }
 // Geometry/data-continuity fix (2026-08-27, Customer Journey Completion —
 // Stage 1 completion repair), extracted into its own function 2026-09-02
@@ -2092,74 +1974,6 @@ p.history.push({at:now(),text:`Building footprint re-derived on Map 1 after a di
 }
 // Building-regs calculation re-runs after any building size change.
 if(typeof pcBuildingRegsRun==='function')pcBuildingRegsRun(p);
-}
-// Consolidated Client Input Page (2026-09-02 — see MASTER-SPEC.md/
-// CHANGELOG.md § "Consolidated Client Input Page"): the ONE page
-// collecting the five facts retired from the sequential Stage 1
-// questionnaire (name, role, width, length, height — see § "Stage 1
-// question reduction (17 -> 12)"). Reached only via advanceStage1()
-// immediately after the last sequential question (programme) is saved —
-// never a URL/hash route of its own, exactly like buildingPositionMap()/
-// siteBoundaryMap() above. Deliberately has NO "Question X of Y"
-// counter, is NOT added to stage1Questions[], and does not appear in
-// the left question navigator or the 12-question progress bar — it is
-// explicitly not a 13th question. Field wording is the exact original
-// question wording these facts had before their removal from the
-// sequential array (not reworded, not reinvented). Every field is
-// required, same as the original sequential questions were, and the
-// exact same p.facts.name/role/width/length/height keys are read/
-// written — no duplicate keys, no second storage location, no invented
-// defaults.
-// Apply Locked Application Shell to Remaining Pages (2026-09-02): this
-// page (and stage1Summary() below) now use the locked Project Workspace
-// shell (pale-green nav-only banner + complete logo beside the heading)
-// instead of the compact Stage 1 question-page header — that header
-// stays exactly as locked for Q1-12 only (data-page="stage1", untouched
-// here). Since this page is reached by direct function call (never a
-// hash change), data-page is explicitly set to "stage1-shell" here so
-// the correct banner treatment applies regardless of inherited state.
-function stage1ClientInput(id){
-let p=getP(id);if(!p)return;
-document.body.dataset.page='stage1-shell';
-let roleOptions=['Business owner / director','Facilities / operations','Property / estates','Project / construction'];
-let accountName=(accountRecord()||state.user||{}).name||'';
-let roleVal=p.facts.role||'';
-let roleIsOther=roleVal&&!roleOptions.includes(roleVal);
-app.innerHTML=`<div class="container"><div class="pagehead"><div class="workspace-identity"><img class="workspace-logo" src="assets/project-check-logo.png" alt="Project Check — Know before you build."><div><div class="eyebrow">Stage 1 · Client details</div><h1>${esc(p.name)}</h1><p class="meta">A few final details to complete your Project Check assessment.</p></div></div><button class="btn secondary" onclick="route('project','${esc(id)}')">Save & exit</button></div>
-<div class="card">
-<div class="field"><label>What is your name?</label><input id="ciName" type="text" placeholder="Your full name" value="${esc(p.facts.name||p.customerName||accountName||'')}"></div>
-<div class="field"><label>What is your role in this project?</label><select id="ciRole" onchange="document.querySelector('#ciRoleOtherWrap').style.display=this.value==='__other__'?'block':'none'"><option value="">Choose…</option>${roleOptions.map(x=>`<option ${roleVal===x?'selected':''}>${esc(x)}</option>`).join('')}<option value="__other__" ${roleIsOther?'selected':''}>Other</option></select><div id="ciRoleOtherWrap" style="margin-top:8px;${roleIsOther?'':'display:none'}"><input id="ciRoleOther" type="text" placeholder="Please specify" value="${esc(roleIsOther?roleVal:'')}"></div></div>
-<div class="field"><label>Approximately how wide does the building need to be (metres)?</label><input id="ciWidth" type="number" value="${esc(p.facts.width||'')}"></div>
-<div class="field"><label>Approximately how long does the building need to be (metres)?</label><input id="ciLength" type="number" value="${esc(p.facts.length||'')}"></div>
-<div class="field"><label>What clear internal height do you need (metres)?</label><input id="ciHeight" type="number" value="${esc(p.facts.height||'')}"></div>
-<div class="actions"><button class="btn secondary" onclick="moveStage1('${esc(id)}',${stage1QuestionsFor(p).length-1})">Back</button><button class="btn green" onclick="saveStage1ClientInput('${esc(id)}')">Save & continue</button></div>
-</div></div>`;
-window.scrollTo(0,0)
-}
-function saveStage1ClientInput(id){
-let p=getP(id);if(!p)return;
-let name=document.querySelector('#ciName').value.trim();
-let roleSel=document.querySelector('#ciRole').value;
-let role=roleSel==='__other__'?(document.querySelector('#ciRoleOther')?.value||'').trim():roleSel;
-let width=document.querySelector('#ciWidth').value.trim();
-let length=document.querySelector('#ciLength').value.trim();
-let height=document.querySelector('#ciHeight').value.trim();
-if(!name||!role||!width||!length||!height)return alert('Please complete all fields before continuing.');
-// Exact same fact keys/side-effects saveStage1() already used for these —
-// no new keys, no new storage.
-p.facts.name=name;p.customerName=name;
-p.facts.role=role;
-p.facts.width=width;
-p.facts.length=length;
-p.facts.height=height;
-p.history.push({at:now(),text:'Client details added (name, role, width, length, height)'});
-// Always safe to call — reconcileFootprintWithCurrentDimensions() already
-// no-ops internally when the footprint is unconfirmed/absent or already
-// matches the current dimensions; no separate "did width/length change"
-// check needed here.
-reconcileFootprintWithCurrentDimensions(p);
-save();
-finalizeStage1(id)
 }
 function saveStage1(id,idx){
 let p=getP(id),q=p&&stage1QuestionsFor(p)[idx],v;
@@ -2304,24 +2118,6 @@ let el=document.querySelector('#mapBearingReadout');if(!el||!map)return;
 let b=Math.round(((map.getBearing()%360)+360)%360);
 el.textContent=b===0?'Map view: facing North':`Map view: facing ${b}°`
 }
-// Explicit MAP-VIEW rotation controls (Stage 1 Map Architecture task) — deliberately
-// separate function names/labels/buttons from rotateBuilding()/rotateBoundaryBuilding()
-// below, so a customer (and this code) can never confuse "rotate what I'm looking at"
-// with "rotate the building itself". Operates on activeMeasureMap — whichever of
-// activeBuildingMap/activeBoundaryMap is currently on screen (see comment above).
-// jumpTo() (instant, no animation) rather than rotateTo()/easeTo() — a discrete
-// button click is a deliberate, immediate step, not a drag gesture, and an eased
-// transition would let a fast second click read getBearing() mid-flight (still
-// animating from the first click) instead of the settled value, drifting bearing
-// off the expected 15° steps under rapid input.
-function rotateMapView(delta){
-if(!activeMeasureMap)return;
-activeMeasureMap.jumpTo({bearing:(activeMeasureMap.getBearing()+delta+360)%360})
-}
-function resetMapNorth(){
-if(!activeMeasureMap)return;
-activeMeasureMap.jumpTo({bearing:0})
-}
 // Shared MapLibre map factory for both Stage 1 map screens. pitch is hard-locked to 0
 // three separate ways (maxPitch/minPitch/pitchWithRotate) — this task is map BEARING,
 // not 3D/tilt. touchZoomRotate (pinch-zoom + two-finger rotate together) is left at
@@ -2368,220 +2164,7 @@ map.addLayer({id:srcId+'-line',type:'line',source:srcId,paint:{'line-color':colo
 if(map.isStyleLoaded())apply();else map.once('load',apply);
 return corners
 }
-function buildingPositionMap(id){
-let p=getP(id),d=buildingDims(p),saved=p.facts.buildingFootprint;activeFootprintAngle=Number(saved?.angle)||0;
-measureMode=null;measurePoints=[];
-// Reset stale references from a previous visit to this screen (e.g. a
-// different project's building map) — the click handler below now treats
-// "activeBuildingMarker already set" as "don't place a new one", so a
-// leftover marker bound to an already-destroyed map would silently block
-// placement on this one.
-activeBuildingMarker=null;
-// Control-layout redesign (2026-08-27, Stage 1 Map Control Layout task):
-// mobile review showed rotate/reset-north/building/measurement controls sitting
-// far above the map, forcing a scroll away from the map to operate them. The
-// address search + layer toggle stay above (one-time setup, not repeatedly
-// operated while looking at the map); MAP VIEW controls now sit immediately
-// above the map, BUILDING orientation immediately below it, and measurement is
-// a collapsible <details> directly below that — so the map, its bearing
-// controls and its building controls are all visible/reachable together
-// without a large scroll. Map view vs building controls stay visually and
-// functionally distinct: separate toolbar rows, separate group headings
-// ("Map view" / "Building orientation"), separate icon sets (⟲/⟳/🧭 vs ↺/↻).
-app.innerHTML=`<div class="container"><div class="pagehead"><div><div class="eyebrow">Stage 1 · Building position</div><h1>${esc(p.name)}</h1></div><button class="btn secondary" onclick="route('project','${esc(id)}')">Save & exit</button></div><div class="card"><h2>Show the proposed building position</h2><p class="map-help">Search the address, then click the centre of the proposed building — Project Check draws a ${d.width} m × ${d.length} m footprint and you can rotate it to match. No live mapping available? Continue without it — this will not block Stage 1.</p><div class="map-search"><input id="buildingAddressSearch" value="${esc(p.address||'')}" placeholder="Site address or postcode"><button class="btn secondary" onclick="searchBuildingAddress('${esc(id)}')">Search address</button></div><div id="buildingSearchStatus" class="meta"></div><div class="map-toolbar layer-toggle-row"><label class="layer-toggle"><input type="radio" name="mapLayer" id="mapLayerSatellite" checked onclick="setBaseLayer(activeMeasureMap,'satellite')"> Satellite</label><label class="layer-toggle"><input type="radio" name="mapLayer" id="mapLayerStreet" onclick="setBaseLayer(activeMeasureMap,'street')"> Street map</label></div>
-<div class="map-toolbar map-view-toolbar map-edge-toolbar compact-toolbar"><strong>Map view <span id="mapBearingReadout" class="bearing-readout">facing North</span></strong><div class="actions"><button class="btn secondary compact" onclick="rotateMapView(-15)">⟲ Rotate map left</button><button class="btn secondary compact" onclick="rotateMapView(15)">Rotate map right ⟳</button><button class="btn secondary compact" onclick="resetMapNorth()">🧭 Reset north</button></div></div>
-<div id="buildingMap" class="mapbox"></div><div id="buildingStatus" class="map-status">${saved?'Building footprint saved.':'No building position selected yet.'}</div>
-<div class="map-toolbar map-edge-toolbar compact-toolbar"><strong>Building orientation: ${d.width} m × ${d.length} m</strong><div class="actions"><button class="btn secondary compact" onclick="rotateBuilding('${esc(id)}',-15)">↺ Rotate building 15°</button><button class="btn secondary compact" onclick="rotateBuilding('${esc(id)}',15)">Rotate building 15° ↻</button></div></div>
-<div class="map-toolbar map-edge-toolbar compact-toolbar"><strong>📏 Measurement</strong><div class="actions"><button id="measureDistanceBtn" class="btn secondary compact" onclick="toggleMeasure('distance')">📏 Distance</button><button id="measureAreaBtn" class="btn secondary compact" onclick="toggleMeasure('area')">▱ Area</button><button class="btn secondary compact" onclick="clearMeasure()">Clear</button></div></div><div id="measureStatus" class="map-status">Measurement tool off.</div>
-<div class="actions"><button class="btn secondary" onclick="skipBuildingPosition('${esc(id)}')">Continue without pinpointing on the map</button><button class="btn green" onclick="saveBuildingPosition('${esc(id)}')">Save & continue</button></div></div></div>`;
-const center=saved?.center?{lat:saved.center.lat,lng:saved.center.lng}:{lat:54.5,lng:-3},zoom=saved?18:6;
-activeBuildingMap=createProjectCheckMap('buildingMap',center,zoom,getSavedMapBearing(id));activeMeasureMap=activeBuildingMap;
-activeBuildingMap.on('rotateend',()=>saveMapBearing(id,activeBuildingMap.getBearing()));
-if(saved?.center)placeBuildingMarker(p,center);
-activeBuildingMap.on('click',e=>{
-if(measureMode){measurePoints.push([e.lngLat.lat,e.lngLat.lng]);redrawMeasure();return}
-// Only the first click places the building. Once it exists, repositioning
-// is by dragging the marker itself (see placeBuildingMarker) — keeping
-// map-panning and building-placement on separate gestures means an
-// imprecise drag over empty map area always pans (MapLibre's own map
-// dragging), and can never be misread as "move the building" instead.
-if(activeBuildingMarker)return;
-placeBuildingMarker(p,{lat:e.lngLat.lat,lng:e.lngLat.lng});
-document.querySelector('#buildingStatus').textContent=`Building centre selected. Rotation: ${activeFootprintAngle}°.`
-})
-}
-// Creates the draggable building-position marker on first placement, or just
-// moves it (and the footprint layer) on every later placement/search/drag —
-// used by the map click handler, searchBuildingAddress() and the saved-state
-// reload above, so there's exactly one place marker dragging is wired up.
-// ll is always the app's plain {lat,lng} shape — the MapLibre [lng,lat] array
-// conversion happens only right here, at the marker API boundary.
-function placeBuildingMarker(p,ll){
-if(activeBuildingMarker)activeBuildingMarker.setLngLat([ll.lng,ll.lat]);
-else{
-activeBuildingMarker=new maplibregl.Marker({draggable:true}).setLngLat([ll.lng,ll.lat]).addTo(activeBuildingMap);
-activeBuildingMarker.on('drag',()=>{let c=activeBuildingMarker.getLngLat();updateBuildingLayer(p,activeBuildingMap,{lat:c.lat,lng:c.lng},activeFootprintAngle,'building')});
-activeBuildingMarker.on('dragend',()=>{document.querySelector('#buildingStatus').textContent=`Building centre selected. Rotation: ${activeFootprintAngle}°.`})
-}
-updateBuildingLayer(p,activeBuildingMap,ll,activeFootprintAngle,'building')
-}
 async function geocode(q){let res=await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&addressdetails=1&q=${encodeURIComponent(q)}`,{headers:{Accept:'application/json'}});if(!res.ok)throw new Error('search unavailable');let x=await res.json();return x[0]||null}
-async function searchBuildingAddress(id){
-let p=getP(id),q=document.querySelector('#buildingAddressSearch').value.trim(),status=document.querySelector('#buildingSearchStatus');if(!q)return alert('Enter the site address or postcode.');status.textContent='Searching address…';
-try{let best=await geocode(q);if(!best){status.textContent='Address not found.';return}let c={lat:parseFloat(best.lat),lng:parseFloat(best.lon)};activeBuildingMap.jumpTo({center:[c.lng,c.lat],zoom:19});placeBuildingMarker(p,c);document.querySelector('#buildingStatus').textContent='Address located. Drag the pin onto the exact proposed building centre and rotate if required.';status.textContent=best.display_name}catch(e){status.textContent='Address search could not connect. Pan/zoom manually, or continue without pinpointing on the map.'}
-}
-function rotateBuilding(id,delta){let p=getP(id);if(!activeBuildingMarker)return alert('Place the building first.');let c=activeBuildingMarker.getLngLat(),ll={lat:c.lat,lng:c.lng};activeFootprintAngle=(activeFootprintAngle+delta+360)%360;updateBuildingLayer(p,activeBuildingMap,ll,activeFootprintAngle,'building');document.querySelector('#buildingStatus').textContent=`Building centre selected. Rotation: ${activeFootprintAngle}°.`}
-// 2026-08-27 (revised 17-question workflow): Map 1 sits mid-flow (after
-// personnelDoors, before base), not immediately before Map 2 — both confirm
-// and skip resume the question flow at 'base's index (moveStage1) instead
-// of jumping straight to siteBoundaryMap(). Map 2 is reached only once
-// base/level/services are answered (see advanceStage1()).
-// Index recomputed 2026-09-01 (Stage 1 Question Reduction, 17 -> 12 — see
-// MASTER-SPEC.md/CHANGELOG.md): was 12 ('base's old position), now 7
-// ('base's new position) — this was a hardcoded array position, not a
-// fact-key lookup, so it had to be updated alongside stage1Questions[]
-// itself; missing this exact spot was caught by a genuine end-to-end test
-// failure (skipping Map 1 landed on the wrong, much-later question) before
-// being fixed here.
-function saveBuildingPosition(id){
-let p=getP(id);if(!activeBuildingMarker)return alert('Search the address or click the map to select the proposed building position, or choose "Continue without pinpointing on the map".');let c=activeBuildingMarker.getLngLat(),d=buildingDims(p),center={lat:c.lat,lng:c.lng},corners=metresToFootprintCorners(center,d.width,d.length,activeFootprintAngle).map(x=>({lat:x[0],lng:x[1]}));p.facts.buildingPosition=center;p.facts.buildingFootprint={center,width:d.width,length:d.length,angle:activeFootprintAngle,corners};p.facts.buildingPositionStatus='confirmed';p.facts.addressConfirmedOnly=false;p.history.push({at:now(),text:`Proposed building footprint confirmed (${d.width} m × ${d.length} m, ${activeFootprintAngle}°)`});if(typeof pcBuildingRegsRun==='function')pcBuildingRegsRun(p);save();resumeStage1After(id,"personnelDoors")
-}
-function skipBuildingPosition(id){
-let p=getP(id);p.facts.buildingPositionStatus='skipped';p.facts.addressConfirmedOnly=true;p.history.push({at:now(),text:'Building position not pinpointed on a map — continuing with the typed address only'});if(typeof pcBuildingRegsRun==='function')pcBuildingRegsRun(p);save();resumeStage1After(id,"personnelDoors")
-}
-function siteBoundaryMap(id){
-let p=getP(id),fp=p.facts.buildingFootprint,d=buildingDims(p);activeBoundaryFootprintAngle=Number(fp?.angle)||0;
-measureMode=null;measurePoints=[];
-// Control-layout redesign (2026-08-27, Stage 1 Map Control Layout task) —
-// same sandwich principle as Map 1: map view controls immediately above the
-// map, boundary/building controls and a collapsible measurement tool
-// immediately below it. See buildingPositionMap()'s comment for the full
-// rationale.
-app.innerHTML=`<div class="container"><div class="pagehead"><div><div class="eyebrow">Stage 1 · Site boundary</div><h1>${esc(p.name)}</h1></div><button class="btn secondary" onclick="route('project','${esc(id)}')">Save & exit</button></div><div class="card"><h2>Show the relevant site boundary</h2><p class="map-help">Your building footprint is shown if saved. Click around the site boundary to draw it (at least three points). No live mapping available? Continue without it — this will not block Stage 1.</p><div class="map-search"><input id="boundaryAddressSearch" value="${esc(p.address||'')}" placeholder="Site address or postcode"><button class="btn secondary" onclick="searchBoundaryAddress('${esc(id)}')">Search address</button></div><div id="boundarySearchStatus" class="meta"></div><div class="map-toolbar layer-toggle-row"><label class="layer-toggle"><input type="radio" name="mapLayer" id="mapLayerSatellite" checked onclick="setBaseLayer(activeMeasureMap,'satellite')"> Satellite</label><label class="layer-toggle"><input type="radio" name="mapLayer" id="mapLayerStreet" onclick="setBaseLayer(activeMeasureMap,'street')"> Street map</label></div>
-<div class="map-toolbar map-view-toolbar map-edge-toolbar compact-toolbar"><strong>Map view <span id="mapBearingReadout" class="bearing-readout">facing North</span></strong><div class="actions"><button class="btn secondary compact" onclick="rotateMapView(-15)">⟲ Rotate map left</button><button class="btn secondary compact" onclick="rotateMapView(15)">Rotate map right ⟳</button><button class="btn secondary compact" onclick="resetMapNorth()">🧭 Reset north</button></div></div>
-<div id="boundaryMap" class="mapbox"></div><div id="boundaryStatus" class="map-status">${p.facts.siteBoundary?.length>=3?'Site boundary saved.':'No site boundary drawn yet.'}</div>
-<div class="map-toolbar map-edge-toolbar compact-toolbar"><strong>Building orientation: ${d.width} m × ${d.length} m</strong><div class="actions"><button class="btn secondary compact" onclick="rotateBoundaryBuilding('${esc(id)}',-15)">↺ Rotate building 15°</button><button class="btn secondary compact" onclick="rotateBoundaryBuilding('${esc(id)}',15)">Rotate building 15° ↻</button></div></div>
-<div class="map-toolbar map-edge-toolbar compact-toolbar"><strong>Boundary</strong><div class="actions"><button class="btn secondary compact" onclick="resetBoundary()">Reset boundary</button></div></div>
-<div class="map-toolbar map-edge-toolbar compact-toolbar"><strong>📏 Measurement</strong><div class="actions"><button id="measureDistanceBtn" class="btn secondary compact" onclick="toggleMeasure('distance')">📏 Distance</button><button id="measureAreaBtn" class="btn secondary compact" onclick="toggleMeasure('area')">▱ Area</button><button class="btn secondary compact" onclick="clearMeasure()">Clear</button></div></div><div id="measureStatus" class="map-status">Measurement tool off.</div>
-<div class="actions"><button class="btn secondary" onclick="skipSiteBoundary('${esc(id)}')">Continue without drawing the boundary</button><button class="btn green" onclick="saveBoundary('${esc(id)}')">Save & continue</button></div></div>
-<div class="card" style="margin-top:18px"><h3>Site evidence (optional)</h3><p id="s1evidenceStatus" class="meta">${uploadsLabel(p,'Stage 1')}</p><p class="meta">Attach photographs or documents about the site now, or add more later from the project workspace. This prototype records file metadata only and stores it locally in your browser — production will use private, secure project storage. Avoid uploading confidential or sensitive project documents to this preview environment.</p><div class="actions"><label class="btn secondary" for="s1files" style="display:inline-block">Upload files</label></div><input type="file" id="s1files" multiple style="display:none"></div></div>`;
-const center=fp?.center?{lat:fp.center.lat,lng:fp.center.lng}:{lat:54.5,lng:-3},zoom=fp?18:6;
-activeBoundaryMap=createProjectCheckMap('boundaryMap',center,zoom,getSavedMapBearing(id));activeMeasureMap=activeBoundaryMap;
-activeBoundaryMap.on('rotateend',()=>saveMapBearing(id,activeBoundaryMap.getBearing()));
-if(fp?.center)updateBuildingLayer(p,activeBoundaryMap,fp.center,activeBoundaryFootprintAngle,'boundary');
-activeBoundaryPoints=Array.isArray(p.facts.siteBoundary)?p.facts.siteBoundary.map(x=>[x.lat,x.lng]):[];redrawBoundary();
-activeBoundaryMap.on('click',e=>{
-if(measureMode){measurePoints.push([e.lngLat.lat,e.lngLat.lng]);redrawMeasure();return}
-activeBoundaryPoints.push([e.lngLat.lat,e.lngLat.lng]);redrawBoundary();document.querySelector('#boundaryStatus').textContent=`Boundary points: ${activeBoundaryPoints.length}`
-});
-let s1f=document.querySelector('#s1files');
-// Updates the allowance line in place rather than re-rendering the whole
-// screen — a full siteBoundaryMap(id) re-render would tear down and
-// recreate the live map, discarding any boundary points the customer had
-// already clicked but not yet saved.
-s1f.onchange=async()=>{await addEvidenceFiles(p,s1f.files,'Stage 1','Stage 1 evidence added');let st=document.querySelector('#s1evidenceStatus');if(st)st.textContent=uploadsLabel(p,'Stage 1')}
-}
-// --- Approximate site-planning measurement tool (distance/area). Metric only.
-// These are working/site-planning measurements, not surveyed dimensions, and never
-// touch the customer's report-download allowance (see downloadReport()). Purely
-// geographic (haversineMetres/approxAreaM2 operate on real lat/lng), so — like every
-// other geometry function in this file — camera/map bearing has zero effect on them. ---
-function toggleMeasure(mode){measureMode=(measureMode===mode)?null:mode;measurePoints=[];redrawMeasure();updateMeasureUI()}
-function clearMeasure(){measureMode=null;measurePoints=[];redrawMeasure();updateMeasureUI()}
-function updateMeasureUI(){
-let db=document.querySelector('#measureDistanceBtn'),ab=document.querySelector('#measureAreaBtn');
-if(db)db.classList.toggle('active',measureMode==='distance');
-if(ab)ab.classList.toggle('active',measureMode==='area');
-let st=document.querySelector('#measureStatus');if(!st)return;
-if(!measureMode){st.textContent='Measurement tool off.';return}
-st.textContent=measureMode==='distance'?'Click points on the map to measure distance.':'Click at least 3 points to measure an approximate area.'
-}
-function approxAreaM2(points){
-const lat0=points[0][0]*Math.PI/180,mPerDegLat=111320,mPerDegLng=Math.max(1,111320*Math.cos(lat0));
-const xy=points.map(([lat,lng])=>[(lng-points[0][1])*mPerDegLng,(lat-points[0][0])*mPerDegLat]);
-let sum=0;for(let i=0;i<xy.length;i++){const [x1,y1]=xy[i],[x2,y2]=xy[(i+1)%xy.length];sum+=x1*y2-x2*y1}
-return Math.abs(sum)/2
-}
-// Replaces Leaflet's L.latLng().distanceTo() — plain haversine great-circle distance,
-// same formula family or that method used internally, purely geographic (lat/lng in,
-// metres out), never touched by map bearing.
-function haversineMetres(a,b){
-const R=6371000,toRad=x=>x*Math.PI/180,dLat=toRad(b[0]-a[0]),dLng=toRad(b[1]-a[1]);
-const s=Math.sin(dLat/2)**2+Math.cos(toRad(a[0]))*Math.cos(toRad(b[0]))*Math.sin(dLng/2)**2;
-return 2*R*Math.asin(Math.sqrt(s))
-}
-function redrawMeasure(){
-if(!activeMeasureMap)return;
-const srcId='measure-draw';
-let st=document.querySelector('#measureStatus');
-const clearLayer=()=>{let src=activeMeasureMap.getSource(srcId);if(src)src.setData({type:'FeatureCollection',features:[]})};
-const apply=()=>{
-if(!measureMode||measurePoints.length<1){clearLayer();return}
-let geojson;
-if(measureMode==='distance')geojson={type:'Feature',geometry:{type:'LineString',coordinates:measurePoints.map(([lat,lng])=>[lng,lat])},properties:{}};
-else{let ring=measurePoints.map(([lat,lng])=>[lng,lat]);geojson=ring.length>=3?{type:'Feature',geometry:{type:'Polygon',coordinates:[[...ring,ring[0]]]},properties:{}}:{type:'Feature',geometry:{type:'LineString',coordinates:ring},properties:{}}}
-let src=activeMeasureMap.getSource(srcId);
-if(src)src.setData(geojson);
-else{
-activeMeasureMap.addSource(srcId,{type:'geojson',data:geojson});
-activeMeasureMap.addLayer({id:srcId+'-fill',type:'fill',source:srcId,filter:['==',['geometry-type'],'Polygon'],paint:{'fill-color':'#a15c00','fill-opacity':.12}});
-activeMeasureMap.addLayer({id:srcId+'-line',type:'line',source:srcId,paint:{'line-color':'#a15c00','line-width':3,'line-dasharray':[2,1.3]}})
-}
-};
-if(activeMeasureMap.isStyleLoaded())apply();else activeMeasureMap.once('load',apply);
-if(!measureMode)return;
-if(measurePoints.length<1){if(st)st.textContent=measureMode==='distance'?'Click points on the map to measure distance.':'Click at least 3 points to measure an approximate area.';return}
-if(measureMode==='distance'){
-let total=0;for(let i=1;i<measurePoints.length;i++)total+=haversineMetres(measurePoints[i-1],measurePoints[i]);
-if(st)st.textContent=`Approximate working measurement — not a surveyed dimension. Distance: ${total.toFixed(1)} m over ${measurePoints.length} point(s).`
-}else if(measureMode==='area'){
-if(measurePoints.length>=3){let area=approxAreaM2(measurePoints);if(st)st.textContent=`Approximate working measurement — not a surveyed dimension. Area: ${Math.round(area).toLocaleString()} m².`}
-else if(st)st.textContent=`Click at least 3 points to measure an approximate area (${measurePoints.length} so far).`
-}
-}
-async function searchBoundaryAddress(id){let q=document.querySelector('#boundaryAddressSearch').value.trim(),s=document.querySelector('#boundarySearchStatus');if(!q)return alert('Enter the site address or postcode.');s.textContent='Searching address…';try{let b=await geocode(q);if(!b){s.textContent='Address not found.';return}activeBoundaryMap.jumpTo({center:[parseFloat(b.lon),parseFloat(b.lat)],zoom:19});s.textContent=b.display_name}catch(e){s.textContent='Address search could not connect. Pan/zoom manually, or continue without drawing the boundary.'}}
-function rotateBoundaryBuilding(id,delta){let p=getP(id),fp=p.facts.buildingFootprint;if(!fp?.center)return alert('No saved building footprint.');activeBoundaryFootprintAngle=(activeBoundaryFootprintAngle+delta+360)%360;updateBuildingLayer(p,activeBoundaryMap,fp.center,activeBoundaryFootprintAngle,'boundary');document.querySelector('#boundaryStatus').textContent=`Building rotation: ${activeBoundaryFootprintAngle}°. Continue drawing the boundary.`}
-// Draws the boundary-in-progress as a GeoJSON source with three geometry-type-filtered
-// layers (point/line/fill) sharing one source — MapLibre's 'geometry-type' filter
-// expression lets exactly one layer match at a time as the point count grows from 1 to
-// 2 to 3+, without needing three separate sources.
-function redrawBoundary(){
-if(!activeBoundaryMap)return;
-const srcId='boundary-draw';
-let geojson=null;
-if(activeBoundaryPoints.length===1){const [lat,lng]=activeBoundaryPoints[0];geojson={type:'Feature',geometry:{type:'Point',coordinates:[lng,lat]},properties:{}}}
-else if(activeBoundaryPoints.length===2)geojson={type:'Feature',geometry:{type:'LineString',coordinates:activeBoundaryPoints.map(([lat,lng])=>[lng,lat])},properties:{}};
-else if(activeBoundaryPoints.length>=3){let ring=activeBoundaryPoints.map(([lat,lng])=>[lng,lat]);geojson={type:'Feature',geometry:{type:'Polygon',coordinates:[[...ring,ring[0]]]},properties:{}}}
-const apply=()=>{
-let src=activeBoundaryMap.getSource(srcId);
-if(!geojson){if(src)src.setData({type:'FeatureCollection',features:[]});return}
-if(src)src.setData(geojson);
-else{
-activeBoundaryMap.addSource(srcId,{type:'geojson',data:geojson});
-activeBoundaryMap.addLayer({id:srcId+'-fill',type:'fill',source:srcId,filter:['==',['geometry-type'],'Polygon'],paint:{'fill-color':'#a15c00','fill-opacity':.1}});
-activeBoundaryMap.addLayer({id:srcId+'-line',type:'line',source:srcId,filter:['in',['geometry-type'],['literal',['LineString','Polygon']]],paint:{'line-color':'#a15c00','line-width':3}});
-activeBoundaryMap.addLayer({id:srcId+'-point',type:'circle',source:srcId,filter:['==',['geometry-type'],'Point'],paint:{'circle-radius':6,'circle-color':'#a15c00'}})
-}
-};
-if(activeBoundaryMap.isStyleLoaded())apply();else activeBoundaryMap.once('load',apply)
-}
-function resetBoundary(){activeBoundaryPoints=[];redrawBoundary();document.querySelector('#boundaryStatus').textContent='Boundary reset. Click the map to redraw it.'}
-// 2026-08-27 (revised 17-question workflow): Map 2 sits mid-flow (after
-// services, before closeBoundary) — it no longer completes Stage 1 itself.
-// Both confirm and skip resume the question flow at 'closeBoundary's index
-// (moveStage1); Stage 1 finalisation (stage1Complete/runStage1Risks/
-// history/routing to the report) happens only once the last question
-// (programme) is answered — see advanceStage1().
-// Index recomputed 2026-09-01 (Stage 1 Question Reduction, 17 -> 12): was
-// 15 ('closeBoundary's old position), now 10 (new position) — same
-// hardcoded-array-position issue as saveBuildingPosition()/
-// skipBuildingPosition() above; fixed alongside them.
-function saveBoundary(id){
-if(activeBoundaryPoints.length<3)return alert('Please add at least three points to define the site boundary, or choose "Continue without drawing the boundary".');let p=getP(id);p.facts.siteBoundary=activeBoundaryPoints.map(x=>({lat:x[0],lng:x[1]}));p.facts.siteBoundaryStatus='confirmed';if(p.facts.buildingFootprint?.center){let d=buildingDims(p),center=p.facts.buildingFootprint.center,corners=metresToFootprintCorners(center,d.width,d.length,activeBoundaryFootprintAngle).map(x=>({lat:x[0],lng:x[1]}));p.facts.buildingFootprint={center,width:d.width,length:d.length,angle:activeBoundaryFootprintAngle,corners}}p.history.push({at:now(),text:'Relevant site boundary confirmed on map'});if(typeof pcBuildingRegsRun==='function')pcBuildingRegsRun(p);save();resumeStage1After(id,"personnelDoors")
-}
-function skipSiteBoundary(id){
-let p=getP(id);p.facts.siteBoundaryStatus='skipped';p.history.push({at:now(),text:'Site boundary not drawn on a map — continuing without a mapped boundary'});if(typeof pcBuildingRegsRun==='function')pcBuildingRegsRun(p);save();resumeStage1After(id,"personnelDoors")
-}
 
 // PRESERVED, NOT AUTHORITATIVE — the original app-native heated-building
 // Stage 1 risk trigger, kept unaltered per Project-Check-Brain's
@@ -2772,7 +2355,7 @@ let siteBoundaryRisk=pcBrainSiteBoundaryStatusRisk(f.siteBoundaryStatus);if(site
 if(projectReuseIntention(f)==='Yes — assess it for reuse')add('The customer would like to reuse the existing surface if it proves suitable; levels, drainage, services, structural capacity and anchoring suitability remain unverified.','cost','civils');
 if(projectReuseIntention(f)==='Not sure')add('Reuse of the existing surface is undecided; evidence is needed before any saving or replacement cost can be assumed.','cost','civils');
 const steel=projectIsSteelFreeStanding(f);
-let specialistLowTemperatureFlag=steel?stage1SteelEnvelope(f).label==='Potential issue identified':Boolean(p.stage1Assessments?.specialistLowTemperatureFlag);
+let specialistLowTemperatureFlag=steel?stage1SteelEnvelope(f).label==='Get professional support':Boolean(p.stage1Assessments?.specialistLowTemperatureFlag);
 if(specialistLowTemperatureFlag)add('The stated internal temperature is below 2°C and requires specialist low-temperature envelope and temperature-control review.','cost','engineering');
 if(!risks.length)add(steel?'No immediate high-level issue was triggered by the information supplied. The project still needs competent verification before firm commitments.':'No immediate high-level issue was triggered by the information supplied, but Stage 2 evidence is still required before major commitments.','issue','general');
 let actions=[steel?'Resolve the evidence gaps and obtain competent checks before making a firm supplier commitment.':'Complete Stage 2 before relying on the project as ready for firm supplier commitment.'];
@@ -2877,8 +2460,7 @@ return `<div class="subhead">${esc(title)}</div><div class="risk-list">${items.m
 function stage1Summary(id){
 if(!requireUser())return;
 let p=getP(id);if(!p)return route('dashboard');
-const steel=projectIsSteelFreeStanding(projectFacts(p));
-if(steel){
+{
   const gaps=stage1SteelReportGaps(p);
   if(gaps.length||!p.stage1SummaryConfirmed){
     app.innerHTML=`<main class="container stage1-workspace"><section class="stage1-tech-card"><h1>Stage 1 Free Report</h1><p>Complete the outstanding information and review the Project Summary first.</p><ul>${gaps.map(gap=>`<li>${esc(gap)}</li>`).join('')}</ul><button class="btn green" data-route="stage1Confirm" data-id="${esc(id)}">Open Project Summary</button></section></main>`;
@@ -2894,7 +2476,7 @@ if(steel){
   syncAuth();
 }
 document.body.dataset.page='stage1-shell';
-let missing=stage1MissingInfo(p);
+let missing=[...stage1MissingInfo(p),...stage1RegsMissingInfo(p)];
 let resolvedFacts={...p.facts,structure:stage1KnownValue(p,"structure"),use:stage1KnownValue(p,"use")};
 let reportProject={...p,facts:resolvedFacts};
 let drawing=buildingDrawingSVG(reportProject);
@@ -2924,21 +2506,20 @@ app.innerHTML=`<div class="container"><div class="pagehead"><div class="workspac
 <div><b>Use:</b> ${esc(resolvedFacts.use||'—')}</div>
 <div><b>Dimensions:</b> ${esc(p.facts.width||'—')} m × ${esc(p.facts.length||'—')} m, clear height ${esc(p.facts.height||'—')} m</div>
 ${steelRequirementRows}
-${steel?'':`<div><b>Roller doors:</b> ${(p.facts.rollerDoors||[]).length}</div>`}
-<div><b>Personnel doors:</b> ${esc(p.facts.personnelDoors||'—')}</div>
+<div><b>Personnel doors:</b> ${esc(stage1PersonnelDoorsText(p))}</div>
 </div><p class="meta" style="margin-top:8px">These are the customer's own answers, not independently verified by Project Check.</p></div>
 ${stage1RollerOpeningListMarkup(p)}
 
 <div class="card" style="margin-top:18px"><h3>Site &amp; footprint information</h3><div class="grid2 small-list">
- ${steel?`<div><b>Visible level:</b> ${esc(p.facts.level||'Not known')}</div><div><b>Known drains or services:</b> ${esc(p.facts.services||'Not known')}</div><div><b>Calculated indicative ridge:</b> ${projectRidgeHeight(p)?.toFixed(2)??'Not calculated'} m</div>`:''}
+ <div><b>Visible level:</b> ${esc(p.facts.level||'Not known')}</div><div><b>Known drains or services:</b> ${esc(p.facts.services||'Not known')}</div><div><b>Calculated indicative ridge:</b> ${projectRidgeHeight(p)?.toFixed(2)??'Not calculated'} m</div>
 <div><b>Building position:</b> ${p.facts.buildingPositionStatus==='confirmed'?'Confirmed on map (customer-placed)':'Not yet confirmed on a map — typed address only'}</div>
 <div><b>Site boundary:</b> ${p.facts.siteBoundaryStatus==='confirmed'?'Confirmed on map (customer-drawn)':'Not yet confirmed on a map'}</div>
 </div><p class="meta" style="margin-top:8px">Map-drawn positions/boundaries reflect the customer's own placement on a satellite map at typical residential/commercial accuracy — they are not a professional survey.</p></div>
-${steel?stage1SteelEnvelopeMarkup(p)+stage1SteelSiteMarkup(p)+stage1BaseFoundationsMarkup(p)+stage1AdjacentJunctionMarkup(p)+stage1RegsCheckerMarkup(p):''}
+${stage1SteelEnvelopeMarkup(p)+stage1SteelSiteMarkup(p)+stage1BaseFoundationsMarkup(p)+stage1AdjacentJunctionMarkup(p)+stage1RegsCheckerMarkup(p)}
 
 <div class="card" style="margin-top:18px"><h3>Industrial building reference visual</h3><p class="meta">Illustrative reference image of a modern industrial/warehouse-style building, shown for general context only — this is not a depiction of your specific proposed building. Your project-specific preliminary illustration, based on the dimensions you supplied, is shown separately below.</p><img class="report-building" src="assets/project-check-building-reports.png" alt="Illustrative modern industrial building, shown for general reference only"></div>
 
-<div class="card" style="margin-top:18px"><h3>Planning position — at Stage 1 level</h3><p class="meta">Stage 1 does not check local planning records or nearby planning history — that is a Stage 2 investigation. The only planning-adjacent observation available at this stage is below.</p>${stage1DisciplineBlock(p,'planning','Preliminary planning-adjacent flag','No boundary/neighbour-related flag was identified from the answers supplied.')}</div>
+<div class="card stage1-permitted-development" style="margin-top:18px"><h3>Permitted development</h3><p class="stage1-pd-${stage1PermittedDevelopment(p).status}">${esc(stage1PermittedDevelopment(p).text)}</p></div>
 
 <div class="card" style="margin-top:18px"><h3>Civils &amp; site observations — at Stage 1 level</h3><p class="meta">Based only on what is visible/known about the site so far — not a ground investigation or civils design.</p>${stage1DisciplineBlock(p,'civils','Preliminary civils-adjacent flags','No civils-adjacent flag was identified from the answers supplied.')}</div>
 
@@ -2948,11 +2529,10 @@ ${steel?stage1SteelEnvelopeMarkup(p)+stage1SteelSiteMarkup(p)+stage1BaseFoundati
 
 <div class="card" style="margin-top:18px"><h3>Assumptions / information not yet established</h3>${missing.length?`<div class="action-list">${missing.map(m=>`<div class="risk">${esc(m)}</div>`).join('')}</div>`:'<p class="meta">No outstanding information gaps were identified from the answers supplied.</p>'}</div>
 
-<div class="card" style="margin-top:18px"><h3>Recommended next actions</h3><div class="action-list">${p.actions1.map(x=>`<div class="action-item">${esc(x)}</div>`).join('')}</div></div>
 
 ${drawing?`<div class="card" style="margin-top:18px"><h3>Preliminary building illustration</h3><p class="meta">Preliminary Stage 1 illustration only, based on the dimensions supplied — not a construction or fabrication drawing.</p><div class="svg-wrap">${drawing}</div></div>`:''}
 
-${steel?`<div class="card" style="margin-top:18px"><h3>Download your Stage 1 Free Report</h3><button class="btn" onclick="downloadReport('${esc(id)}','s1')">Download Stage 1 PDF</button></div>`:`<div class="card" style="margin-top:18px"><h3>What Stage 2 will investigate</h3><p>Stage 2 asks the questions that cannot be answered from the visible site alone: what is below the surface, what evidence exists, what the local planning/Building Regulations position is, and what operational requirements could change the building or civils design.</p><div class="actions"><button class="btn" onclick="downloadReport('${esc(id)}','s1')">Download Stage 1 PDF</button><button class="btn green" onclick="startStage2('${esc(id)}')">Start Stage 2</button></div></div>`}</div>`
+<div class="card" style="margin-top:18px"><h3>Download your Stage 1 Free Report</h3><button class="btn" onclick="downloadReport('${esc(id)}','s1')">Download Stage 1 PDF</button></div></div>`
 }
 
 const stage2Questions=[
@@ -2985,7 +2565,6 @@ const stage2Questions=[
 ['ev','Is EV charging planned inside or immediately around the building?','select',['Yes','No','Not sure']],
 ['supplierQuotes','Do you already have supplier quotations for this project?','select',['Yes — one','Yes — two','Yes — three or more','No','Not yet']]
 ];
-function startStage2(id){let p=getP(id);if(!p)return;if(projectIsSteelFreeStanding(projectFacts(p)))return;if(!p.stage1Complete)return alert('Complete Stage 1 first.');p.stage='Stage 2';p.history.push({at:now(),text:'Stage 2 opened'});save();route('stage2',id)}
 // Shared "evidence can be added at any time" panel rendered on every Stage 2
 // question — this is the one place that panel is templated, so adding the
 // upload control here covers all Stage 2 questions uniformly, not just the
@@ -3003,6 +2582,8 @@ function startStage2(id){let p=getP(id);if(!p)return;if(projectIsSteelFreeStandi
 // correctly excluded from the Stage 1 two-file allowance (stage1EvidenceCount
 // only counts stage==='Stage 1'). There is no separate Stage 2 upload limit
 // in the existing product — none is introduced here, per instruction.
+// Stage 2 is not open yet: every building type stays on the one Stage 1 route.
+function startStage2(id){route('stage1Workspace',id)}
 function stage2EvidencePanelHTML(p){
 return `<div class="actions"><label class="btn secondary" for="s2files" style="display:inline-block">Upload files</label></div><input type="file" id="s2files" multiple style="display:none"><p class="meta">${uploadsLabel(p,p.stage)}</p><p class="meta">${p.evidence.length?`${p.evidence.length} file(s) recorded for this project: ${p.evidence.map(e=>esc(e.name)).join(', ')}`:'No files uploaded yet for this project.'}</p>`
 }
@@ -3134,8 +2715,7 @@ app.innerHTML=`<div class="container"><div class="pagehead"><div><div class="eye
 <div class="grid2"><div class="card"><h3>Add a quotation you already have</h3><div class="field"><label>Supplier</label><input id="qsupplier" placeholder="Supplier name"></div><div class="grid2"><div class="field"><label>Quoted price (£)</label><input id="qprice" type="number" step="1"></div><div class="field"><label>Lead time</label><input id="qlead" placeholder="e.g. 12 weeks"></div></div><div class="field"><label>What is included / excluded?</label><textarea id="qscope" placeholder="Main scope, exclusions, assumptions, optional items"></textarea></div><div class="field"><label>Quotation file</label><input id="qfile" type="file"></div><button class="btn green" onclick="addQuote('${esc(id)}')">Add quotation</button></div>
 <div class="card"><span class="pill">Three suppliers</span><h3>Request three suitable quotations</h3><p>Record a request for three quotations from three different suitable building suppliers. This prototype records the request; production will route the project through the supplier-matching workflow.</p>${p.supplierRequest?`<div class="banner green"><b>Request recorded</b><div class="meta">${new Date(p.supplierRequest.at).toLocaleString()}</div></div>`:`<button class="btn green" onclick="requestThreeSuppliers('${esc(id)}')">Request 3 quotations</button>`}</div></div>
 ${fireExitCard}
-<div class="card" style="margin-top:18px"><h3>Quotation comparison</h3>${p.quotes.length?`<table><thead><tr><th>Supplier</th><th>Price</th><th>Lead time</th><th>Scope / exclusions</th><th>File</th></tr></thead><tbody>${p.quotes.map(q=>`<tr><td>${esc(q.supplier)}</td><td>${q.price?`£${Number(q.price).toLocaleString()}`:'—'}</td><td>${esc(q.lead||'—')}</td><td>${esc(q.scope||'—')}</td><td>${esc(q.file||'—')}</td></tr>`).join('')}</tbody></table>`:`<p class="meta">No quotations recorded yet.</p>`}</div>
-<div class="card" style="margin-top:18px"><h3>Need help resolving the differences?</h3><p>Move to the £99 Solutions stage for organised actions and direct project-specific support, or the £249 one-project support route for continuing project involvement.</p><div class="actions"><button class="btn green" onclick="selectPlan('${esc(id)}','£99 Solutions')">Choose £99 Solutions</button><button class="btn dark" onclick="selectPlan('${esc(id)}','£249 One-project support')">Choose £249 support</button><button class="btn secondary" data-route="pricing">View pricing details</button></div></div></div>`
+<div class="card" style="margin-top:18px"><h3>Quotation comparison</h3>${p.quotes.length?`<table><thead><tr><th>Supplier</th><th>Price</th><th>Lead time</th><th>Scope / exclusions</th><th>File</th></tr></thead><tbody>${p.quotes.map(q=>`<tr><td>${esc(q.supplier)}</td><td>${q.price?`£${Number(q.price).toLocaleString()}`:'—'}</td><td>${esc(q.lead||'—')}</td><td>${esc(q.scope||'—')}</td><td>${esc(q.file||'—')}</td></tr>`).join('')}</tbody></table>`:`<p class="meta">No quotations recorded yet.</p>`}</div></div>`
 }
 // Stage 2 design summary for quotation (#quotationSummary/<project id>). Shows the
 // confirmed Building Design with the Stage 2 background checks (background-
@@ -3155,7 +2735,6 @@ app.innerHTML=`<div class="container quotation-summary"><div class="pagehead"><d
 }
 function addQuote(id){let p=getP(id),supplier=document.querySelector('#qsupplier').value.trim(),price=document.querySelector('#qprice').value.trim(),lead=document.querySelector('#qlead').value.trim(),scope=document.querySelector('#qscope').value.trim(),file=document.querySelector('#qfile').files[0];if(!supplier)return alert('Enter the supplier name.');p.quotes.push({id:crypto.randomUUID(),supplier,price,lead,scope,file:file?.name||'',at:now()});if(file)p.evidence.push({name:file.name,size:file.size,type:file.type,at:now(),stage:'Quotation'});p.history.push({at:now(),text:`Supplier quotation added: ${supplier}`});save();quotes(id)}
 function requestThreeSuppliers(id){let p=getP(id);p.supplierRequest={at:now(),count:3,status:'Requested'};p.history.push({at:now(),text:'Requested three quotations from three suitable suppliers'});save();quotes(id)}
-function selectPlan(id,plan){let p=getP(id);p.plan=plan;p.history.push({at:now(),text:`Paid support selected in prototype: ${plan}`});save();alert(`${plan} recorded for this prototype. Payment is not active yet.`);quotes(id)}
 
 // Evidence Intelligence Batch 4 — customer-facing Stage 3 action detail. This
 // AUGMENTS the existing Stage 3 architecture (pricing() § £99/£249,
@@ -3207,68 +2786,6 @@ if(req&&req.status==='RESPONSE_SUPPLIED')return'Evidence received — under revi
 return STAGE3_STATUS_LABEL[a.action_status]||a.action_status
 }
 function stage3StatusIsClosedLike(a){return a.action_status==='RESOLVED'||a.action_status==='CLOSED'||a.action_status==='SUPERSEDED'}
-function stage3Actions(id){
-if(!requireUser())return;let p=getP(id);if(!p)return route('dashboard');
-if(!p.plan)return route('project',id);
-// Batch 5: rebuild findings first (as every other Stage 2/3-reading route
-// already does) so the ISSUE line below (sourced from each action's own
-// finding) is never stale.
-if(typeof buildStage2Findings==='function')buildStage2Findings(p);
-if(typeof buildStage3Actions==='function')buildStage3Actions(p);save();
-let actions=Object.values(p.stage3Actions||{});
-let open=actions.filter(a=>!stage3StatusIsClosedLike(a));
-let resolved=actions.filter(stage3StatusIsClosedLike);
-// Batch 4 (2026-08-26): `likely_responsible_party` on a Batch-3-derived
-// action already carries its own complete, cautious framing (see
-// describeApparentResponsibility() in evidence.js — "Likely responsible
-// party: X." / "Appears to require input from: X (assistance/information
-// only...)." / "Responsibility requires confirmation..."), so it is shown
-// as-is; an OLD action's plain party name/description keeps the existing
-// hard-coded "<b>Likely responsible party:</b> ... " wrapping unchanged.
-const respAlreadyFramed=s=>/^(Likely responsible party|Appears to require input from|Responsibility requires confirmation)/.test(s||'');
-// Batch 5: the ISSUE line — sourced from the action's OWN Stage 2 finding's
-// existing, already-restrained customer_facing_summary (never a new piece
-// of copy, never internal_detail/raw IDs). Package/scope, interface and
-// evidence-required-to-close are all NEW sections here, each individually
-// suppressed when empty — never a blank heading shown to the customer.
-const findingsById=p.stage2Findings||{};
-const actionCard=a=>{
-let finding=findingsById[a.source_finding_id];
-let issueText=finding?finding.customer_facing_summary:null;
-let pkgScopeText=(typeof customerPackageScopeText==='function')?customerPackageScopeText(a.package,a.scope):null;
-let highPriority=a.action_priority==='high'&&!stage3StatusIsClosedLike(a);
-// Planning Batch 4 (2026-08-26): plain-English "Resolve before:" wording —
-// consumes the planning gate Planning Batch 3 already derived
-// (a.planning_gate, present only on planning-context actions) via the ONE
-// existing label map (PLANNING_GATE_RESOLVE_BEFORE_LABEL, evidence.js) —
-// never a second/duplicate label map, never the raw enum shown. Absent
-// entirely on every non-planning action (unchanged).
-let resolveBeforeText=(a.planning_gate&&typeof PLANNING_GATE_RESOLVE_BEFORE_LABEL!=='undefined'&&PLANNING_GATE_RESOLVE_BEFORE_LABEL[a.planning_gate])||null;
-return `<div class="card" style="margin-top:14px"><span class="pill${stage3StatusIsClosedLike(a)?' green':(highPriority?' warn':'')}">${esc(stage3CustomerStatusLabel(a,p))}</span>`
-+(issueText&&issueText!==a.customer_facing_action?`<p class="meta"><b>Issue:</b> ${esc(issueText)}</p>`:'')
-+`<h3>${esc(a.customer_facing_action)}</h3>`
-+`<p class="meta">${esc(a.why_required)}</p>`
-+(resolveBeforeText?`<p class="meta"><b>Resolve before:</b> ${esc(resolveBeforeText)}</p>`:'')
-+(pkgScopeText?`<p class="meta"><b>Affected package/scope:</b> ${esc(pkgScopeText)}</p>`:'')
-+(a.required_information&&a.required_information.length?`<p class="meta"><b>Information required:</b> ${a.required_information.map(esc).join('; ')}</p>`:'')
-+(a.likely_responsible_party?(respAlreadyFramed(a.likely_responsible_party)?`<p class="meta">${esc(a.likely_responsible_party)} <span class="meta">(not contractually confirmed by Project Check)</span></p>`:`<p class="meta"><b>Likely responsible party:</b> ${esc(a.likely_responsible_party)} <span class="meta">(typically provided by this party — not contractually confirmed by Project Check)</span></p>`):'')
-+(a.interface_summary?`<p class="meta"><b>Interface / coordination point:</b> ${esc(a.interface_summary)}</p>`:'')
-+(a.evidence_required_to_close&&a.evidence_required_to_close.length?`<p class="meta"><b>Evidence required to close:</b> ${a.evidence_required_to_close.map(esc).join('; ')}</p>`:'')
-+`</div>`
-};
-// Planning Batch 5 (2026-08-26): a single restrained "new evidence" note —
-// never a scraper error/HTTP code/adapter name/raw URL/raw evidence ID
-// (governing brief §27). Shown only when the planning portal check has
-// actually ingested at least one document; the resulting action/status
-// changes are then simply visible through the SAME existing action cards
-// above/below — no separate portal dashboard.
-let portalNewEvidenceNote=(p.planningPortalSource&&(p.planningPortalSource.documents_ingested_evidence_names||[]).length)?'<div class="card" style="margin-top:14px"><p class="meta">New planning evidence has been identified from the public planning record. The actions below reflect the current position.</p></div>':'';
-app.innerHTML=`<div class="container"><div class="pagehead"><div><div class="eyebrow">Stage 3 · ${esc(p.plan)}</div><h1>Project actions — ${esc(p.name)}</h1><p class="meta">Practical next steps identified from your project information and uploaded documents. Project Check identifies and coordinates these — it is not the structural, fire or geotechnical engineer, Building Control, planning authority, supplier or civil/drainage engineer for your project.</p></div><button class="btn secondary" onclick="route('project','${esc(id)}')">Project workspace</button></div>
-${portalNewEvidenceNote}
-${open.length?open.map(actionCard).join(''):'<div class="card"><p class="meta">No open actions have been identified from your project information and uploaded documents yet.</p></div>'}
-${resolved.length?`<div class="card resolved-actions" style="margin-top:18px"><h3>Resolved</h3>${resolved.map(actionCard).join('')}</div>`:''}
-</div>`
-}
 
 // buildingDrawingSVG() and svgToPngDataUrl() now live in drawing.js, driven by
 // buildGeometry()/ensureGeometry() in geometry.js — the single project-geometry
@@ -3345,16 +2862,10 @@ save();
 renderDoorReview(id,true)
 }
 
-// p.downloads is the ONLY thing the two-free-download allowance counts. It is incremented
-// nowhere else in this file — not by positioning/rotating/confirming the building footprint,
-// marking/skipping boundaries, the distance/area measurement tool, evidence uploads, or the
-// Stage 2 door review (add/remove/reposition/regenerate). Those are required system/interactive
-// steps to complete the assessment, not customer-facing report downloads (Sprint 2, item 5).
 async function downloadReport(id,stage){
 let p=getP(id),k=stage==='s1'?'s1':'s2';
 if(!p)return;
-const steel=projectIsSteelFreeStanding(projectFacts(p));
-if(steel){
+{
   if(stage!=='s1'||!p.stage1Complete||!p.stage1SummaryConfirmed||stage1SteelReportGaps(p).length)return;
   runStage1Risks(p);
 }
@@ -3387,10 +2898,11 @@ if(y+refH>270){doc.addPage();y=18}
 doc.addImage(PC_BUILDING_REPORT_DATA_URL,'PNG',left,y,refW,refH);y+=refH+8
 }catch(e){/* optional reference image only — a malformed data URI must not abort the whole report */}
 }
-const excludeKeys=['buildingPosition','buildingFootprint','siteBoundary','rollerDoors','buildingPositionStatus','siteBoundaryStatus','addressConfirmedOnly'];
+const RETIRED_ANSWER_KEYS=['regsFireAccessElevations','regsFireAccessWidth'];
+const excludeKeys=['buildingPosition','buildingFootprint','siteBoundary','rollerDoors','buildingPositionStatus','siteBoundaryStatus','addressConfirmedOnly',...RETIRED_ANSWER_KEYS];
 if(stage==='s1'){
-heading(steel?'CUSTOMER ENTERED':'FACTS SUPPLIED');
-if(steel){
+heading('CUSTOMER ENTERED');
+{
   const facts=projectFacts(p),envelope=stage1SteelEnvelope(facts);
   const customerFacts={
     'Building use':stage1KnownValue(p,'use'), 'Building type':facts.buildingType||'Free-standing building',
@@ -3400,7 +2912,7 @@ if(steel){
     'Visible level':facts.level, 'Known drains or services':facts.services,
     'Drawings, surveys or site information':projectSiteEvidenceAvailability(facts),
     'Vehicle doors':facts.rollerCount,
-    'Personnel doors':facts.personnelDoors, 'Close boundaries or obstructions':facts.closeBoundary, 'Programme':facts.programme
+    'Personnel doors':stage1PersonnelDoorsText(p), 'Close boundaries or obstructions':facts.closeBoundary, 'Programme':facts.programme
   };
   Object.entries(customerFacts).forEach(([name,value])=>add(`${name}: ${value||'Not supplied'}`,9,false,5));
   const openings=stage1RollerOpeningComparison(p);
@@ -3421,8 +2933,7 @@ if(steel){
     heading(STAGE1_ADJACENT_JUNCTION_HEADING.toUpperCase());
     STAGE1_ADJACENT_JUNCTION_NOTES.forEach(item=>add(`• ${item}`,9,false,5.6));
   }
-}else Object.entries(p.facts).forEach(([key,val])=>{if(excludeKeys.includes(key)||val===''||val==null||(key==='heated'&&p.facts.temperatureCondition))return;let shown=Array.isArray(val)?val.join(', '):val;add(`${label(key)}: ${shown}`,9,false,5)});
-if(!steel&&p.facts.rollerDoors?.length){subhead('Roller doors:');p.facts.rollerDoors.forEach((d,i)=>add(`Door ${i+1}: ${d.width} m wide${d.widthSource==='suggested-default'?' (preliminary default)':''} × ${d.height} m high${d.heightSource==='suggested-default'?' (preliminary default)':''} — ${d.access||'access type not set'}`,9,false,5))}
+}
 add(`Building position: ${p.facts.buildingPositionStatus==='confirmed'?`confirmed on map (${p.facts.buildingFootprint?.width} m × ${p.facts.buildingFootprint?.length} m, rotation ${p.facts.buildingFootprint?.angle}°)`:'not yet confirmed on a map — typed address only'}`,9,false,6);
 add(`Site boundary: ${p.facts.siteBoundaryStatus==='confirmed'?'confirmed on map':'not yet confirmed on a map'}`,9,false,6);
 add(`Evidence supplied: ${p.evidence.length} file reference(s).`,9,false,6);
@@ -3437,10 +2948,18 @@ subhead(t);
 if(items.length)items.forEach(r=>add(`• ${r.text}`,9,false,5.6));
 else add(emptyNote,9,false,5.6)
 };
-if(steel)heading('POTENTIAL ISSUES IDENTIFIED');
-heading('PLANNING POSITION — AT STAGE 1 LEVEL');
-add('Stage 1 does not check local planning records or nearby planning history — that is a Stage 2 investigation.',8,false,5);
-printDiscipline('planning','Preliminary planning-adjacent flag','No boundary/neighbour-related flag was identified from the answers supplied.');
+{
+  const found=stage1RegsFindings(p);
+  if(found){
+    heading('POTENTIAL ISSUES IDENTIFIED');
+    found.problems.forEach(item=>{add(`• ${item.text}`,9,true,5.6);if(item.why)add(item.why,9,false,5.6)});
+    if(found.support.length){subhead('Get professional support');found.support.forEach(text=>add(`• ${text}`,9,false,5.6))}
+    if(found.needInfo.length){subhead('Need info');add("We can't check these yet. Missing:",9,false,5.6);found.needInfo.forEach(text=>add(`• ${text}`,9,false,5.6))}
+    if(found.allClear)add('No potential issues found from the information given.',9,false,5.6)
+  }
+}
+heading('PERMITTED DEVELOPMENT');
+add(stage1PermittedDevelopment(p).text,9,false,5.6);
 
 heading('CIVILS & SITE OBSERVATIONS — AT STAGE 1 LEVEL');
 printDiscipline('civils','Preliminary civils-adjacent flags','No civils-adjacent flag was identified from the answers supplied.');
@@ -3454,11 +2973,8 @@ printDiscipline('site','Site/map confirmation','');
 printDiscipline('general','General/programme','');
 
 heading('ASSUMPTIONS / INFORMATION NOT YET ESTABLISHED');
-let missing=stage1MissingInfo(p);
+let missing=[...stage1MissingInfo(p),...stage1RegsMissingInfo(p)];
 if(missing.length)missing.forEach(m=>add(`• ${m}`,9,false,5.6));else add('No outstanding information gaps were identified from the answers supplied.',9,false,6);
-
-heading('RECOMMENDED NEXT ACTIONS');
-p.actions1.forEach(a=>add(`• ${a}`,9,false,6));
 
 let pdfProject={...p,facts:{...p.facts,structure:stage1KnownValue(p,"structure"),use:stage1KnownValue(p,"use")}};
 let svg=buildingDrawingSVG(pdfProject);
@@ -3477,13 +2993,13 @@ heading('PROJECT FACTS');
 Object.entries(p.facts).forEach(([key,val])=>{if(excludeKeys.includes(key)||val===''||val==null||(key==='heated'&&p.facts.temperatureCondition))return;let shown=Array.isArray(val)?val.join(', '):val;add(`${label(key)}: ${shown}`,9,false,5)});
 if(p.facts.rollerDoors?.length){subhead('Roller doors:');p.facts.rollerDoors.forEach((d,i)=>add(`Door ${i+1}: ${d.width} m wide × ${d.height} m high — ${d.access}`,9,false,5))}
 if(p.facts.buildingFootprint)add(`Building footprint: ${p.facts.buildingFootprint.width} m × ${p.facts.buildingFootprint.length} m, rotation ${p.facts.buildingFootprint.angle}°`,9,false,6);
-heading('STAGE 2 EVIDENCE / STATUS');Object.entries(p.stage2).forEach(([key,val])=>add(`${label(key)}: ${val}`,9,false,5));
+heading('STAGE 2 EVIDENCE / STATUS');Object.entries(p.stage2).filter(([key])=>!RETIRED_ANSWER_KEYS.includes(key)).forEach(([key,val])=>add(`${label(key)}: ${val}`,9,false,5));
 heading('DEEPER RISKS');p.risks2.forEach(r=>add(`• ${r}`,9,false,6));
 heading('RECOMMENDED ACTIONS');p.actions2.forEach(a=>add(`• ${a}`,9,false,6));
 heading('SUPPLIER POSITION');add(`${p.quotes.length} supplier quotation(s) currently recorded.`,9,false,5);add(p.supplierRequest?'A request for three suitable supplier quotations has been recorded.':'No three-supplier quotation request is currently recorded.',9,false,6)
 }
 heading('IMPORTANT');add('This is a preliminary Project Check assessment based on the information supplied. It is not structural design, statutory approval, a survey or a substitute for project-specific professional design. Figures and illustrations are indicative and subject to verification.',8,false,5);
-p.downloads[k]++;p.history.push({at:now(),text:`${stage==='s1'?'Stage 1':'Stage 2'} PDF report downloaded`});save();
+p.history.push({at:now(),text:`${stage==='s1'?'Stage 1':'Stage 2'} PDF report downloaded`});save();
 doc.save(`Project-Check-${p.name.replace(/\W+/g,'-')}-${stage==='s1'?'Stage-1':'Stage-2'}.pdf`)
 }
 // wetProcess: no longer an active question (removed 2026-08-24, see
@@ -3493,7 +3009,7 @@ doc.save(`Project-Check-${p.name.replace(/\W+/g,'-')}-${stage==='s1'?'Stage-1':'
 // hgvRoute: same pattern, no longer an active question (removed 2026-08-26,
 // see stage1Questions above) — kept mapped here purely so a legacy project's
 // PDF facts dump still renders "Site access width" instead of the raw key.
-function label(k){return ({name:'Your name',role:'Role',structure:'Structure type',address:'Site',use:'Intended use',buildingUse:'Building use',buildingType:'Building type',heated:'Heated',temperatureCondition:'Temperature conditions',requiredTemperatureC:'Required internal temperature (°C)',ambientProtectionNeeded:'Frost/condensation/temperature-change protection (legacy)',intendsToReuseExistingBase:'Intention to reuse existing surface',adjacentExistingBuilding:'Link to or near an existing building',siteEvidenceAvailability:'Drawings, surveys or site information',width:'Width',length:'Length',height:'Clear height',clearSpan:'Clear span',base:'Existing surface',level:'Level',services:'Services/drains',closeBoundary:'Boundaries/nearby buildings',hgvRoute:'Site access width',rollerCount:'Roller doors',personnelDoors:'Personnel doors',programme:'Programme',beneathSurface:'Below visible surface',slabThickness:'Slab thickness known',slabThicknessDetail:'Slab thickness detail',reinforcement:'Slab reinforcement known',groundTesting:'Ground/slab investigation',surfaceCondition:'Footprint condition',topo:'Topographical survey',drainInfo:'Drainage information',serviceInfo:'Underground services',planning:'Planning position',planningConstraints:'Planning constraints',planningDetail:'Planning details',buildingControl:'Building Regulations / Building Control',fireStrategy:'Fire strategy',sprinklers:'Sprinklers',occupancy:'Expected occupancy',racking:'Racking',mezzanine:'Mezzanine',crane:'Crane/suspended loads',hazardous:'Hazardous/unusual processes',wetProcess:'Wet process',ev:'EV charging',supplierQuotes:'Existing quotations',regsFireAccessElevations:'Fire engine access elevations',regsFireAccessWidth:'Narrowest fire engine road width (m)'})[k]||k}
+function label(k){return ({name:'Your name',role:'Role',structure:'Structure type',address:'Site',use:'Intended use',buildingUse:'Building use',buildingType:'Building type',heated:'Heated',temperatureCondition:'Temperature conditions',requiredTemperatureC:'Required internal temperature (°C)',ambientProtectionNeeded:'Frost/condensation/temperature-change protection (legacy)',intendsToReuseExistingBase:'Intention to reuse existing surface',adjacentExistingBuilding:'Link to or near an existing building',siteEvidenceAvailability:'Drawings, surveys or site information',width:'Width',length:'Length',height:'Clear height',clearSpan:'Clear span',base:'Existing surface',level:'Level',services:'Services/drains',closeBoundary:'Boundaries/nearby buildings',hgvRoute:'Site access width',rollerCount:'Roller doors',personnelDoors:'Personnel doors',programme:'Programme',beneathSurface:'Below visible surface',slabThickness:'Slab thickness known',slabThicknessDetail:'Slab thickness detail',reinforcement:'Slab reinforcement known',groundTesting:'Ground/slab investigation',surfaceCondition:'Footprint condition',topo:'Topographical survey',drainInfo:'Drainage information',serviceInfo:'Underground services',planning:'Planning position',planningConstraints:'Planning constraints',planningDetail:'Planning details',buildingControl:'Building Regulations / Building Control',fireStrategy:'Fire strategy',sprinklers:'Sprinklers',occupancy:'Expected occupancy',racking:'Racking',mezzanine:'Mezzanine',crane:'Crane/suspended loads',hazardous:'Hazardous/unusual processes',wetProcess:'Wet process',ev:'EV charging',supplierQuotes:'Existing quotations'})[k]||k}
 
 // esc() (HTML-entity encoding) protects the HTML-parsing context that every
 // route-render function inserts `id` into via onclick="...('${esc(id)}')" —
@@ -3540,14 +3056,13 @@ function render(){syncAuth();let [r,id]=(location.hash.slice(1)||'home').split('
 // visible only where it was actually requested.
 document.body.dataset.page=r;
 if(SITE_SHELL_ROUTES.has(r))document.body.dataset.reviewShell='true';else delete document.body.dataset.reviewShell;
-if(['stage2','stage2Summary','stage3','quotes','doors'].includes(r)){
+if(['stage2','stage2Summary','quotes','doors'].includes(r)){
   const p=id&&getP(id);
-  if(p&&projectIsSteelFreeStanding(projectFacts(p)))return route('stage1Workspace',id);
+  if(p)return route('stage1Workspace',id);
 }
 switch(r){
 case 'signin':authModal('signin',true);break;
 case 'create':authModal('create',true);break;
-case 'pricing':pricing(id);break;
 case 'dashboard':dashboard(id);break;
 case 'createProject':projectBriefModal(undefined,false,true);break;
 case 'profile':profile(id);break;
@@ -3565,7 +3080,6 @@ case 'stage2':stage2(id);break;
 case 'stage2Summary':stage2Summary(id);break;
 case 'quotes':quotes(id);break;
 case 'quotationSummary':quotationSummary(id);break;
-case 'stage3':stage3Actions(id);break;
 case 'doors':doorReview(id);break;
 case 'evidenceLedger':evidenceLedgerPage(id);break;
 case 'terms':termsPage();break;
@@ -3591,8 +3105,8 @@ document.querySelectorAll(':is(.home-footer nav,.sitefooter-primary) button:is([
 // question-to-question flow, which calls stage1(id) directly and never
 // goes through render() for its own internal steps.
 window.scrollTo(0,0)}
-window.route=route;window.stage1SummaryDoorSelect=stage1SummaryDoorSelect;window.quotationSummary=quotationSummary;window.authModal=authModal;window.newProject=newProject;window.uploadDrawings=uploadDrawings;window.requestHumanSupport=requestHumanSupport;window.moveStage1=moveStage1;window.saveStage1=saveStage1;window.confirmStage1Evidence=confirmStage1Evidence;window.correctStage1Evidence=correctStage1Evidence;window.searchBuildingAddress=searchBuildingAddress;window.rotateBuilding=rotateBuilding;window.saveBuildingPosition=saveBuildingPosition;window.skipBuildingPosition=skipBuildingPosition;window.searchBoundaryAddress=searchBoundaryAddress;window.rotateBoundaryBuilding=rotateBoundaryBuilding;window.resetBoundary=resetBoundary;window.saveBoundary=saveBoundary;window.skipSiteBoundary=skipSiteBoundary;window.startStage2=startStage2;window.moveStage2=moveStage2;window.saveStage2=saveStage2;window.addQuote=addQuote;window.requestThreeSuppliers=requestThreeSuppliers;window.selectPlan=selectPlan;window.downloadReport=downloadReport;
-window.doorReview=doorReview;window.selectDoor=selectDoor;window.moveDoor=moveDoor;window.changeDoorWall=changeDoorWall;window.addDoor=addDoor;window.removeDoor=removeDoor;window.confirmDoors=confirmDoors;window.toggleMeasure=toggleMeasure;window.clearMeasure=clearMeasure;
+window.route=route;window.startStage2=startStage2;window.stage1SummaryDoorSelect=stage1SummaryDoorSelect;window.quotationSummary=quotationSummary;window.authModal=authModal;window.newProject=newProject;window.uploadDrawings=uploadDrawings;window.moveStage1=moveStage1;window.saveStage1=saveStage1;window.confirmStage1Evidence=confirmStage1Evidence;window.correctStage1Evidence=correctStage1Evidence;window.moveStage2=moveStage2;window.saveStage2=saveStage2;window.addQuote=addQuote;window.requestThreeSuppliers=requestThreeSuppliers;window.downloadReport=downloadReport;
+window.doorReview=doorReview;window.selectDoor=selectDoor;window.moveDoor=moveDoor;window.changeDoorWall=changeDoorWall;window.addDoor=addDoor;window.removeDoor=removeDoor;window.confirmDoors=confirmDoors;
 async function initializeStage1Review(){
   try {
     const response=await fetch('/api/stage1-review',{cache:'no-store',credentials:'omit'});

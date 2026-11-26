@@ -373,6 +373,7 @@ function pcDesignLegend(geom, x, y) {
     <line x1="${x + 140}" y1="${y + 1}" x2="${x + 152}" y2="${y + 1}" stroke="${PC_INK}" stroke-width="3"/><text x="${x + 155}" y="${y + 4}" font-size="5.5" fill="${PC_INK}">RD Roller door</text>
     <rect x="${x}" y="${y + 9}" width="8" height="5" fill="#e6f4fb" stroke="${PC_SKY}" stroke-width=".7"/><text x="${x + 11}" y="${y + 14}" font-size="5.5" fill="${PC_INK}">Skylight</text>
     <rect x="${x + 66}" y="${y + 9}" width="8" height="5" fill="${PC_SOLAR}" stroke="#d99a1e" stroke-width=".6"/><text x="${x + 77}" y="${y + 14}" font-size="5.5" fill="${PC_INK}">PV Solar array</text>
+    <path d="M${x + 140} ${y + 13} L${x + 140} ${y + 7} L${x + 146} ${y + 13}" fill="none" stroke="${PC_GREEN}" stroke-width=".7"/><text x="${x + 149}" y="${y + 14}" font-size="5.5" fill="${PC_INK}">FE Fire exit</text>
     <text x="${x}" y="${y + 24}" font-size="5.5" fill="${PC_DIM}">${pcEscXml(roofLine)}</text></g>`;
 }
 

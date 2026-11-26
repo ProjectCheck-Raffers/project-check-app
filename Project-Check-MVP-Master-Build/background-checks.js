@@ -400,10 +400,37 @@ function pcFireExitFootprintCorners(fp) {
   const hw = (Number(fp.width) || 0) / 2, hl = (Number(fp.length) || 0) / 2, th = (Number(fp.angle) || 0) * Math.PI / 180;
   return [[-hw, -hl], [hw, -hl], [hw, hl], [-hw, hl]].map(([x, y]) => { const xr = x * Math.cos(th) - y * Math.sin(th), yr = x * Math.sin(th) + y * Math.cos(th); return { lat: lat + yr / mLat, lng: lng + xr / mLng }; });
 }
+// True when a marked boundary line lies on the side a wall faces: the line crosses the strip
+// running straight out from that wall (as wide as the wall). A side with no such line is
+// "unmarked" and its distance is unknown (need info), never assumed far enough.
+function pcBgWallHasBoundary(a, b, centroid, lines) {
+  const dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy);
+  if (!len) return false;
+  const ux = dx / len, uy = dy / len;
+  let nx = -uy, ny = ux;
+  if (nx * ((a.x + b.x) / 2 - centroid.x) + ny * ((a.y + b.y) / 2 - centroid.y) < 0) { nx = -nx; ny = -ny; }
+  const toWall = q => ({ l: (q.x - a.x) * ux + (q.y - a.y) * uy, t: (q.x - a.x) * nx + (q.y - a.y) * ny });
+  return lines.some(line => {
+    for (let i = 0; i < line.length - 1; i++) {
+      const p1 = toWall(line[i]), p2 = toWall(line[i + 1]);
+      let t0 = 0, t1 = 1;
+      const clip = (p, q) => { // keep the part where p + t*q >= 0
+        if (q === 0) return p >= 0;
+        const r = -p / q;
+        if (q > 0) { if (r > t1) return false; if (r > t0) t0 = r; } else { if (r < t0) return false; if (r < t1) t1 = r; }
+        return true;
+      };
+      const dl = p2.l - p1.l, dt = p2.t - p1.t;
+      if (clip(p1.l, dl) && clip(len - p1.l, -dl) && clip(p1.t, dt) && t0 <= t1) return true;
+    }
+    return false;
+  });
+}
 // Per-wall minimum distance (m) to the nearest user-drawn boundary line, keyed by
 // elevation letter (A front, B right, C back, D left — footprint corner order
 // used by Site Layout and the Building Design site reference). Returns null when
-// boundaries were skipped, not yet confirmed, or no lines exist.
+// boundaries were skipped, not yet confirmed, or no lines exist. A wall with no
+// marked boundary on the side it faces is null (unmarked = need info).
 function pcBgBoundaryDistances(p) {
   const facts = (p && p.facts) || {}, fp = facts.buildingFootprint || {};
   if (facts.siteBoundaryStatus !== 'confirmed') return null;
@@ -413,8 +440,10 @@ function pcBgBoundaryDistances(p) {
   const origin = { lat: corners.reduce((t, c) => t + c.lat, 0) / 4, lng: corners.reduce((t, c) => t + c.lng, 0) / 4 };
   const local = corners.map(c => pcFireExitLocal(c, origin));
   const walls = [['A', local[0], local[1]], ['B', local[1], local[2]], ['C', local[2], local[3]], ['D', local[3], local[0]]];
+  const localLines = lines.map(line => line.map(pt => pcFireExitLocal(pt, origin)));
   const out = {};
   walls.forEach(([letter, a, b]) => {
+    if (!pcBgWallHasBoundary(a, b, { x: 0, y: 0 }, localLines)) { out[letter] = null; return; }
     let min = Infinity;
     lines.forEach(line => { for (let i = 0; i < line.length - 1; i++) { const d = pcFireExitSegDist(a, b, pcFireExitLocal(line[i], origin), pcFireExitLocal(line[i + 1], origin)); if (d < min) min = d; } });
     out[letter] = Number.isFinite(min) ? Math.round(min * 100) / 100 : null;
