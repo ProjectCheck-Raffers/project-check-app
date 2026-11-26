@@ -1,12 +1,12 @@
 {
-  "version": "regs-checker-20261123",
+  "version": "regs-checker-20261126",
   "note": "Stage 1 text must show potential problems only - never solutions, methods, products or costs. Placeholders: {elevation} {distance} {travel}. Set approved to true only when Stuart has signed the rule off.",
   "rules": [
     {
       "id": "B_BOUNDARY",
       "part": "B",
       "regsRef": "ADB Vol 2 Section 13",
-      "trigger": "Per elevation: distance to the drawn site boundary under 25 m. The cladding fire rating is not asked; standard PIR is never treated as unprotected by default. Unmarked side = need info.",
+      "trigger": "Per elevation: distance to the drawn site boundary that wall faces (ADB 13.5 / Diagram 13.2: faces test plus the 80 degree rule, measured at right angles from the wall) under 25 m. Distances from background-checks.js pcBgFacingBoundaryDistances. The cladding fire rating is not asked; standard PIR is never treated as unprotected by default. No facing boundary marked = need info, never ok.",
       "stage1Problem": "A fire-rated wall may be needed on elevation {elevation} – the building supplier to confirm.",
       "stage1WhyItMatters": "Walls close to a boundary are limited in how much fire can spread to the neighbouring site.",
       "stage2Solution": "Stuart to write",
@@ -17,7 +17,7 @@
       "id": "B_BOUNDARY_1M",
       "part": "B",
       "regsRef": "ADB Vol 2 13.8",
-      "trigger": "Per elevation: distance to boundary under 1 m.",
+      "trigger": "Per elevation: distance to the boundary that wall faces (same facing distances as B_BOUNDARY) under 1 m. A line passing a corner is measured at right angles from the wall, not diagonally to the corner. No facing boundary marked = need info.",
       "stage1Problem": "Elevation {elevation} is under 1 m from the boundary – strict fire rules apply to this wall.",
       "stage1WhyItMatters": "Very close walls face the tightest fire limits, which can affect the wall and any openings in it.",
       "stage2Solution": "Stuart to write",
@@ -110,15 +110,17 @@
     {
       "id": "L_ENERGY",
       "part": "L",
-      "regsRef": "Approved Document L (Vol 2)",
-      "trigger": "Building Design answer 'Will this building have heating, toilets, offices or any services?': Yes = note, No = ok, Not sure or blank = need info.",
-      "stage1Problem": "",
-      "stage1WhyItMatters": "",
+      "regsRef": "Approved Document L Vol 2 (2021: para 0.11, 2.27–2.29; 2026 edition: para 0.12, 2.26–2.28)",
+      "trigger": "Test is fixed heating or cooling. Heated, other temperature requirement, or services answer Yes = note. Unheated (Stage 1 heated answer) AND services No AND use inside the exemption (industrial, storage, workshop, agricultural) = ok. Unheated AND services No AND any other use (e.g. sports or leisure) = check line (never ok). Heated answer, services answer or use unknown = need info (never ok).",
+      "stage1Problem": "Unheated building used for {use} – a Part L (energy) statement for Building Control may be needed. Get professional support.",
+      "stage1WhyItMatters": "The Part L exemption for unheated buildings only covers industrial sites, workshops, storage and agricultural buildings.",
       "stage2Solution": "Stuart to write",
       "approved": true,
       "scope": "customer",
-      "stage1Note": "With heating, toilets, offices or other services, an energy calculation for Building Control may be needed. Get professional support.",
-      "needInfo": "Whether the building will have heating, toilets, offices or any services"
+      "stage1Note": "With heating, cooling, toilets, offices or other services, an energy calculation for Building Control may be needed. Get professional support.",
+      "needInfo": "Whether the building will have heating, toilets, offices or any services",
+      "needInfoHeating": "Whether the building will be heated or cooled",
+      "needInfoUse": "The building use"
     },
     {
       "id": "PLAN_PD",
@@ -136,7 +138,7 @@
       },
       "anyNation": true,
       "scope": "customer",
-      "stage1Problem": "Full planning permission is likely to be needed \\u2013 get professional support.",
+      "stage1Problem": "Full planning permission is likely to be needed – get professional support.",
       "stage1WhyItMatters": "Permitted development limits on size, boundary distance and height look to be exceeded.",
       "stage2Solution": "Stuart to write",
       "approved": false
@@ -249,11 +251,12 @@
       "id": "H_DRAINAGE_QUOTE",
       "part": "H",
       "regsRef": "Approved Document H",
-      "trigger": "Always (England). Quote request: gutters and downpipes by the building supplier; surface water connection is customer scope. Also covers services or drainage within the footprint (was the separate services/drainage check).",
+      "trigger": "Always (England). Quote request: gutters and downpipes by the building supplier; surface water connection is customer scope. Also covers services or drainage within the footprint (was the separate services/drainage check). Built inside an existing building (Stage 1 base answer 'Existing building / structure', or a use saying inside/within an existing building) = services line only, no gutter or surface water lines.",
       "scope": "customer",
       "stage1Problem": "",
       "stage1WhyItMatters": "",
       "stage1Note": "Surface water drainage connection, and any services or drainage within the footprint (these may affect the building position, foundations or programme) – get professional support.",
+      "stage1NoteInternal": "Any services or drainage within the footprint (these may affect the building position, foundations or programme) – get professional support.",
       "stage2Solution": "Stuart to write",
       "approved": true
     },
@@ -323,7 +326,7 @@
       "stage1Problem": "The requested programme is compressed relative to the approvals, design, civils, manufacture and installation stages that may still be required.",
       "stage1WhyItMatters": "",
       "stage2Solution": "Stuart to write",
-      "approved": true
+      "approved": false
     },
     {
       "id": "MAP_NOT_CONFIRMED",
