@@ -2454,6 +2454,15 @@ function uploadHasTopoSurvey(p,files){
   if(/^yes\b/i.test(String(facts.topo||'')))return true;
   return (files||[]).some(uploadLooksLikeTopo)
 }
+const FIRE_LAYOUT_SCOPE='Under the terms, how you lay out stock, racking and machinery inside, and keeping escape routes clear, is your responsibility. It is outside the building supply.';
+function uploadLooksLikeInternalLayout(file){
+  const name=file&&file.name||'';
+  const type=file&&file.entry&&file.entry.documentType||'';
+  const guess=typeof uploadTypeGuess==='function'?uploadTypeGuess(name):{};
+  const text=file&&file.entry&&file.entry.extractedText||'';
+  const blob=[name,type,guess.kind||'',guess.label||'',String(text).slice(0,4000)].join(' ');
+  return /\b(rack(?:ing)?(?:[-_\s]?layout)?|pallet[-_\s]?rack|machiner(?:y|ies)|plant[-_\s]?layout|machine(?:ry)?[-_\s]?(?:position|layout|plan)|internal[-_\s]?layout|inside[-_\s]?layout|fit[-_]?out|stock[-_\s]?layout|storage[-_\s]?layout|warehouse[-_\s]?layout|travel[-_\s]?route|escape[-_\s]?route|means[-_\s]?of[-_\s]?escape|fire[-_\s]?exit[-_\s]?plan|evacuation[-_\s]?(?:plan|route))\b/i.test(blob)
+}
 function uploadSizeChangeLines(earlier,later){
   const lines=[];
   if(earlier.nums.length>=2&&later.nums.length>=2){
@@ -2571,8 +2580,6 @@ function uploadBuildReview(p){
   });
   if(!files.length)needInfo.push('You have not uploaded any files yet.');
   if(changes.length)questions.push(latestSize?`Which drawing is current: ${latestSize.file} (${uploadMetresText(latestSize.nums,latestSize.raw)}) or an earlier version?`:'Which drawing is current?');
-  questions.push('Where will machinery sit?');
-  questions.push('How will materials be stored?');
   const occupancyValue=stage1HasValue(facts.occupancy)?String(facts.occupancy).trim():'';
   const occupancyQ="What's the most people that will be inside the building at any one time?";
   const occupancyNote='Racked storage is usually 10 or fewer, even at 3,000 m², with no toilets, café or waiting rooms.';
@@ -2589,8 +2596,8 @@ function uploadBuildReview(p){
   const fireAssume=longSide
     ?`For a building about ${uploadPrettyNum(longSide)} m on its longer side, the planning assumption is a fire door roughly every 32 m, with 5 m of movement each way so doors can be repositioned. The right fire doors are priced up front.`
     :'The planning assumption is a fire door roughly every 32 m, with 5 m of movement each way so doors can be repositioned. The right fire doors are priced up front.';
-  const fireAdb='We check this against Approved Document B Volume 2 travel distances for storage: 25 m if there is only one way out, and 45 m if there is more than one. This is Stage 2 guidance only, not a statement that the building complies. Stuart will go through this with you.';
   const cards=files.map(file=>{
+    const internalLayout=uploadLooksLikeInternalLayout(file);
     const found=[];
     file.facts.forEach(fact=>{
       const label=UPLOAD_FACT_LABELS[fact.subject]||fact.subject.replace(/_/g,' ');
@@ -2625,9 +2632,9 @@ function uploadBuildReview(p){
     if(unclear.some(text=>/changed from|different size|current\?/i.test(text)))fileQuestions.push('Which drawing is current?');
     if(!file.revision&&file.read.canRead)fileQuestions.push(`Is ${file.name} the latest version?`);
     const unique=list=>[...new Set(list.filter(Boolean))].slice(0,6);
-    return {name:file.name,type:file.type,format:file.format,revision:file.revision,status:file.status,read:file.read,found:unique(found),missing:unique(missing),unclear:unique(unclear),questions:unique(fileQuestions).slice(0,5)}
+    return {name:file.name,type:file.type,format:file.format,revision:file.revision,status:file.status,read:file.read,found:unique(found),missing:unique(missing),unclear:unique(unclear),questions:unique(fileQuestions).slice(0,5),internalLayout}
   });
-  return {files,readableCount:readable.length,rows,needInfo:[...new Set(needInfo.filter(Boolean))],cards,sortedByUpload:true,changes,latestNote,latestName:latestSize?latestSize.file:'',questions:[...new Set(questions.filter(Boolean))],recommendations,cheapest,fireAssume,fireAdb,occupancyQ,occupancyNote,occupancyValue}
+  return {files,readableCount:readable.length,rows,needInfo:[...new Set(needInfo.filter(Boolean))],cards,sortedByUpload:true,changes,latestNote,latestName:latestSize?latestSize.file:'',questions:[...new Set(questions.filter(Boolean))],recommendations,cheapest,fireAssume,occupancyQ,occupancyNote,occupancyValue}
 }
 function uploadStatusChip(status){
   const cls=status==='Match'?'likely':status==='Changed'?'possibly':'needinfo';
@@ -2639,7 +2646,8 @@ function uploadFileCardMarkup(card,mode){
   const st=card.status?` · Marked "${esc(card.status)}"`:'';
   const block=(title,items,empty)=>`<div class="simple-qblock"><h4>${esc(title)}</h4>${items.length?`<ul class="simple-list simple-list-tight">${items.map(text=>`<li>${esc(text)}</li>`).join('')}</ul>`:`<p class="meta">${esc(empty)}</p>`}</div>`;
   const foundEmpty=mode==='stage1'?'Not reviewed in the free check.':(card.read.canRead?'Nothing we can read automatically was found in this file.':'We could not read this file, so we have not listed any figures.');
-  return `<article class="simple-qcard simple-draw-card"><div class="simple-qhead"><h3>${esc(card.type)} · ${esc(card.name)}${rev}${st}</h3></div><p class="meta">${esc(card.format)}. ${esc(readLine)}</p>${mode==='stage1'?`<p class="simple-file-line">Received, not reviewed in the free check.</p>`:''}${block('What we found',mode==='stage1'?[]:card.found,foundEmpty)}${block("What's missing – we need this from you",mode==='stage1'?(card.read.canRead?[]:card.missing):card.missing,mode==='stage1'?'A full list of what is missing is part of Stage 2.':'Nothing further listed from what we could read.')}${mode==='stage1'?'':block("What's unclear",card.unclear,'Nothing further listed from what we could read.')}${mode==='stage1'?'':block('Questions for your meeting with Stuart',card.questions,'No extra questions from this file.')}<p class="meta simple-qnote">${esc(UPLOAD_REVIEW_FOOTER)}</p></article>`
+  const layoutNote=mode!=='stage1'&&card.internalLayout?`<p class="meta">${esc(FIRE_LAYOUT_SCOPE)}</p>`:'';
+  return `<article class="simple-qcard simple-draw-card"><div class="simple-qhead"><h3>${esc(card.type)} · ${esc(card.name)}${rev}${st}</h3></div><p class="meta">${esc(card.format)}. ${esc(readLine)}</p>${layoutNote}${mode==='stage1'?`<p class="simple-file-line">Received, not reviewed in the free check.</p>`:''}${block('What we found',mode==='stage1'?[]:card.found,foundEmpty)}${block("What's missing – we need this from you",mode==='stage1'?(card.read.canRead?[]:card.missing):card.missing,mode==='stage1'?'A full list of what is missing is part of Stage 2.':'Nothing further listed from what we could read.')}${mode==='stage1'?'':block("What's unclear",card.unclear,'Nothing further listed from what we could read.')}${mode==='stage1'?'':block('Questions for your meeting with Stuart',card.questions,'No extra questions from this file.')}<p class="meta simple-qnote">${esc(UPLOAD_REVIEW_FOOTER)}</p></article>`
 }
 function uploadFiguresMarkup(review,mode){
   if(mode==='stage1'){
@@ -2667,11 +2675,11 @@ function uploadReviewMarkup(p,mode){
   const changed=review.changes.length
     ?`<section class="simple-qcard simple-review-panel"><h3>What changed between drawings</h3><p>Changing drawings is normal, not an error. A job goes through several stages and sizes can move. We show the latest drawing we have, what changed, and ask which is current.</p><ul class="simple-list simple-list-tight">${review.changes.map(text=>`<li>${esc(text)}</li>`).join('')}</ul>${review.latestNote?`<p class="meta">${esc(review.latestNote)}</p>`:''}</section>`
     :(review.latestNote?`<section class="simple-qcard simple-review-panel"><h3>Latest drawing</h3><p class="meta">${esc(review.latestNote)}</p></section>`:'');
-  const need=`<section class="simple-qcard simple-review-panel"><h3>Need info</h3>${review.needInfo.length?`<ul class="simple-list simple-list-tight">${review.needInfo.map(text=>`<li>${esc(text)}</li>`).join('')}</ul>`:'<p class="meta">Nothing listed yet from the files. That is not an all-clear.</p>'}<p class="meta">Where machinery will sit and how materials will be stored are questions, not missing items. We could not always read fire-door positions or boundary distances from the files. The planning assumption for fire doors is shown below. This is not a Building Regulations approval.</p></section>`;
+  const need=`<section class="simple-qcard simple-review-panel"><h3>Need info</h3>${review.needInfo.length?`<ul class="simple-list simple-list-tight">${review.needInfo.map(text=>`<li>${esc(text)}</li>`).join('')}</ul>`:'<p class="meta">Nothing listed yet from the files. That is not an all-clear.</p>'}<p class="meta">We could not always read fire-door positions or boundary distances from the files. The planning assumption for fire doors is shown below. This is not a Building Regulations approval.</p></section>`;
   const questions=uploadListSection('Questions for your meeting with Stuart',review.questions,'No extra questions yet.','');
   const recs=review.recommendations.length?uploadListSection('Recommendation',review.recommendations,'',''):'';
   const cheapest=`<section class="simple-qcard simple-review-panel"><h3>The cheapest option that still suits</h3><p>${esc(review.cheapest)}</p></section>`;
-  const fire=`<section class="simple-qcard simple-review-panel"><h3>Fire doors — planning assumption</h3><p>${esc(review.fireAssume)}</p><p class="meta">${esc(review.fireAdb)}</p></section>`;
+  const fire=`<section class="simple-qcard simple-review-panel"><h3>Fire doors — planning assumption</h3><p>${esc(review.fireAssume)}</p><p>${esc(FIRE_LAYOUT_SCOPE)}</p></section>`;
   const cards=review.cards.length?`<div class="simple-qlist">${review.cards.map(card=>uploadFileCardMarkup(card,mode)).join('')}</div>`:'';
   return `<div class="simple-upload-review">${header}${uploadFiguresMarkup(review,mode)}${changed}${need}${questions}${recs}${cheapest}${fire}${cards}</div>`
 }
@@ -2685,16 +2693,16 @@ function uploadExampleReviewMarkup(){
 <tr><th scope="row">Roof pitch</th><td>10°</td><td>Not found in the files we could read</td><td>${chip('Not shown')}</td><td>Roof pitch isn't written on the drawings we could read – we need it.</td></tr>
 </tbody></table></div></section>
 <section class="simple-qcard simple-review-panel"><h3>What changed between drawings</h3><p>Changing drawings is normal, not an error. A job goes through several stages and sizes can move. We show the latest drawing we have, what changed, and ask which is current.</p><ul class="simple-list simple-list-tight"><li>Length changed from 25 m on planning-layout.pdf to 24.4 m on steel-general-arrangement.pdf.</li></ul><p class="meta">We treated steel-general-arrangement.pdf as the latest because it is marked revision A and dated 16 Apr 2026. Please confirm it is the current one.</p></section>
-<section class="simple-qcard simple-review-panel"><h3>Need info</h3><ul class="simple-list simple-list-tight"><li>Which drawing is current: steel-general-arrangement.pdf (20 m × 24.4 m) or the earlier planning-layout.pdf (20 m × 25 m)?</li><li>Distance from each wall to the site boundary – not found in the files we could read.</li></ul><p class="meta">Where machinery will sit and how materials will be stored are questions, not missing items. The planning assumption for fire doors is shown below. This is not a Building Regulations approval.</p></section>
-<section class="simple-qcard simple-review-panel"><h3>Questions for your meeting with Stuart</h3><ul class="simple-list simple-list-tight"><li>Which drawing is current: steel-general-arrangement.pdf (20 m × 24.4 m) or the earlier planning-layout.pdf (20 m × 25 m)?</li><li>Where will machinery sit?</li><li>How will materials be stored?</li><li>What's the most people that will be inside the building at any one time? Racked storage is usually 10 or fewer, even at 3,000 m², with no toilets, café or waiting rooms.</li></ul></section>
+<section class="simple-qcard simple-review-panel"><h3>Need info</h3><ul class="simple-list simple-list-tight"><li>Which drawing is current: steel-general-arrangement.pdf (20 m × 24.4 m) or the earlier planning-layout.pdf (20 m × 25 m)?</li><li>Distance from each wall to the site boundary – not found in the files we could read.</li></ul><p class="meta">The planning assumption for fire doors is shown below. This is not a Building Regulations approval.</p></section>
+<section class="simple-qcard simple-review-panel"><h3>Questions for your meeting with Stuart</h3><ul class="simple-list simple-list-tight"><li>Which drawing is current: steel-general-arrangement.pdf (20 m × 24.4 m) or the earlier planning-layout.pdf (20 m × 25 m)?</li><li>What's the most people that will be inside the building at any one time? Racked storage is usually 10 or fewer, even at 3,000 m², with no toilets, café or waiting rooms.</li></ul></section>
 <section class="simple-qcard simple-review-panel"><h3>Recommendation</h3><ul class="simple-list simple-list-tight"><li>We have not found a topographical (level) survey in your uploads. We recommend one so heights and levels can be checked properly.</li></ul></section>
 <section class="simple-qcard simple-review-panel"><h3>The cheapest option that still suits</h3><p>The floor area you entered is about 500 m². We'll help you look at the cheapest option that still suits how you'll use the building, how close it is to the boundary, and this floor area.</p></section>
-<section class="simple-qcard simple-review-panel"><h3>Fire doors — planning assumption</h3><p>For a building about 25 m on its longer side, the planning assumption is a fire door roughly every 32 m, with 5 m of movement each way so doors can be repositioned. The right fire doors are priced up front.</p><p class="meta">We check this against Approved Document B Volume 2 travel distances for storage: 25 m if there is only one way out, and 45 m if there is more than one. This is Stage 2 guidance only, not a statement that the building complies. Stuart will go through this with you.</p></section>
+<section class="simple-qcard simple-review-panel"><h3>Fire doors — planning assumption</h3><p>For a building about 25 m on its longer side, the planning assumption is a fire door roughly every 32 m, with 5 m of movement each way so doors can be repositioned. The right fire doors are priced up front.</p><p>Under the terms, how you lay out stock, racking and machinery inside, and keeping escape routes clear, is your responsibility. It is outside the building supply.</p></section>
 <article class="simple-qcard simple-draw-card"><div class="simple-qhead"><h3>Drawing · steel-general-arrangement.pdf · Rev A · 16 Apr 2026</h3></div><p class="meta">PDF. We could read the text in this file. This is the latest drawing we have.</p>
 ${block('What we found',['Building 20 m wide × 24.4 m long (steel-general-arrangement.pdf)','Roller door: 4.0 m wide; height not written'])}
 ${block("What's missing – we need this from you",['Distance from each wall to the site boundary – not shown'])}
 ${block("What's unclear",['An earlier drawing, planning-layout.pdf, showed a length of 25 m. This later drawing shows 24.4 m. Changing drawings is normal. Which one is current?'])}
-${block('Questions for your meeting with Stuart',['Which drawing is current?','Where will machinery sit?','How will materials be stored?',"What's the most people that will be inside the building at any one time?"])}
+${block('Questions for your meeting with Stuart',['Which drawing is current?',"What's the most people that will be inside the building at any one time?"])}
 <p class="meta simple-qnote">${esc(UPLOAD_REVIEW_FOOTER)}</p></article></div>`
 }
 
