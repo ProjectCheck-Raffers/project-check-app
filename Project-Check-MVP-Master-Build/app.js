@@ -2463,6 +2463,17 @@ function uploadLooksLikeInternalLayout(file){
   const blob=[name,type,guess.kind||'',guess.label||'',String(text).slice(0,4000)].join(' ');
   return /\b(rack(?:ing)?(?:[-_\s]?layout)?|pallet[-_\s]?rack|machiner(?:y|ies)|plant[-_\s]?layout|machine(?:ry)?[-_\s]?(?:position|layout|plan)|internal[-_\s]?layout|inside[-_\s]?layout|fit[-_]?out|stock[-_\s]?layout|storage[-_\s]?layout|warehouse[-_\s]?layout|travel[-_\s]?route|escape[-_\s]?route|means[-_\s]?of[-_\s]?escape|fire[-_\s]?exit[-_\s]?plan|evacuation[-_\s]?(?:plan|route))\b/i.test(blob)
 }
+function uploadFireAdbGuidance(longSide,file){
+  let text='Because this file was uploaded, we check fire exits against Approved Document B Volume 2 travel distances for storage: 25 m if there is only one way out, and 45 m if there is more than one.';
+  if(longSide){
+    text+=` The building is about ${uploadPrettyNum(longSide)} m on its longer side.`;
+    if(longSide>25)text+=' If there is only one way out, 25 m may not cover a route from the far end; 45 m applies if there is more than one way out.';
+  }
+  if(file&&file.read&&file.read.canRead)text+=' We cannot confirm actual travel routes automatically from this file.';
+  else text+=' We could not measure travel routes from this file automatically.';
+  text+=' This is Stage 2 guidance only, not a statement that the building complies. Stuart will go through this with you.';
+  return text
+}
 function uploadSizeChangeLines(earlier,later){
   const lines=[];
   if(earlier.nums.length>=2&&later.nums.length>=2){
@@ -2632,7 +2643,8 @@ function uploadBuildReview(p){
     if(unclear.some(text=>/changed from|different size|current\?/i.test(text)))fileQuestions.push('Which drawing is current?');
     if(!file.revision&&file.read.canRead)fileQuestions.push(`Is ${file.name} the latest version?`);
     const unique=list=>[...new Set(list.filter(Boolean))].slice(0,6);
-    return {name:file.name,type:file.type,format:file.format,revision:file.revision,status:file.status,read:file.read,found:unique(found),missing:unique(missing),unclear:unique(unclear),questions:unique(fileQuestions).slice(0,5),internalLayout}
+    const fireAdb=internalLayout?uploadFireAdbGuidance(longSide,file):'';
+    return {name:file.name,type:file.type,format:file.format,revision:file.revision,status:file.status,read:file.read,found:unique(found),missing:unique(missing),unclear:unique(unclear),questions:unique(fileQuestions).slice(0,5),internalLayout,fireAdb}
   });
   return {files,readableCount:readable.length,rows,needInfo:[...new Set(needInfo.filter(Boolean))],cards,sortedByUpload:true,changes,latestNote,latestName:latestSize?latestSize.file:'',questions:[...new Set(questions.filter(Boolean))],recommendations,cheapest,fireAssume,occupancyQ,occupancyNote,occupancyValue}
 }
@@ -2646,7 +2658,7 @@ function uploadFileCardMarkup(card,mode){
   const st=card.status?` · Marked "${esc(card.status)}"`:'';
   const block=(title,items,empty)=>`<div class="simple-qblock"><h4>${esc(title)}</h4>${items.length?`<ul class="simple-list simple-list-tight">${items.map(text=>`<li>${esc(text)}</li>`).join('')}</ul>`:`<p class="meta">${esc(empty)}</p>`}</div>`;
   const foundEmpty=mode==='stage1'?'Not reviewed in the free check.':(card.read.canRead?'Nothing we can read automatically was found in this file.':'We could not read this file, so we have not listed any figures.');
-  const layoutNote=mode!=='stage1'&&card.internalLayout?`<p class="meta">${esc(FIRE_LAYOUT_SCOPE)}</p>`:'';
+  const layoutNote=mode!=='stage1'&&card.internalLayout?`<div class="simple-qblock"><h4>Fire-exit check — guidance only</h4><p>${esc(card.fireAdb||'')}</p><p class="meta">${esc(FIRE_LAYOUT_SCOPE)}</p></div>`:'';
   return `<article class="simple-qcard simple-draw-card"><div class="simple-qhead"><h3>${esc(card.type)} · ${esc(card.name)}${rev}${st}</h3></div><p class="meta">${esc(card.format)}. ${esc(readLine)}</p>${layoutNote}${mode==='stage1'?`<p class="simple-file-line">Received, not reviewed in the free check.</p>`:''}${block('What we found',mode==='stage1'?[]:card.found,foundEmpty)}${block("What's missing – we need this from you",mode==='stage1'?(card.read.canRead?[]:card.missing):card.missing,mode==='stage1'?'A full list of what is missing is part of Stage 2.':'Nothing further listed from what we could read.')}${mode==='stage1'?'':block("What's unclear",card.unclear,'Nothing further listed from what we could read.')}${mode==='stage1'?'':block('Questions for your meeting with Stuart',card.questions,'No extra questions from this file.')}<p class="meta simple-qnote">${esc(UPLOAD_REVIEW_FOOTER)}</p></article>`
 }
 function uploadFiguresMarkup(review,mode){
