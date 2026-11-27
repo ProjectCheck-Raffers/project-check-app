@@ -2406,6 +2406,68 @@ function uploadStatusOf(entry,read){
   const found=detectDocumentStatusToken(entry.extractedText);
   return found&&found.value?found.value:null
 }
+function uploadRevisionRank(rev){
+  if(!rev)return -1;
+  const text=String(rev).trim().toUpperCase();
+  const num=text.match(/(\d+)\s*$/);
+  const letter=text.match(/([A-Z]+)/);
+  let letters=0;
+  if(letter){for(let i=0;i<letter[1].length;i++)letters=letters*26+(letter[1].charCodeAt(i)-64)}
+  if(num)return (letters||0)*1000+parseInt(num[1],10);
+  return letters|| -1
+}
+function uploadPrettyNum(n){
+  if(!Number.isFinite(n))return '';
+  return String(Math.round(n*1000)/1000).replace(/\.0+$/,'')
+}
+function uploadMetresText(nums,raw){
+  if(nums&&nums.length>=2)return `${uploadPrettyNum(nums[0])} m × ${uploadPrettyNum(nums[1])} m`;
+  if(nums&&nums.length===1)return `${uploadPrettyNum(nums[0])} m`;
+  return raw||''
+}
+function uploadPickLatest(files,items){
+  if(!items.length)return null;
+  const byName=new Map(files.map(file=>[file.name,file]));
+  const order=new Map(files.map((file,i)=>[file.name,i]));
+  return items.reduce((best,item)=>{
+    if(!best)return item;
+    const a=byName.get(item.file)||{},b=byName.get(best.file)||{};
+    const ra=uploadRevisionRank(a.revision),rb=uploadRevisionRank(b.revision);
+    if(ra>=0&&rb>=0&&ra!==rb)return ra>rb?item:best;
+    return (order.get(item.file)||0)>=(order.get(best.file)||0)?item:best
+  },null)
+}
+function uploadLatestReason(files,latestName){
+  const file=files.find(item=>item.name===latestName);
+  if(!file)return 'We could not tell which drawing is the latest. Please tell us which is current.';
+  if(file.revision)return `We treated ${latestName} as the latest because it is marked revision ${file.revision}. Please confirm it is the current one.`;
+  return `We treated ${latestName} as the latest because it was uploaded last. We could not read a drawing date. Please confirm which is current.`
+}
+function uploadLooksLikeTopo(file){
+  const name=file&&file.name||'';
+  const type=file&&file.entry&&file.entry.documentType||'';
+  const guess=typeof uploadTypeGuess==='function'?uploadTypeGuess(name):{};
+  return /topo|topograph|level.?survey|existing.?levels|site.?survey/i.test([name,type,guess.kind||'',guess.label||''].join(' '))
+}
+function uploadHasTopoSurvey(p,files){
+  const facts=p?projectFacts(p):{};
+  if(/^yes\b/i.test(String(facts.topo||'')))return true;
+  return (files||[]).some(uploadLooksLikeTopo)
+}
+function uploadSizeChangeLines(earlier,later){
+  const lines=[];
+  if(earlier.nums.length>=2&&later.nums.length>=2){
+    const eW=earlier.nums[0],eL=earlier.nums[1];
+    const aligned=uploadValuesMatch(eW,later.nums[0])||uploadValuesMatch(eL,later.nums[1])||!(uploadValuesMatch(eW,later.nums[1])&&uploadValuesMatch(eL,later.nums[0]))
+      ?later.nums:[later.nums[1],later.nums[0]];
+    if(!uploadValuesMatch(eW,aligned[0]))lines.push(`Width changed from ${uploadPrettyNum(eW)} m on ${earlier.file} to ${uploadPrettyNum(aligned[0])} m on ${later.file}.`);
+    if(!uploadValuesMatch(eL,aligned[1]))lines.push(`Length changed from ${uploadPrettyNum(eL)} m on ${earlier.file} to ${uploadPrettyNum(aligned[1])} m on ${later.file}.`);
+    if(!lines.length&&!uploadPairMatches(eW,eL,later.nums))lines.push(`Size changed from ${uploadMetresText(earlier.nums,earlier.raw)} on ${earlier.file} to ${uploadMetresText(later.nums,later.raw)} on ${later.file}.`)
+  }else if((earlier.raw||'')!==(later.raw||'')){
+    lines.push(`Size changed from ${earlier.raw||uploadMetresText(earlier.nums)} on ${earlier.file} to ${later.raw||uploadMetresText(later.nums)} on ${later.file}.`)
+  }
+  return lines
+}
 function uploadBuildReview(p){
   const docs=(p&&p.evidence||[]).filter(item=>item&&item.name).slice().sort((a,b)=>(a.at||0)-(b.at||0));
   const files=docs.map(entry=>{
@@ -2420,9 +2482,24 @@ function uploadBuildReview(p){
   const hasL=stage1HasValue(facts.length)&&Number.isFinite(enteredL);
   const sizeFacts=files.flatMap(file=>file.facts.filter(fact=>fact.subject==='building_footprint_dimensions'||fact.subject==='overall_building_length').map(fact=>({file:file.name,fact})));
   const eavesFacts=files.flatMap(file=>file.facts.filter(fact=>fact.subject==='eaves_height').map(fact=>({file:file.name,fact})));
+  const pairs=sizeFacts.map(item=>({file:item.file,nums:uploadParseMetres(item.fact.extracted_value),raw:item.fact.extracted_value}));
+  const latestSize=uploadPickLatest(files,pairs);
+  const changes=[];
+  const questions=[];
+  const recommendations=[];
+  if(latestSize){
+    pairs.forEach(item=>{
+      if(item.file===latestSize.file)return;
+      uploadSizeChangeLines(item,latestSize).forEach(line=>{if(!changes.includes(line))changes.push(line)})
+    })
+  }
+  const latestNote=latestSize?uploadLatestReason(files,latestSize.file):'';
   const rows=[];
   if(hasW||hasL||sizeFacts.length){
-    const drawingParts=sizeFacts.map(item=>`${item.fact.extracted_value} (${item.file})`);
+    const drawingParts=sizeFacts.map(item=>{
+      const tag=latestSize&&item.file===latestSize.file?'latest ':'';
+      return `${item.fact.extracted_value} (${tag}${item.file})`
+    });
     const drawingText=drawingParts.length?drawingParts.join(' / '):'';
     let status='Not shown',wording;
     if(!readable.length){
@@ -2432,23 +2509,28 @@ function uploadBuildReview(p){
       status='Not shown';
       wording='A written width and length were not found in the files we could read. We need this from a dimensioned PDF.'
     }else{
-      const pairs=sizeFacts.map(item=>({file:item.file,nums:uploadParseMetres(item.fact.extracted_value),raw:item.fact.extracted_value}));
       const allAgree=pairs.every(item=>{
         const first=pairs[0];
         if(item.nums.length>=2&&first.nums.length>=2)return uploadPairMatches(first.nums[0],first.nums[1],item.nums);
         if(item.nums.length===1&&first.nums.length===1)return uploadValuesMatch(item.nums[0],first.nums[0]);
         return item.raw===first.raw
       });
-      const matchesEntered=hasW&&hasL&&pairs.some(item=>item.nums.length>=2?uploadPairMatches(enteredW,enteredL,item.nums):false);
+      const latestNums=latestSize&&latestSize.nums||[];
+      const matchesLatest=hasW&&hasL&&latestNums.length>=2&&uploadPairMatches(enteredW,enteredL,latestNums);
+      const matchesAnyEarlier=hasW&&hasL&&pairs.some(item=>item!==latestSize&&item.nums.length>=2&&uploadPairMatches(enteredW,enteredL,item.nums));
+      const latestLabel=latestSize?latestSize.file:'the latest drawing';
+      const latestSizeText=latestSize?uploadMetresText(latestSize.nums,latestSize.raw):'';
       if(!allAgree){
-        status='Mismatch';
-        wording='Your drawings disagree with each other. Which is right?'
-      }else if(hasW&&hasL&&!matchesEntered){
-        status='Mismatch';
-        wording='The size on the drawings does not match the size you entered. Which is right?'
-      }else if(matchesEntered){
+        status='Changed';
+        if(matchesLatest)wording=`The latest drawing we have, ${latestLabel}, matches the size you entered (${latestSizeText}). ${changes[0]||'An earlier drawing showed a different size.'} Changing drawings is normal. Please confirm the latest drawing is the current one.`;
+        else if(matchesAnyEarlier)wording=`The latest drawing we have, ${latestLabel}, shows ${latestSizeText}. You entered ${facts.width} m × ${facts.length} m, which matches an earlier drawing. ${changes[0]||''} Changing drawings is normal. Which one is current?`;
+        else wording=`The latest drawing we have, ${latestLabel}, shows ${latestSizeText}. You entered ${hasW&&hasL?`${facts.width} m × ${facts.length} m`:'no size yet'}. ${changes[0]||''} Changing drawings is normal. Which one is current?`
+      }else if(hasW&&hasL&&!matchesLatest){
+        status='Changed';
+        wording=`The drawings show ${latestSizeText}. You entered ${facts.width} m × ${facts.length} m. Which is current?`
+      }else if(matchesLatest){
         status='Match';
-        wording='Matches your drawings.'
+        wording=`Matches the latest drawing we have, ${latestLabel}.`
       }else{
         status='Not shown';
         wording='A size is written on the drawings. You have not entered a matching width and length yet.'
@@ -2457,10 +2539,27 @@ function uploadBuildReview(p){
     rows.push({item:'Width and length',entered:hasW&&hasL?`${facts.width} m × ${facts.length} m`:'Not entered',drawings:drawingText||'Not found in the files we could read',status,wording})
   }
   if(eavesFacts.length){
-    const drawingText=eavesFacts.map(item=>`${item.fact.extracted_value} (${item.file})`).join(' / ');
-    const nums=eavesFacts.map(item=>uploadParseMetres(item.fact.extracted_value)[0]).filter(Number.isFinite);
+    const eavesPairs=eavesFacts.map(item=>({file:item.file,nums:uploadParseMetres(item.fact.extracted_value),raw:item.fact.extracted_value}));
+    const latestEaves=uploadPickLatest(files,eavesPairs);
+    const drawingText=eavesFacts.map(item=>{
+      const tag=latestEaves&&item.file===latestEaves.file?'latest ':'';
+      return `${item.fact.extracted_value} (${tag}${item.file})`
+    }).join(' / ');
+    const nums=eavesPairs.map(item=>item.nums[0]).filter(Number.isFinite);
     const disagree=nums.length>1&&nums.some(n=>!uploadValuesMatch(n,nums[0]));
-    rows.push({item:'Eaves height',entered:'Not entered',drawings:drawingText,status:disagree?'Mismatch':'Not shown',wording:disagree?'Two different eaves heights are written on the drawings. Which is right?':'Eaves height is written on the drawings. You have not entered this figure separately (your clear height is a different measurement).'})
+    if(disagree&&latestEaves){
+      eavesPairs.forEach(item=>{
+        if(item.file===latestEaves.file)return;
+        const a=item.nums[0],b=latestEaves.nums[0];
+        if(Number.isFinite(a)&&Number.isFinite(b)&&!uploadValuesMatch(a,b)){
+          const line=`Eaves height changed from ${uploadPrettyNum(a)} m on ${item.file} to ${uploadPrettyNum(b)} m on ${latestEaves.file}.`;
+          if(!changes.includes(line))changes.push(line)
+        }
+      });
+      rows.push({item:'Eaves height',entered:'Not entered',drawings:drawingText,status:'Changed',wording:`The latest drawing we have, ${latestEaves.file}, shows ${latestEaves.raw||uploadMetresText(latestEaves.nums)}. ${changes.find(line=>/Eaves height changed/.test(line))||'An earlier drawing showed a different eaves height.'} Changing drawings is normal. Which one is current?`})
+    }else{
+      rows.push({item:'Eaves height',entered:'Not entered',drawings:drawingText,status:'Not shown',wording:'Eaves height is written on the drawings. You have not entered this figure separately (your clear height is a different measurement).'})
+    }
   }
   const needInfo=[];
   files.forEach(file=>{if(!file.read.canRead||file.read.partial)needInfo.push(file.read.reason)});
@@ -2471,6 +2570,26 @@ function uploadBuildReview(p){
     if(file.status&&['PRELIMINARY','DRAFT','FOR APPROVAL','SUPERSEDED'].includes(file.status))needInfo.push(`${file.name} is marked "${file.status}". Please send the current issued version if you have one.`)
   });
   if(!files.length)needInfo.push('You have not uploaded any files yet.');
+  if(changes.length)questions.push(latestSize?`Which drawing is current: ${latestSize.file} (${uploadMetresText(latestSize.nums,latestSize.raw)}) or an earlier version?`:'Which drawing is current?');
+  questions.push('Where will machinery sit?');
+  questions.push('How will materials be stored?');
+  const occupancyValue=stage1HasValue(facts.occupancy)?String(facts.occupancy).trim():'';
+  const occupancyQ="What's the most people that will be inside the building at any one time?";
+  const occupancyNote='Racked storage is usually 10 or fewer, even at 3,000 m², with no toilets, café or waiting rooms.';
+  if(occupancyValue)questions.push(`You told us the most people inside at any one time is ${occupancyValue}. ${occupancyNote}`);
+  else questions.push(`${occupancyQ} ${occupancyNote}`);
+  if(!uploadHasTopoSurvey(p,files))recommendations.push('We have not found a topographical (level) survey in your uploads. We recommend one so heights and levels can be checked properly.');
+  const use=stage1HasValue(facts.buildingUse)?facts.buildingUse:(stage1HasValue(facts.use)?facts.use:'');
+  const area=hasW&&hasL?Math.round(enteredW*enteredL):null;
+  let cheapest="We'll help you look at the cheapest option that still suits how you'll use the building, how close it is to the boundary, and its floor area.";
+  if(use&&area)cheapest=`You've told us the use is ${use} and the floor area is about ${area} m². We'll help you look at the cheapest option that still suits that use, how close the building is to the boundary, and this floor area.`;
+  else if(use)cheapest=`You've told us the use is ${use}. We'll help you look at the cheapest option that still suits that use, how close the building is to the boundary, and the floor area.`;
+  else if(area)cheapest=`The floor area you entered is about ${area} m². We'll help you look at the cheapest option that still suits how you'll use the building, how close it is to the boundary, and this floor area.`;
+  const longSide=hasW&&hasL?Math.max(enteredW,enteredL):null;
+  const fireAssume=longSide
+    ?`For a building about ${uploadPrettyNum(longSide)} m on its longer side, the planning assumption is a fire door roughly every 32 m, with 5 m of movement each way so doors can be repositioned. The right fire doors are priced up front.`
+    :'The planning assumption is a fire door roughly every 32 m, with 5 m of movement each way so doors can be repositioned. The right fire doors are priced up front.';
+  const fireAdb='We check this against Approved Document B Volume 2 travel distances for storage: 25 m if there is only one way out, and 45 m if there is more than one. This is Stage 2 guidance only, not a statement that the building complies. Stuart will go through this with you.';
   const cards=files.map(file=>{
     const found=[];
     file.facts.forEach(fact=>{
@@ -2481,28 +2600,37 @@ function uploadBuildReview(p){
     if(file.status)found.push(`Marked "${file.status}" (${file.name})`);
     const missing=[];
     const unclear=[];
-    const questions=[];
+    const fileQuestions=[];
     if(!file.read.canRead){
       missing.push(file.read.reason);
-      questions.push(`Please send a dimensioned PDF of ${file.name}, or another file we can read.`)
+      fileQuestions.push(`Please send a dimensioned PDF of ${file.name}, or another file we can read.`)
     }else{
       if(file.read.partial)unclear.push(file.read.reason);
       if(!file.facts.some(fact=>fact.subject==='building_footprint_dimensions'||fact.subject==='overall_building_length'))missing.push('A written width and length – not found in the text we could read.');
       if(!file.revision)unclear.push('No revision letter was found in the text we could read, so we cannot tell if this is the latest version.');
       if(file.status&&['PRELIMINARY','DRAFT','FOR APPROVAL','SUPERSEDED'].includes(file.status))unclear.push(`This file is marked "${file.status}", so the figures on it may not be confirmed.`);
       file.facts.forEach(fact=>{
-        if(fact.extraction_note&&/inconsistent/i.test(fact.extraction_note))unclear.push(`${UPLOAD_FACT_LABELS[fact.subject]||fact.subject}: the same file gives more than one value. Which is right?`)
-      })
+        if(fact.extraction_note&&/inconsistent/i.test(fact.extraction_note))unclear.push(`${UPLOAD_FACT_LABELS[fact.subject]||fact.subject}: the same file gives more than one value. Changing drawings is normal. Which figure is current?`)
+      });
+      if(latestSize&&sizeFacts.length>1){
+        const thisPair=pairs.find(item=>item.file===file.name);
+        if(thisPair&&thisPair.file!==latestSize.file){
+          uploadSizeChangeLines(thisPair,latestSize).forEach(line=>unclear.push(`${line} Changing drawings is normal. Which one is current?`))
+        }else if(thisPair&&thisPair.file===latestSize.file){
+          const earlier=pairs.find(item=>item.file!==latestSize.file&&uploadSizeChangeLines(item,latestSize).length);
+          if(earlier)unclear.push(`An earlier drawing, ${earlier.file}, showed a different size. ${uploadSizeChangeLines(earlier,latestSize)[0]||''} Changing drawings is normal. Which one is current?`)
+        }
+      }
     }
-    if(unclear.some(text=>/does not match|disagree/i.test(text)))questions.push('Which drawing is the one you are building from?');
-    if(!file.revision&&file.read.canRead)questions.push(`Is ${file.name} the latest version?`);
+    if(unclear.some(text=>/changed from|different size|current\?/i.test(text)))fileQuestions.push('Which drawing is current?');
+    if(!file.revision&&file.read.canRead)fileQuestions.push(`Is ${file.name} the latest version?`);
     const unique=list=>[...new Set(list.filter(Boolean))].slice(0,6);
-    return {name:file.name,type:file.type,format:file.format,revision:file.revision,status:file.status,read:file.read,found:unique(found),missing:unique(missing),unclear:unique(unclear),questions:unique(questions).slice(0,5)}
+    return {name:file.name,type:file.type,format:file.format,revision:file.revision,status:file.status,read:file.read,found:unique(found),missing:unique(missing),unclear:unique(unclear),questions:unique(fileQuestions).slice(0,5)}
   });
-  return {files,readableCount:readable.length,rows,needInfo:[...new Set(needInfo.filter(Boolean))],cards,sortedByUpload:true}
+  return {files,readableCount:readable.length,rows,needInfo:[...new Set(needInfo.filter(Boolean))],cards,sortedByUpload:true,changes,latestNote,latestName:latestSize?latestSize.file:'',questions:[...new Set(questions.filter(Boolean))],recommendations,cheapest,fireAssume,fireAdb,occupancyQ,occupancyNote,occupancyValue}
 }
 function uploadStatusChip(status){
-  const cls=status==='Match'?'likely':status==='Mismatch'?'needinfo':'needinfo';
+  const cls=status==='Match'?'likely':status==='Changed'?'possibly':'needinfo';
   return `<span class="simple-chip simple-chip--${cls}">${esc(status)}</span>`
 }
 function uploadFileCardMarkup(card,mode){
@@ -2521,32 +2649,52 @@ function uploadFiguresMarkup(review,mode){
     return `<section class="simple-qcard simple-review-panel"><h3>Your figures checked against the drawings</h3><p>We couldn't compare your figures with the drawings yet. We can only check sizes when they are written as text in a PDF or Word file we can read. We cannot read CAD (DWG) files or photos automatically, and we never guess a number.</p></section>`
   }
   const body=review.rows.map(row=>`<tr><th scope="row">${esc(row.item)}</th><td>${esc(row.entered)}</td><td>${esc(row.drawings)}</td><td>${uploadStatusChip(row.status)}</td><td>${esc(row.wording)}</td></tr>`).join('');
-  return `<section class="simple-qcard simple-review-panel"><h3>Your figures checked against the drawings</h3><p class="meta">Status is only Match, Mismatch or Not shown. This is not a pass or a Building Regulations check.</p><div class="simple-review-table-wrap"><table class="simple-review-table"><thead><tr><th>Item</th><th>You entered</th><th>Drawings show</th><th>Status</th><th></th></tr></thead><tbody>${body}</tbody></table></div></section>`
+  return `<section class="simple-qcard simple-review-panel"><h3>Your figures checked against the drawings</h3><p class="meta">When drawings differ, we show the latest one we have, what changed, and ask which is current. Changing drawings is normal, not an error. Status is Match, Changed or Not shown. This is not a pass or a Building Regulations check.</p><div class="simple-review-table-wrap"><table class="simple-review-table"><thead><tr><th>Item</th><th>You entered</th><th>Drawings show</th><th>Status</th><th></th></tr></thead><tbody>${body}</tbody></table></div></section>`
+}
+function uploadListSection(title,items,empty,extra){
+  return `<section class="simple-qcard simple-review-panel"><h3>${esc(title)}</h3>${items&&items.length?`<ul class="simple-list simple-list-tight">${items.map(text=>`<li>${esc(text)}</li>`).join('')}</ul>`:(empty?`<p class="meta">${esc(empty)}</p>`:'')}${extra||''}</section>`
 }
 function uploadReviewMarkup(p,mode){
   const review=uploadBuildReview(p);
   const header=mode==='stage1'
     ?`<p class="simple-know-status" role="status"><strong>Received, not reviewed in the free check.</strong> ${review.files.length?`We have ${review.files.length} file${review.files.length===1?'':'s'}. We could read text in ${review.readableCount}.`:'You have not uploaded any files yet.'} A plain review of each file is part of Stage 2.</p>${review.sortedByUpload&&review.files.length?`<p class="meta">Files are listed in the order you uploaded them, because we could not read a drawing date.</p>`:''}`
     :`<p class="simple-know-status" role="status">${review.files.length?`We received ${review.files.length} file${review.files.length===1?'':'s'}. We could read text in ${review.readableCount}. ${review.files.length-review.readableCount?`${review.files.length-review.readableCount} need your help (see below).`:''}`:'You have not uploaded any files yet.'}</p>${review.sortedByUpload&&review.files.length?`<p class="meta">Files are listed in the order you uploaded them, because we could not read a drawing date.</p>`:''}`;
-  const need=`<section class="simple-qcard simple-review-panel"><h3>Need info</h3>${review.needInfo.length?`<ul class="simple-list simple-list-tight">${review.needInfo.map(text=>`<li>${esc(text)}</li>`).join('')}</ul>`:'<p class="meta">Nothing listed yet from the files. That is not an all-clear.</p>'}<p class="meta">Some checks, such as fire exits and boundary distances, cannot be read automatically yet. Stuart will go through those guidance items with you in your Stage 2 meeting. This is not a Building Regulations approval.</p></section>`;
+  if(mode==='stage1'){
+    const need=`<section class="simple-qcard simple-review-panel"><h3>Need info</h3>${review.needInfo.length?`<ul class="simple-list simple-list-tight">${review.needInfo.map(text=>`<li>${esc(text)}</li>`).join('')}</ul>`:'<p class="meta">Nothing listed yet from the files. That is not an all-clear.</p>'}<p class="meta">A full review of the drawings, including what changed between versions, is part of Stage 2. This is not a Building Regulations approval.</p></section>`;
+    const cards=review.cards.length?`<div class="simple-qlist">${review.cards.map(card=>uploadFileCardMarkup(card,mode)).join('')}</div>`:'';
+    return `<div class="simple-upload-review">${header}${uploadFiguresMarkup(review,mode)}${need}${cards}</div>`
+  }
+  const changed=review.changes.length
+    ?`<section class="simple-qcard simple-review-panel"><h3>What changed between drawings</h3><p>Changing drawings is normal, not an error. A job goes through several stages and sizes can move. We show the latest drawing we have, what changed, and ask which is current.</p><ul class="simple-list simple-list-tight">${review.changes.map(text=>`<li>${esc(text)}</li>`).join('')}</ul>${review.latestNote?`<p class="meta">${esc(review.latestNote)}</p>`:''}</section>`
+    :(review.latestNote?`<section class="simple-qcard simple-review-panel"><h3>Latest drawing</h3><p class="meta">${esc(review.latestNote)}</p></section>`:'');
+  const need=`<section class="simple-qcard simple-review-panel"><h3>Need info</h3>${review.needInfo.length?`<ul class="simple-list simple-list-tight">${review.needInfo.map(text=>`<li>${esc(text)}</li>`).join('')}</ul>`:'<p class="meta">Nothing listed yet from the files. That is not an all-clear.</p>'}<p class="meta">Where machinery will sit and how materials will be stored are questions, not missing items. We could not always read fire-door positions or boundary distances from the files. The planning assumption for fire doors is shown below. This is not a Building Regulations approval.</p></section>`;
+  const questions=uploadListSection('Questions for your meeting with Stuart',review.questions,'No extra questions yet.','');
+  const recs=review.recommendations.length?uploadListSection('Recommendation',review.recommendations,'',''):'';
+  const cheapest=`<section class="simple-qcard simple-review-panel"><h3>The cheapest option that still suits</h3><p>${esc(review.cheapest)}</p></section>`;
+  const fire=`<section class="simple-qcard simple-review-panel"><h3>Fire doors — planning assumption</h3><p>${esc(review.fireAssume)}</p><p class="meta">${esc(review.fireAdb)}</p></section>`;
   const cards=review.cards.length?`<div class="simple-qlist">${review.cards.map(card=>uploadFileCardMarkup(card,mode)).join('')}</div>`:'';
-  return `<div class="simple-upload-review">${header}${uploadFiguresMarkup(review,mode)}${need}${cards}</div>`
+  return `<div class="simple-upload-review">${header}${uploadFiguresMarkup(review,mode)}${changed}${need}${questions}${recs}${cheapest}${fire}${cards}</div>`
 }
 function uploadExampleReviewMarkup(){
-  const chip=status=>`<span class="simple-chip simple-chip--${status==='Match'?'likely':'needinfo'}">${esc(status)}</span>`;
+  const chip=status=>`<span class="simple-chip simple-chip--${status==='Match'?'likely':status==='Changed'?'possibly':'needinfo'}">${esc(status)}</span>`;
   const block=(title,items)=>`<div class="simple-qblock"><h4>${esc(title)}</h4><ul class="simple-list simple-list-tight">${items.map(text=>`<li>${esc(text)}</li>`).join('')}</ul></div>`;
   return `<div class="simple-upload-review simple-upload-example"><p class="simple-example-tag">EXAMPLE ONLY. Made-up content, not a real project or a real file.</p>
-<section class="simple-qcard simple-review-panel"><h3>Your figures checked against the drawings</h3><p class="meta">Status is only Match, Mismatch or Not shown. This is not a pass or a Building Regulations check.</p>
+<section class="simple-qcard simple-review-panel"><h3>Your figures checked against the drawings</h3><p class="meta">When drawings differ, we show the latest one we have, what changed, and ask which is current. Changing drawings is normal, not an error. Status is Match, Changed or Not shown. This is not a pass or a Building Regulations check.</p>
 <div class="simple-review-table-wrap"><table class="simple-review-table"><thead><tr><th>Item</th><th>You entered</th><th>Drawings show</th><th>Status</th><th></th></tr></thead><tbody>
-<tr><th scope="row">Width and length</th><td>20 m × 25 m</td><td>20 m × 24.4 m (steel drawing) / 20 m × 25 m (planning drawing)</td><td>${chip('Mismatch')}</td><td>Your drawings disagree with each other and with you. Which is right?</td></tr>
+<tr><th scope="row">Width and length</th><td>20 m × 25 m</td><td>20 m × 24.4 m (latest steel-general-arrangement.pdf) / 20 m × 25 m (planning-layout.pdf)</td><td>${chip('Changed')}</td><td>The latest drawing we have is steel-general-arrangement.pdf (Rev A, 16 Apr 2026). The length changed from 25 m on the earlier planning drawing to 24.4 m. You entered 20 m × 25 m, which matches the earlier drawing. Changing drawings is normal. Which one is current?</td></tr>
 <tr><th scope="row">Roof pitch</th><td>10°</td><td>Not found in the files we could read</td><td>${chip('Not shown')}</td><td>Roof pitch isn't written on the drawings we could read – we need it.</td></tr>
 </tbody></table></div></section>
-<section class="simple-qcard simple-review-panel"><h3>Need info</h3><ul class="simple-list simple-list-tight"><li>Which length is right: 24.4 m or 25 m?</li><li>Exit door widths – not found in the files we could read.</li><li>Distance from each wall to the site boundary – not found in the files we could read.</li></ul><p class="meta">Stuart will go through guidance items such as fire exits and boundary distances with you. This is not a Building Regulations approval.</p></section>
-<article class="simple-qcard simple-draw-card"><div class="simple-qhead"><h3>Drawing · steel-general-arrangement.pdf · Rev A · 16 Apr 2026</h3></div><p class="meta">PDF. We could read the text in this file.</p>
+<section class="simple-qcard simple-review-panel"><h3>What changed between drawings</h3><p>Changing drawings is normal, not an error. A job goes through several stages and sizes can move. We show the latest drawing we have, what changed, and ask which is current.</p><ul class="simple-list simple-list-tight"><li>Length changed from 25 m on planning-layout.pdf to 24.4 m on steel-general-arrangement.pdf.</li></ul><p class="meta">We treated steel-general-arrangement.pdf as the latest because it is marked revision A and dated 16 Apr 2026. Please confirm it is the current one.</p></section>
+<section class="simple-qcard simple-review-panel"><h3>Need info</h3><ul class="simple-list simple-list-tight"><li>Which drawing is current: steel-general-arrangement.pdf (20 m × 24.4 m) or the earlier planning-layout.pdf (20 m × 25 m)?</li><li>Distance from each wall to the site boundary – not found in the files we could read.</li></ul><p class="meta">Where machinery will sit and how materials will be stored are questions, not missing items. The planning assumption for fire doors is shown below. This is not a Building Regulations approval.</p></section>
+<section class="simple-qcard simple-review-panel"><h3>Questions for your meeting with Stuart</h3><ul class="simple-list simple-list-tight"><li>Which drawing is current: steel-general-arrangement.pdf (20 m × 24.4 m) or the earlier planning-layout.pdf (20 m × 25 m)?</li><li>Where will machinery sit?</li><li>How will materials be stored?</li><li>What's the most people that will be inside the building at any one time? Racked storage is usually 10 or fewer, even at 3,000 m², with no toilets, café or waiting rooms.</li></ul></section>
+<section class="simple-qcard simple-review-panel"><h3>Recommendation</h3><ul class="simple-list simple-list-tight"><li>We have not found a topographical (level) survey in your uploads. We recommend one so heights and levels can be checked properly.</li></ul></section>
+<section class="simple-qcard simple-review-panel"><h3>The cheapest option that still suits</h3><p>The floor area you entered is about 500 m². We'll help you look at the cheapest option that still suits how you'll use the building, how close it is to the boundary, and this floor area.</p></section>
+<section class="simple-qcard simple-review-panel"><h3>Fire doors — planning assumption</h3><p>For a building about 25 m on its longer side, the planning assumption is a fire door roughly every 32 m, with 5 m of movement each way so doors can be repositioned. The right fire doors are priced up front.</p><p class="meta">We check this against Approved Document B Volume 2 travel distances for storage: 25 m if there is only one way out, and 45 m if there is more than one. This is Stage 2 guidance only, not a statement that the building complies. Stuart will go through this with you.</p></section>
+<article class="simple-qcard simple-draw-card"><div class="simple-qhead"><h3>Drawing · steel-general-arrangement.pdf · Rev A · 16 Apr 2026</h3></div><p class="meta">PDF. We could read the text in this file. This is the latest drawing we have.</p>
 ${block('What we found',['Building 20 m wide × 24.4 m long (steel-general-arrangement.pdf)','Roller door: 4.0 m wide; height not written'])}
-${block("What's missing – we need this from you",['Distance from each wall to the site boundary – not shown','Clear widths of any fire exit doors – not shown'])}
-${block("What's unclear",['The planning drawing gives the length as 25 m; this drawing gives 24.4 m. Which is right?','No date was found for a second sheet in the same set.'])}
-${block('Questions for your meeting with Stuart',['Which drawing is the one you are building from?','Is the small door on the front wall a fire exit? How wide is it?'])}
+${block("What's missing – we need this from you",['Distance from each wall to the site boundary – not shown'])}
+${block("What's unclear",['An earlier drawing, planning-layout.pdf, showed a length of 25 m. This later drawing shows 24.4 m. Changing drawings is normal. Which one is current?'])}
+${block('Questions for your meeting with Stuart',['Which drawing is current?','Where will machinery sit?','How will materials be stored?',"What's the most people that will be inside the building at any one time?"])}
 <p class="meta simple-qnote">${esc(UPLOAD_REVIEW_FOOTER)}</p></article></div>`
 }
 
@@ -2600,7 +2748,7 @@ function stage1KnowledgeLists(p){
     else if(/\b(TBC|TBD)\b|to be confirmed/i.test(text))unclear.push(`${file.name} has items marked "to be confirmed", so the figures on it are not confirmed. Please send the current issued version.`);
     if(/\bby others\b/i.test(text))unclear.push(`${file.name} says some of the work is "by others". That doesn't show what will be built. Please send the drawing from whoever owns that part.`)
   });
-  try{stage1ConfirmationEvidenceNotices(p).forEach(notice=>unclear.push(`${notice.label}: your documents and your answers don't agree${notice.value?` (${notice.value})`:''}. Please tell us which is right.`))}catch(e){}
+  try{stage1ConfirmationEvidenceNotices(p).forEach(notice=>unclear.push(`${notice.label}: a document shows something different from the answer you gave${notice.value?` (${notice.value})`:''}. Changing drawings is normal. Which is current?`))}catch(e){}
   if(has(facts.width)&&has(facts.length)&&has(facts.height))unclear.push('The size and height are what you entered. None of your files has been checked against them yet.');
   const unique=list=>[...new Set(list.filter(Boolean))];
   return {have:unique(have),missing:unique(missing),unclear:unique(unclear),files,
@@ -3634,11 +3782,11 @@ function paidStagePage(id){
 ${disclaimerMediumMarkup()}
 <p class="meta">${esc(SUPPLY_CONTRACT_LINE)} <button type="button" class="simple-linkbtn" data-route="terms">Read the full terms.</button></p>
 ${scopeFullMarkup(true)}
-${p?`<section class="simple-section" aria-labelledby="stage2ReviewTitle"><h2 id="stage2ReviewTitle">Review of your uploads</h2><p class="simple-lead">Shown in this order: your figures checked against the drawings, the need-info list, then a card for each file. We only show figures written as text in a file we could read. We never guess a number, and this is not a Building Regulations or planning approval.</p>
+${p?`<section class="simple-section" aria-labelledby="stage2ReviewTitle"><h2 id="stage2ReviewTitle">Review of your uploads</h2><p class="simple-lead">Shown in this order: your figures checked against the drawings, what changed between versions, the need-info list, questions, then a card for each file. When drawings differ, we show the latest one, what changed, and ask which is current. Changing drawings is normal, not an error. We only show figures written as text in a file we could read. We never guess a number, and this is not a Building Regulations or planning approval.</p>
 <div class="simple-scope-beside">${scopeShortMarkup()}${uploadReviewMarkup(p,'stage2')}</div></section>`:scopeShortMarkup()}
 <section class="simple-section" aria-labelledby="stage2ExampleTitle"><h2 id="stage2ExampleTitle">What a plain review of your uploads looks like</h2>
 <p class="simple-example-tag">EXAMPLES ONLY. Made-up content, not a real project or a real file.</p>
-<p class="meta">Each review starts with your figures (Match, Mismatch or Not shown), then a need-info list, then a card for each drawing: what we found, what's missing, what's unclear, and questions for your meeting with Stuart.</p>
+<p class="meta">Each review starts with your figures (Match, Changed or Not shown). When drawings differ, we show the latest one, what changed, and ask which is current. Changing drawings is normal, not an error. Then come the need-info list, questions, any recommendation, and a card for each drawing.</p>
 ${uploadExampleReviewMarkup()}
 <p class="meta">Please send photos as JPEG or PNG and drawings as PDF. iPhone HEIC photos can't be read yet: change your camera to "Most Compatible" first.</p></section>
 <section class="card simple-actions simple-stage2-cta" aria-labelledby="stage2CtaTitle"><h2 id="stage2CtaTitle">Ready to start?</h2>
