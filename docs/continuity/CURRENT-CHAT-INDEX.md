@@ -411,3 +411,72 @@ Carried forward unchanged from the previous nightly record and not re-checked by
 ### Note
 
 This is an automated GitHub-state record, not a full transcript. It was generated without an AI model and has no access to private chats. It changes only this file.
+
+## Nightly continuity record – 2026-11-27
+
+### Date and stopping point
+
+27 November 2026, recorded by the GitHub Actions workflow `nightly-continuity.yml` (run 45963060399). The current stopping point visible in the repository is as follows.
+
+Live `approved` HEAD when this run read the branch is `554253e7f2dbd7bc5556ce7cc08820a18670702d` ("Merge pull request #10 from ProjectCheck-Raffers/review", 26 November 2026 22:27 Europe/London). The last non-continuity commit on `approved` within the fetched history is `554253e7f2dbd7bc5556ce7cc08820a18670702d` ("Merge pull request #10 from ProjectCheck-Raffers/review", 26 November 2026 22:27 Europe/London).
+
+Commits on `approved` in the 24 hours before this run:
+
+- `554253e7f2dbd7bc5556ce7cc08820a18670702d` ("Merge pull request #10 from ProjectCheck-Raffers/review", ProjectCheck-Raffers)
+- `df8506aa652e845320d3b55130d95a1504449ecb` ("project_events: store a small change summary (field names only) instead of full before/after snapshots; remove client/site names from code, tests and comments", ProjectCheck-Raffers)
+- `3bc4e2314b0adc4cd16882005a6db3b02390a286` ("L_ENERGY: unheated storage/distribution now 'Part L statement may be needed' (Stuart 26 Nov); help text no longer lists storage; free-text storage treated the same as the dropdown", ProjectCheck-Raffers)
+- `2b740c5d4db29fe94ea7db45084af29ec1fed28e` ("regs-checker: fix live L_ENERGY and boundary rules, plus small items", ProjectCheck-Raffers)
+- `70f02a7cc0c071a86f753c4018ce4b6cca6b626d` ("Merge pull request #9 from ProjectCheck-Raffers/brain-to-regs", ProjectCheck-Raffers)
+- `970993747bbb09abcd39fe467e6c6188efa2204c` ("Merge pull request #8 from ProjectCheck-Raffers/migrate-old-repo", ProjectCheck-Raffers)
+- `616e02a92613fa8a064c5ecbe921083338a856cd` ("regs-checker: approve B_BOUNDARY, B_BOUNDARY_1M, L_ENERGY, H_DRAINAGE_QUOTE (replace dropped brain lines)", ProjectCheck-Raffers)
+- `bcd7476fd5955980fbf6d770cec7d149438519ee` ("Move brain/stage-1 checks into regs checker", ProjectCheck-Raffers)
+- `fb65ac3ed7f2f472eb0448140c755eb508f12c43` ("Remove 193 dead CSS rules from site-layout-presentation.css (pricing page, old toolbar and layout selectors that match nothing in HTML/JS)", ProjectCheck-Raffers)
+- `7078f6e21884e1272dc2370184a7b7e67d75ae93` ("Trim migration: keep product, reporting, tools only; single rulebook in CLAUDE.md", ProjectCheck-Raffers)
+- `88c633a93c142e7dd9a077486cff6c0d017de3da` ("Merge approved into migrate-old-repo", ProjectCheck-Raffers)
+- `5d28318b3350781d4b1345e7c998c38a195cdbc3` ("Merge pull request #7 from ProjectCheck-Raffers/job-library", ProjectCheck-Raffers)
+- `6337b019ad462d2c64492dde0d243a41613d4aec` ("Merge pull request #6 from ProjectCheck-Raffers/review", ProjectCheck-Raffers)
+
+Pull requests closed or merged in the same 24 hours:
+
+- PR #10, "Regs fix: L_ENERGY, facing-wall boundaries and small items": merged (merge commit `554253e7f2dbd7bc5556ce7cc08820a18670702d`) at 2026-11-26T22:27:54Z.
+- PR #11, "docs: upload review rules from job library": closed without merge at 2026-11-26T19:32:36Z.
+- PR #9, "Move brain/stage-1 checks into regs checker": merged (merge commit `70f02a7cc0c071a86f753c4018ce4b6cca6b626d`) at 2026-11-26T13:41:01Z.
+- PR #8, "Clean-up: single rulebook, trimmed migration": merged (merge commit `970993747bbb09abcd39fe467e6c6188efa2204c`) at 2026-11-26T13:40:25Z.
+- PR #7, "Job library: anonymised past jobs and lessons for the regs checker": merged (merge commit `5d28318b3350781d4b1345e7c998c38a195cdbc3`) at 2026-11-26T12:55:56Z.
+- PR #6, "Navigation, regs questions, one route, permitted development, report honesty": merged (merge commit `6337b019ad462d2c64492dde0d243a41613d4aec`) at 2026-11-26T12:55:53Z.
+
+This run has no access to private chats, so any Project Check work outside GitHub cannot be determined from the repository.
+
+### Live-verified approved HEAD
+
+`554253e7f2dbd7bc5556ce7cc08820a18670702d` on `approved` ("Merge pull request #10 from ProjectCheck-Raffers/review", 26 November 2026 22:27 Europe/London), read live from GitHub immediately before this entry was written.
+
+### Open PRs
+
+Read live: 1 open PR(s); none touched by this record. Check-run results were not read by this run.
+
+PR #12, "Add report-only security headers and low-noise dependency alerts", head `security-hardening` (`76f5469da6bc3a250666f7d956fa87a80099435f`), base `approved` (`554253e7f2dbd7bc5556ce7cc08820a18670702d`); created 26 November 2026 23:37 Europe/London, last updated 26 November 2026 23:37 Europe/London; open, not draft, unmerged; not touched.
+
+### Unresolved blockers
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+- None recorded in the previous nightly record.
+
+### Note
+
+This is an automated GitHub-state record, not a full transcript. It was generated without an AI model and has no access to private chats. It changes only this file.
