@@ -1758,3 +1758,17 @@ body:is([data-page="signin"],[data-page="create"]) .home-footer{max-width:1040px
 @media(max-width:600px){
 .simple-review-table th:nth-child(5),.simple-review-table td:nth-child(5){display:block;border-bottom:1px solid #d9e0db;padding-left:10px}
 }
+
+/* Draft scope and liability wording. Mobile first, same card family as the report. */
+.simple-disclaimer-card{padding:16px 18px}
+.simple-draft-tag{display:inline-block;margin:0 0 8px;padding:2px 8px;border-radius:999px;border:1px dashed #7a4b00;background:#fff8e6;color:#7a4b00;font-size:12px;font-weight:800;letter-spacing:.02em}
+.simple-disclaimer-card h3,.simple-disclaimer-card h2{margin:0 0 8px;font-size:18px}
+.simple-disclaimer-foot-wrap{max-width:880px;margin:8px auto 0;padding:0 12px 8px}
+.simple-disclaimer-foot{margin:0 0 6px;font-size:12px;line-height:1.45;color:#475467;overflow-wrap:anywhere}
+.simple-scope-fold summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+.simple-scope-fold[open] summary{margin-bottom:10px}
+.simple-scope-beside{display:grid;gap:16px}
+.simple-draft-terms{margin-top:24px}
+@media(min-width:768px){
+.simple-scope-beside{grid-template-columns:minmax(0,14rem) minmax(0,1fr);align-items:start}
+}

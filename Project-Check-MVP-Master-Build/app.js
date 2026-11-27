@@ -645,7 +645,12 @@ const TERMS_SECTIONS=[
 function termsPage(){
 app.innerHTML=`<div class="container"><div class="pagehead"><div><div class="eyebrow">Legal</div><h1>Project Check — Business Terms &amp; Conditions</h1><p class="meta">Version: Draft 5 · Date: 27 August 2026</p></div></div>
 <div class="banner"><b>Status: DRAFT — REQUIRES FORMAL INDEPENDENT LEGAL REVIEW BEFORE PUBLIC PRODUCTION LAUNCH.</b><div class="meta" style="margin-top:6px">These Terms govern business use of Project Check. Project Check's final legal entity, company registration details, registered office, VAT details, insurance arrangements and payment-provider details will be inserted once formally confirmed. Stage 1 (and the other stages described below) reflects Project Check's current direction and remains under active review — see clause 10.2.</div></div>
-${TERMS_SECTIONS.map(([n,title,body])=>`<div class="card legal-doc"><h2>${n}. ${title}</h2>${body}</div>`).join('')}</div>`}
+${TERMS_SECTIONS.map(([n,title,body])=>`<div class="card legal-doc"><h2>${n}. ${title}</h2>${body}</div>`).join('')}
+<section class="card legal-doc simple-draft-terms" aria-labelledby="draftTermsTitle"><div class="banner"><b>Draft for approval</b><div class="meta" style="margin-top:6px">This section is a draft for Stuart to review. It has not had a formal legal review and does not replace the terms above.</div></div>
+<h2 id="draftTermsTitle">About the information we give</h2>
+${disclaimerLongMarkup()}
+${scopeFullMarkup(false)}
+</section></div>`}
 // Full Privacy Policy — Draft 3 (27 August 2026, Architect + SPA controlled
 // legal-document update). This array (and privacyPage() below) IS the
 // authoritative source-of-truth document — there is no separate external
@@ -2632,6 +2637,99 @@ ${list("What's missing",k.missing,'simple-know-missing')}${list("What's unclear"
 //  Q7 Consultants: house position, not law. Say "Building Control (council or a registered approver)", never "Approved Inspector".
 // Chips: Likely / Possibly / Unlikely / Need info. Missing input is always "Need info", never an all-clear.
 // ---------------------------------------------------------------------------
+
+// Scope and liability wording (DRAFT for Stuart to review). Source: sections 1–3 of the
+// scope-liability draft only. Not legal advice. Client pages must not mention RAMS.
+const DISCLAIMER_SHORT='Project Check gives general guidance only. It is not professional, legal, structural, fire or Building Control advice, and nothing on this site or in a report creates a duty of care. Get qualified professional support before you act.';
+const DISCLAIMER_MEDIUM_LEAD='General guidance only.';
+const DISCLAIMER_MEDIUM='Project Check helps you spot questions worth asking before you commit to an industrial building project. What you see here is general information based on what you told us. It is not professional, legal, structural, fire-safety or Building Control advice, it is not an approval or a certificate, and it does not guarantee that a project will get planning permission or pass Building Control. Please get qualified professional support before you act on anything here. Nothing on this site or in a report creates a duty of care to you or to anyone else.';
+const DISCLAIMER_LONG_POINTS=[
+  'Project Check is an information tool for businesses. Its pages and reports are general guidance only.',
+  'They are not professional advice of any kind. That includes legal, structural, civil, geotechnical, fire-safety, planning and Building Control advice, and it includes advice about health and safety.',
+  'A flag or a question in a report is a prompt to get proper advice. It is not a decision, an approval, a certificate or a statutory determination. If a report does not mention something, that does not mean it is not a risk.',
+  'Reports depend on the information you give us. We cannot check that information on site.',
+  'Planning permission and Building Control approval are decided by the local authority or the approved inspector, not by Project Check. We cannot promise any outcome.',
+  'Project Check is not a building supplier, designer, contractor or adviser appointed to your project. It holds no CDM duty-holder role. Unless we agree a separate written appointment for a specific service, we do not take on any of those roles.',
+  'You should get qualified professional support before you act, and you remain responsible for your own decisions.',
+  'Nothing on this site or in a report creates a duty of care to you or to any other person. This does not limit any liability that the law does not allow us to limit.',
+  'This site is for business use only.'
+];
+const SCOPE_SHORT='A supply quote normally covers the building envelope described in it, and nothing more. Work done afterwards, such as heating, toilets, offices, services, or changes to fire doors, is a separate job. It is not part of the supply and can need its own Building Control and planning approval. Check your supplier\'s contract. You\'ll need professional support.';
+const SCOPE_MEDIUM_P1='Project Check is a separate information service. It is not the building supplier and it does not form part of any supply contract. Your supply contract is between you and your chosen supplier, and its quote and terms say what is and isn\'t included.';
+const SCOPE_MEDIUM_P2='A supply of this kind normally covers the building envelope as described in the quote: the frame, cladding, roof and doors, delivered and installed. It does not normally cover what happens to the building after the supplier leaves site. Unless your contract says otherwise, changes made after handover are the responsibility of whoever makes them, and can need fresh Building Control or planning approval. Examples are: adding heating or cooling, toilets or welfare, offices or a mezzanine, new drainage or services, new doors or windows, or moving, blocking or removing a fire door or fire-rated panels. You\'ll need professional support.';
+const SCOPE_FULL_SEPARATE='Project Check is an information service. It is not the building supplier, designer or contractor, it holds no CDM duty-holder role, and it is not a party to your supply contract. Reading a Project Check report does not change what your supplier has agreed to do.';
+const SCOPE_FULL_COVERS='A supply quote for a steel or aluminium building normally covers the building envelope only, as described in that quote: the structure, the cladding and roof, and the doors and openings listed, with delivery and installation. Anything not listed in the quote is not included. Read the quote and its terms for the exact scope, the exclusions, the warranty and who is responsible for what.';
+const SCOPE_FULL_OUTSIDE='These usually sit outside a supply, and are for you and your own advisers or contractors to arrange and get approved: the base and groundworks, drainage and connections to existing drains or sewers, electrical supply and other services, welfare facilities, heating and cooling, internal fit-out, offices, mezzanines and signage or external lighting.';
+const SCOPE_FULL_CHANGES='Once the supplier has left site, unless your contract says otherwise, anything you or anyone else adds, alters, moves, blocks or removes is not part of the supply. That includes changes to what the supplier fitted. Such changes can need their own approvals:';
+const SCOPE_FULL_ITEMS=[
+  ['Heating or cooling','Adding fixed heating or cooling to a building that did not have it is a change to the building\'s energy status under the Building Regulations. It can bring in the energy rules (Part L), and the walls, roof and doors may need upgrading.'],
+  ['Toilets, welfare and hot water','These are Building Regulations work and need drainage connections.'],
+  ['Drainage and sewer connections','New drains or a connection to a public sewer need their own approval.'],
+  ['Mezzanines and extra floors','These bring in structure, fire and escape rules, and can need planning permission.'],
+  ['New doors, windows or rooflights','These can affect structure, fire, energy and the outside appearance.'],
+  ['Fire doors and fire-rated panels','Moving, wedging, blocking, replacing or removing a fire door, or removing or damaging fire-rated panels, can put the building out of compliance and can undo the fire strategy it was designed to.'],
+  ['Change of use','A change in how the building is used can need both Building Control and planning approval, and can change the fire safety arrangements.'],
+  ['Planning conditions','Using the building in breach of a condition (hours, noise, lighting and similar) can lead to enforcement.']
+];
+const SCOPE_FULL_CLOSE='In each case, you\'ll need professional support. This is information, not a way around any approval, and it is not a pass or a waiver.';
+const SCOPE_FULL_RESPONSIBILITY='Planning permission and Building Control approval are decided by the local authority or approved inspector. Who is responsible for a particular item is set by your supply contract and by the law, not by Project Check. If your supplier has agreed in writing to take on a specific responsibility, that is a matter for your contract with them.';
+const LATER_CHANGES_INTRO='These are things that can need a fresh Building Control or planning approval if they happen after the building is supplied. This is not advice on avoiding approval, and it is not a pass or a waiver.';
+const LATER_CHANGES=[
+  'Adding toilets or welfare later is a separate Building Regulations job. You\'ll need professional support.',
+  'New drains, or a connection to the public sewer, need their own approval. You\'ll need professional support.',
+  'Adding heating or cooling later is a separate Building Control job, and the walls and roof may need upgrading to meet energy rules. You\'ll need professional support.',
+  'A change of use can need both Building Control approval and planning permission. You\'ll need professional support.',
+  'Changing, locking or blocking a fire exit, or moving a fire door, can be a Building Regulations and fire-safety issue. You\'ll need professional support.',
+  'Adding a mezzanine can need Building Control approval and may need planning permission. You\'ll need professional support.',
+  'Removing or damaging fire-rated panels or other fire protection can put the building out of compliance. You\'ll need professional support.',
+  'Cutting new doors, windows or rooflights can need Building Control approval, and may need planning permission if the outside appearance changes. You\'ll need professional support.',
+  'An extension is a separate Building Control and planning job unless a permitted-development right is confirmed. You\'ll need professional support.',
+  'New signs or external lighting may need advertisement consent or may be controlled by a planning condition. You\'ll need professional support.',
+  'If a planning condition sets hours, noise or lighting, going beyond it can lead to enforcement. You\'ll need professional support.'
+];
+const SUPPLY_NOT_SUPPLIER='Project Check is a separate information service. It is not a building supplier.';
+const SUPPLY_CONTRACT_LINE='Your supplier\'s quote and contract decide what is included.';
+function draftTag(){return `<p class="simple-draft-tag">Draft for approval</p>`}
+function disclaimerMediumMarkup(){
+  return `<section class="simple-qcard simple-disclaimer-card" aria-label="General guidance only"><h3>${esc(DISCLAIMER_MEDIUM_LEAD)}</h3>${draftTag()}<p>${esc(DISCLAIMER_MEDIUM)}</p></section>`
+}
+function scopeShortMarkup(){
+  return `<section class="simple-qcard simple-disclaimer-card" aria-labelledby="scopeShortTitle">${draftTag()}<h3 id="scopeShortTitle">What a building supply covers</h3><p>${esc(SCOPE_SHORT)}</p></section>`
+}
+function scopeMediumMarkup(){
+  return `<section class="simple-qcard simple-disclaimer-card" aria-labelledby="scopeMediumTitle">${draftTag()}<h3 id="scopeMediumTitle">What the building supply covers, and what it doesn't</h3><p>${esc(SCOPE_MEDIUM_P1)}</p><p>${esc(SCOPE_MEDIUM_P2)}</p></section>`
+}
+function laterChangesMarkup(){
+  return `<section class="simple-qcard simple-disclaimer-card" aria-labelledby="laterChangesTitle">${draftTag()}<h3 id="laterChangesTitle">Later changes that may need fresh Building Control or planning approval</h3><p>${esc(LATER_CHANGES_INTRO)}</p><ul class="simple-list simple-list-tight">${LATER_CHANGES.map(text=>`<li>${esc(text)}</li>`).join('')}</ul></section>`
+}
+function scopeFullMarkup(fold){
+  const items=SCOPE_FULL_ITEMS.map(([title,text])=>`<li><strong>${esc(title)}.</strong> ${esc(text)}</li>`).join('');
+  const body=`${draftTag()}<h3>Project Check is separate from your supply contract.</h3><p>${esc(SCOPE_FULL_SEPARATE)}</p>
+<h3>What a supply normally covers</h3><p>${esc(SCOPE_FULL_COVERS)}</p>
+<h3>What it normally does not cover</h3><p>${esc(SCOPE_FULL_OUTSIDE)}</p>
+<h3>Changes after handover</h3><p>${esc(SCOPE_FULL_CHANGES)}</p>
+<ul class="simple-list simple-list-tight">${items}</ul>
+<p>${esc(SCOPE_FULL_CLOSE)}</p>
+<h3>Responsibility stays with the right person.</h3><p>${esc(SCOPE_FULL_RESPONSIBILITY)}</p>
+<p class="meta">${esc(SUPPLY_CONTRACT_LINE)}</p>`;
+  if(!fold)return `<section class="simple-qcard simple-disclaimer-card" aria-labelledby="scopeFullTitle"><h2 id="scopeFullTitle">What the building supply covers, and what it doesn't</h2>${body}</section>`;
+  return `<details class="simple-qcard simple-disclaimer-card simple-scope-fold"><summary id="scopeFullTitle">What a supply covers <span class="simple-draft-tag">Draft for approval</span></summary>${body}</details>`
+}
+function disclaimerLongMarkup(){
+  const items=DISCLAIMER_LONG_POINTS.map((text,i)=>`<li>${esc(text)}</li>`).join('');
+  return `<section class="simple-qcard simple-disclaimer-card" aria-labelledby="disclaimerLongTitle"><h2 id="disclaimerLongTitle">About the information on this site and in our reports</h2>${draftTag()}<ol class="simple-list">${items}</ol></section>`
+}
+function ensureDisclaimerFooters(){
+  document.querySelectorAll('.home-footer, .sitefooter').forEach(footer=>{
+    if(footer.querySelector('.simple-disclaimer-foot'))return;
+    const wrap=document.createElement('div');
+    wrap.className='simple-disclaimer-foot-wrap';
+    const onLanding=footer.classList.contains('home-footer')&&(document.body.dataset.page==='home'||footer.closest('.simple-home')||footer.closest('.figma-homepage'));
+    wrap.innerHTML=`<p class="simple-disclaimer-foot">${esc(DISCLAIMER_SHORT)}</p>`+(onLanding?`<p class="simple-disclaimer-foot">${esc(SUPPLY_NOT_SUPPLIER)} <button type="button" class="simple-linkbtn" data-route="terms">General guidance only. Read the full terms.</button></p>`:'');
+    footer.appendChild(wrap)
+  })
+}
+
 const STAGE1_INTRO="Here's what you'll probably face to get your building approved, in the order it usually happens, and who you'll need. Think of it as the first chat across the table: no hard sell, and the answers and a plan come later, with Stuart.";
 const QUESTION_CHIPS={likely:'Likely',possibly:'Possibly',unlikely:'Unlikely',needinfo:'Need info'};
 const PLANNING_CONDITIONS=['Start building within 3 years of approval','Build to the approved plans','Materials and colour to match','Details of any outside lighting','Details of any piling or vibration works','Biodiversity net gain (leaving wildlife better off)','No surface water running onto the road','A new approval if the height changes','Working hours and a plan for lorries and noise while building','Noise limits once the building is in use','Drainage and flood control','Landscaping and protecting trees','Parking, lorry access and turning space','Checks if the ground may be contaminated'];
@@ -2885,12 +2983,16 @@ const questions=stage1ClientQuestions(p);
 app.innerHTML=`<div class="container simple-report">
 <header class="simple-report-head"><img class="workspace-logo" src="assets/project-check-logo.png" alt="Project Check — Know before you build."><div class="simple-report-title"><div class="eyebrow">Free check</div><h1>${esc(p.name)}</h1><p class="meta">${esc(today)}</p></div><button class="btn secondary" onclick="route('project','${esc(id)}')">Back to my project</button></header>
 <p class="simple-lead simple-report-intro">${esc(STAGE1_INTRO)}</p>
+${disclaimerMediumMarkup()}
 ${topicIconGridMarkup(questions)}
 ${stage1BasisMarkup(p)}
-<section class="simple-qlist" aria-label="Your questions and probable answers">${questions.map(stage1QuestionCardMarkup).join('')}</section>
+<section class="simple-qlist" aria-label="Your questions and probable answers">${questions.map(q=>stage1QuestionCardMarkup(q)+(/Building Regulations/i.test(q.title)?scopeShortMarkup():'')).join('')}</section>
 ${stage1OptionalMarkup(p)}
 <section class="card simple-know" aria-labelledby="simpleKnowTitle"><h2 id="simpleKnowTitle">What we still don't know</h2>${stage1KnowledgeMarkup(p)}</section>
-${stage1ReportActionsMarkup(id,questions)}</div>`
+${scopeMediumMarkup()}
+${laterChangesMarkup()}
+${stage1ReportActionsMarkup(id,questions)}
+<p class="simple-disclaimer-foot">${esc(DISCLAIMER_SHORT)}</p></div>`
 }
 
 const stage2Questions=[
@@ -3271,7 +3373,7 @@ if(stage==='s1'){
 {
 const ink=[16,24,40],muted=[71,84,103];
 const chipColour={likely:[180,60,10],possibly:[150,100,0],unlikely:[40,110,70],needinfo:muted};
-const ensure=h=>{if(y+h>278)newPage()};
+const ensure=h=>{if(y+h>258)newPage()};
 const put=(text,o={})=>{
   const size=o.size||9.5,gap=o.gap||5,ind=o.indent||0;
   doc.setFont('helvetica',o.bold?'bold':(o.italic?'italic':'normal'));doc.setFontSize(size);doc.setTextColor(...(o.color||ink));
@@ -3283,6 +3385,10 @@ const bullet=(text,o={})=>{
   doc.splitTextToSize(String(text??''),width-ind-5).forEach((line,i)=>{ensure(gap);if(i===0)doc.text('•',left+ind+1,y);doc.text(line,left+ind+5,y);y+=gap})
 };
 const section=title=>{ensure(24);y+=5;put(title,{size:13,bold:true,gap:7});doc.setDrawColor(210);doc.setLineWidth(0.3);doc.line(left,y-3,left+width,y-3);y+=2};
+y+=2;
+put('Draft for approval',{size:8,bold:true,color:muted,gap:4.4});
+put(DISCLAIMER_MEDIUM_LEAD,{size:11,bold:true,gap:5.6});
+put(DISCLAIMER_MEDIUM,{size:9,gap:4.8,color:muted});
 y+=2;
 put(STAGE1_INTRO,{size:10.5,gap:5.8,color:muted});
 y+=3;
@@ -3349,7 +3455,12 @@ questions.forEach(q=>{
   q.blocks.forEach(block=>{y+=1.5;ensure(14);put(block.heading,{bold:true,size:9.5,gap:5});block.items.forEach(text=>bullet(text,{indent:2,size:9,gap:4.8}))});
   if(q.after){y+=1.5;put(q.after,{bold:true,size:9,gap:5})}
   y+=1.5;put(`Why it matters: ${q.why}`,{size:8.5,italic:true,color:muted,gap:4.6});
-  y+=2
+  y+=2;
+  if(/Building Regulations/i.test(q.title)){
+    section('What a building supply covers');
+    put('Draft for approval',{size:8,bold:true,color:muted,gap:4.4});
+    put(SCOPE_SHORT,{size:9,gap:4.8});
+  }
 });
 section("What we still don't know");
 {
@@ -3361,6 +3472,16 @@ section("What we still don't know");
   if(k.files.length){y+=1;put('Your files – received, not reviewed in the free check',{bold:true,size:9.5,gap:5});put('A check of your figures against the drawings is part of Stage 2. We never guess a number.',{size:8.5,color:muted,gap:4.6});k.files.forEach(file=>{const read=uploadReadState(file.entry||{name:file.name});bullet(`${file.name} (${file.guess.label}) – ${read.canRead?((read.partial?'We could only read some of the text. ':'')+'Received, not reviewed in the free check.'):read.reason}`,{indent:2,size:9,gap:4.8})});put(k.fileNote,{size:9,gap:4.8,color:muted})}
   y+=2;put(`${UPLOAD_NOT_REVIEWED_TEXT} This is not an all-clear: it only shows what we know and don't know so far.`,{size:8.5,italic:true,color:muted,gap:4.6})
 }
+section('What the building supply covers, and what it doesn\'t');
+put('Draft for approval',{size:8,bold:true,color:muted,gap:4.4});
+put(SCOPE_MEDIUM_P1,{size:9,gap:4.8});
+put(SCOPE_MEDIUM_P2,{size:9,gap:4.8});
+y+=2;
+section('Later changes that may need fresh Building Control or planning approval');
+put('Draft for approval',{size:8,bold:true,color:muted,gap:4.4});
+put(LATER_CHANGES_INTRO,{size:9,gap:4.8,color:muted});
+LATER_CHANGES.forEach(text=>bullet(text,{indent:2,size:9,gap:4.8}));
+y+=2;
 // Summary box: counts, then the next step. The call is first, saving the project second, Stage 2 only as a gentle offer.
 {
   const c=stage1SummaryCounts(questions),inner=width-10;
@@ -3399,7 +3520,7 @@ heading('RECOMMENDED ACTIONS');p.actions2.forEach(a=>add(`• ${a}`,9,false,6));
 heading('SUPPLIER POSITION');add(`${p.quotes.length} supplier quotation(s) currently recorded.`,9,false,5);add(p.supplierRequest?'A request for three suitable supplier quotations has been recorded.':'No three-supplier quotation request is currently recorded.',9,false,6)
 }
 heading('IMPORTANT');add('This is an early check based on what you told us. It is not a design, an approval or a survey, and it does not replace advice from the professionals on your project.',8,false,5);
-if(stage==='s1'){const pages=doc.getNumberOfPages();for(let i=1;i<=pages;i++){doc.setPage(i);doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(71,84,103);doc.text(`Project Check · Free check · page ${i} of ${pages}`,left,284)}doc.setTextColor(0,0,0)}
+if(stage==='s1'){const pages=doc.getNumberOfPages(),footDate=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});for(let i=1;i<=pages;i++){doc.setPage(i);doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(71,84,103);const footLines=doc.splitTextToSize(DISCLAIMER_SHORT,width);let fy=268;footLines.forEach(line=>{doc.text(line,left,fy);fy+=3.4});doc.text(`Project Check · Free check · ${footDate} · Draft for approval · page ${i} of ${pages}`,left,284)}doc.setTextColor(0,0,0)}
 p.history.push({at:now(),text:`${stage==='s1'?'Stage 1':'Stage 2'} PDF report downloaded`});save();
 doc.save(`Project-Check-${p.name.replace(/\W+/g,'-')}-${stage==='s1'?'Stage-1':'Stage-2'}.pdf`)
 }
@@ -3510,7 +3631,11 @@ function paidStagePage(id){
 <section class="simple-section" aria-labelledby="stage2GetTitle"><h2 id="stage2GetTitle">What you get</h2><div class="simple-steps">${features}</div></section>
 <section class="simple-section" aria-labelledby="stage2PlanTitle"><h2 id="stage2PlanTitle">Your planning history file</h2><p class="simple-lead">So you and your planning consultant can see what the council has approved nearby, and what it asked for.</p>${plainList(STAGE2_PLANNING_FILE)}</section>
 <section class="simple-section" aria-labelledby="stage2RegsTitle"><h2 id="stage2RegsTitle">Building Regulations guidance</h2><p class="simple-lead">Guidance for your building, in plain words.</p>${plainList(STAGE2_REGS_GUIDANCE)}</section>
-${p?`<section class="simple-section" aria-labelledby="stage2ReviewTitle"><h2 id="stage2ReviewTitle">Review of your uploads</h2><p class="simple-lead">Shown in this order: your figures checked against the drawings, the need-info list, then a card for each file. We only show figures written as text in a file we could read. We never guess a number, and this is not a Building Regulations or planning approval.</p>${uploadReviewMarkup(p,'stage2')}</section>`:''}
+${disclaimerMediumMarkup()}
+<p class="meta">${esc(SUPPLY_CONTRACT_LINE)} <button type="button" class="simple-linkbtn" data-route="terms">Read the full terms.</button></p>
+${scopeFullMarkup(true)}
+${p?`<section class="simple-section" aria-labelledby="stage2ReviewTitle"><h2 id="stage2ReviewTitle">Review of your uploads</h2><p class="simple-lead">Shown in this order: your figures checked against the drawings, the need-info list, then a card for each file. We only show figures written as text in a file we could read. We never guess a number, and this is not a Building Regulations or planning approval.</p>
+<div class="simple-scope-beside">${scopeShortMarkup()}${uploadReviewMarkup(p,'stage2')}</div></section>`:scopeShortMarkup()}
 <section class="simple-section" aria-labelledby="stage2ExampleTitle"><h2 id="stage2ExampleTitle">What a plain review of your uploads looks like</h2>
 <p class="simple-example-tag">EXAMPLES ONLY. Made-up content, not a real project or a real file.</p>
 <p class="meta">Each review starts with your figures (Match, Mismatch or Not shown), then a need-info list, then a card for each drawing: what we found, what's missing, what's unclear, and questions for your meeting with Stuart.</p>
@@ -3582,7 +3707,7 @@ document.querySelectorAll(':is(.home-footer nav,.sitefooter-primary) button:is([
 // fixes it everywhere without touching the Stage 1 in-page
 // question-to-question flow, which calls stage1(id) directly and never
 // goes through render() for its own internal steps.
-window.scrollTo(0,0)}
+ensureDisclaimerFooters();window.scrollTo(0,0)}
 window.route=route;window.startStage2=startStage2;window.stage1SummaryDoorSelect=stage1SummaryDoorSelect;window.quotationSummary=quotationSummary;window.authModal=authModal;window.newProject=newProject;window.uploadDrawings=uploadDrawings;window.moveStage1=moveStage1;window.saveStage1=saveStage1;window.confirmStage1Evidence=confirmStage1Evidence;window.correctStage1Evidence=correctStage1Evidence;window.moveStage2=moveStage2;window.saveStage2=saveStage2;window.addQuote=addQuote;window.requestThreeSuppliers=requestThreeSuppliers;window.downloadReport=downloadReport;
 window.doorReview=doorReview;window.selectDoor=selectDoor;window.moveDoor=moveDoor;window.changeDoorWall=changeDoorWall;window.addDoor=addDoor;window.removeDoor=removeDoor;window.confirmDoors=confirmDoors;
 async function initializeStage1Review(){
