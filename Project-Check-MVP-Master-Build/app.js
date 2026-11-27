@@ -862,7 +862,7 @@ app.innerHTML=`<div class="container project-page"><div class="pagehead"><div cl
 <section class="card project-details-card" aria-labelledby="projectDetailsTitle"><div class="project-details-head"><div><div class="eyebrow">Saved project information</div><h2 id="projectDetailsTitle">Project details</h2><p>Review the information supplied for this building at any time.</p></div><button class="btn secondary" onclick="route('projectSettings','${p.id}')">Edit project details</button></div><dl class="project-detail-grid"><div><dt>Building use</dt><dd>${esc(facts.buildingUse||"Not added")}</dd></div><div><dt>Building type</dt><dd>${esc(facts.buildingType||"Not added")}</dd></div><div class="project-detail-location"><dt>Building location</dt><dd>${esc(p.address||"Not added")}</dd></div><div><dt>Postcode</dt><dd>${esc(p.postcode||"Not added")}</dd></div><div><dt>Length</dt><dd>${projectMeasure(facts.length)}</dd></div><div><dt>Width</dt><dd>${projectMeasure(facts.width)}</dd></div><div><dt>Clear height needed</dt><dd>${projectMeasure(facts.height)}</dd></div><div><dt>Roof pitch</dt><dd>${pitch}°</dd><small>Permitted range 5°–22° · standard 10°</small></div><div class="project-detail-result"><dt>Calculated ridge height</dt><dd>${ridge===null?"Add width and clear height":`${ridge.toFixed(2)} m`}</dd><small>Clear height + roof rise at the selected pitch</small></div></dl></section>
 <section class="project-position card"><div><div class="eyebrow">You are here</div><h2>${esc(stage1Status(p))}</h2><p>${p.stage1Complete?"Your first assessment is complete. Continue from the available project stages below.":"Your project has been created. Begin Stage 1 when you are ready."}</p></div><span class="pill">${esc(p.status||"Active")}</span></section>
 <div class="grid4">
-<div class="card stage1-entry-card" data-stage1-entry><span class="pill">Stage 1 ${p.stage1Complete?"complete":"ready"}</span><h3>Initial Project Check</h3><p>Building, site, use, access and early risk assessment.</p><button class="btn green" onclick="route('stage1Workspace','${p.id}')">${p.stage1Complete?"Review Stage 1":"Open Stage 1 workspace"}</button><p class="field-note">This control opens the Stage 1 workspace.</p></div>
+<div class="card stage1-entry-card" data-stage1-entry><span class="pill">Stage 1 ${p.stage1Complete?"complete":"ready"}</span><h3>Initial Project Check</h3><p>Building, site, use, access and the early checks.</p><button class="btn green" onclick="route('stage1Workspace','${p.id}')">${p.stage1Complete?"Review Stage 1":"Open Stage 1 workspace"}</button><p class="field-note">This control opens the Stage 1 workspace.</p></div>
 <div class="card"><span class="pill blue">Stage 2 ${p.stage2Complete?"complete":p.stage1Complete?"available":"locked"}</span><h3>Deeper assessment</h3><p>Substrate, slab, surveys, planning, Building Regulations, fire and operational evidence.</p><button class="btn ${p.stage1Complete?"green":"secondary"}" ${p.stage1Complete?"":"disabled"} onclick="startStage2('${p.id}')">${p.stage2Complete?"Review Stage 2":"Open Stage 2"}</button></div>
 <div class="card"><span class="pill">Stage 2</span><h3>Doors & drawing</h3><p>Review the preliminary drawing and reposition, add or remove doors.</p><button class="btn ${p.stage1Complete?"green":"secondary"}" ${p.stage1Complete?"":"disabled"} onclick="route('doors','${p.id}')">Review doors & drawing</button></div>
 <div class="card"><span class="pill warn">Suppliers</span><h3>Quotations</h3><p>${p.quotes.length} quotation(s) recorded. ${p.supplierRequest?"Three-supplier request recorded.":"Request three suitable quotations after Stage 2."}</p><button class="btn" ${p.stage2Complete?"":"disabled"} onclick="route('quotes','${p.id}')">Supplier quotations</button></div>
@@ -1272,7 +1272,8 @@ function projectDocuments(id){
 if(!requireUser())return;const p=getP(id);if(!p)return route('dashboard');const docs=p.evidence||[],returnRoute=projectDocumentsReturnRoute||"stage1Workspace";
 app.innerHTML=`<div class="container customer-area project-management-page">${projectJourneyNav(p,"documents",returnRoute)}<div class="customer-heading"><div><div class="eyebrow">Project Documents</div><h1>${esc(p.name)}</h1><p class="meta">Upload and review the drawings and supporting evidence supplied for this project.</p></div></div>
 <section class="card document-upload-card"><div><h2>Upload documents</h2><p class="meta">PDF, DOCX, DWG, PNG or JPG. Upload anything you have for the proposed building area, including topographical or level surveys, utility surveys, drainage or CCTV information, slab or foundation drawings, ground investigations, or existing site/building surveys. You do not need to classify or interpret it. DWG files can be downloaded and opened in CAD software; online preview is not available.</p></div><label class="btn green" for="projectDocumentFiles">Choose files</label><p class="meta">${uploadsLabel(p,p.stage1Complete?p.stage:'Stage 1')}</p><p class="meta">${esc(UPLOAD_NOT_REVIEWED_TEXT)} Photos and CAD files (DWG) may not be readable, so please also send a PDF where you can.</p><input id="projectDocumentFiles" type="file" multiple accept=".pdf,.docx,.dwg,.png,.jpg,.jpeg" hidden></section>
-<section class="card management-card"><div class="document-register-heading"><div><h2>Your uploaded documents</h2><p class="meta">${docs.length} document(s) recorded</p></div><label class="field document-filter"><span>Document type</span><select id="documentDiscipline"><option>All disciplines</option><option>Architectural</option><option>Civils</option><option>Structural</option><option>Fire</option><option>Other</option></select></label></div>${docs.length?`<div class="document-table-wrap"><table class="document-register"><thead><tr><th>Document</th><th>Added</th><th>Discipline</th><th>Status</th><th>Actions</th></tr></thead><tbody>${docs.map((e,index)=>`<tr data-discipline="${esc(e.discipline||"Other")}"><td><strong>${esc(e.name)}</strong><small class="simple-file-line">${uploadFileDetail(e.name)}</small><small>Revision ${esc(e.revision||"1")}</small></td><td>${new Date(e.at).toLocaleDateString()}</td><td><select class="document-discipline" id="documentDisciplineRow${index}" aria-label="Discipline for ${esc(e.name)}">${DOCUMENT_DISCIPLINES.map(d=>`<option ${(e.discipline||"Other")===d?"selected":""}>${d}</option>`).join("")}</select></td><td><span class="pill">${esc(e.documentStatus||"Current")}</span></td><td><div class="document-actions"><button class="btn secondary" type="button" onclick="viewProjectDocument('${p.id}',${index})">${/\.dwg$/i.test(e.name||"")?"Download DWG":"View"}</button><label class="btn secondary" for="replaceDocument${index}">Replace</label><input id="replaceDocument${index}" type="file" accept=".pdf,.docx,.dwg,.png,.jpg,.jpeg" hidden></div></td></tr>`).join('')}</tbody></table><p class="meta document-filter-empty" id="documentFilterEmpty" hidden>No documents in this discipline. Change the filter or set a document's discipline in the list.</p></div>`:`<div class="document-empty"><h3>No documents uploaded yet</h3><p class="meta">Use Choose files above when drawings or supporting information are available.</p></div>`}</section>
+<section class="card management-card"><div class="document-register-heading"><div><h2>Your uploaded documents</h2><p class="meta">${docs.length} document(s) recorded</p></div><label class="field document-filter"><span>Document type</span><select id="documentDiscipline"><option>All disciplines</option><option>Architectural</option><option>Civils</option><option>Structural</option><option>Fire</option><option>Other</option></select></label></div>${docs.length?`<div class="document-table-wrap"><table class="document-register"><thead><tr><th>Document</th><th>Added</th><th>Discipline</th><th>Status</th><th>Actions</th></tr></thead><tbody>${docs.map((e,index)=>`<tr data-discipline="${esc(e.discipline||"Other")}"><td><strong>${esc(e.name)}</strong><small class="simple-file-line">${uploadFileDetail(e.name)}</small><small>${e.revision?`Revision ${esc(e.revision)}`:"No revision letter read"}</small></td><td>${new Date(e.at).toLocaleDateString()}</td><td><select class="document-discipline" id="documentDisciplineRow${index}" aria-label="Discipline for ${esc(e.name)}">${DOCUMENT_DISCIPLINES.map(d=>`<option ${(e.discipline||"Other")===d?"selected":""}>${d}</option>`).join("")}</select></td><td><span class="pill">${esc(e.documentStatus||"Current")}</span></td><td><div class="document-actions"><button class="btn secondary" type="button" onclick="viewProjectDocument('${p.id}',${index})">${/\.dwg$/i.test(e.name||"")?"Download DWG":"View"}</button><label class="btn secondary" for="replaceDocument${index}">Replace</label><input id="replaceDocument${index}" type="file" accept=".pdf,.docx,.dwg,.png,.jpg,.jpeg" hidden></div></td></tr>`).join('')}</tbody></table><p class="meta document-filter-empty" id="documentFilterEmpty" hidden>No documents in this discipline. Change the filter or set a document's discipline in the list.</p></div>`:`<div class="document-empty"><h3>No documents uploaded yet</h3><p class="meta">Use Choose files above when drawings or supporting information are available.</p></div>`}</section>
+<section class="card management-card simple-upload-host">${uploadReviewMarkup(p,'stage1')}</section>
 <div class="actions"><button class="btn secondary" onclick="returnFromProjectDocuments('${p.id}')">${returnRoute==="stage1Confirm"?"Back to Project Summary":"Back to project"}</button></div></div>`;
 const filter=document.querySelector('#documentDiscipline');
 // Documents saved without a discipline (every upload before the per-row selector
@@ -2273,6 +2274,277 @@ const KEY_DOCUMENT_REQUESTS=[
 ];
 // What we have, what is missing and what is unclear, for the report, the PDF and the confirm page.
 // Missing data is always "need info", never an all-clear. Documents are never read in Stage 1.
+// ---------------------------------------------------------------------------
+// Client-facing upload result (display only).
+// Uses existing extractEvidenceText results plus extractFactsFromText,
+// detectDocumentRevisionToken, detectDocumentStatusToken and
+// classifyDocumentType when those functions already exist. Does not change
+// extraction, storage, the map or Building Design.
+// Never invent a figure, never claim an image was checked, never state that
+// something complies with Building Regulations or Approved Document B
+// (guidance only; Stuart will go through guidance items in the Stage 2 meeting).
+// Stage 1 only records that files were received and whether we could read text.
+// A figures check is Stage 2, and only for values the existing extraction can find.
+const UPLOAD_REVIEW_FOOTER='This is a check of what we could read in the file. It is not a Building Regulations or planning approval. Stuart will go through the guidance items with you in your Stage 2 meeting.';
+const UPLOAD_DOC_TYPE_LABELS={
+  site_investigation_geotechnical:'Ground investigation',
+  structural_report_calculation:'Structural report or calculations',
+  foundation_base_design:'Foundation or base drawing',
+  groundworks_quotation:'Groundworks quotation',
+  supplier_quotation:'Supplier quotation',
+  planning_document:'Planning document',
+  building_control_document:'Building Control document',
+  fire_strategy:'Fire strategy',
+  drainage_information:'Drainage information',
+  utility_service_survey:'Utilities survey',
+  drawing:'Drawing',
+  specification:'Specification',
+  other_project_evidence:'Document'
+};
+const UPLOAD_FACT_LABELS={
+  building_footprint_dimensions:'Size (width × length)',
+  overall_building_length:'Length',
+  eaves_height:'Eaves height',
+  slab_thickness:'Slab thickness',
+  slab_reinforcement:'Slab reinforcement',
+  foundation_pad_count:'Number of foundation pads',
+  made_ground_depth:'Made-ground depth',
+  allowable_bearing_pressure:'Allowable bearing pressure',
+  concrete_core_count:'Concrete cores',
+  concrete_core_depth_range:'Concrete core depth',
+  concrete_compressive_strength_range:'Concrete strength',
+  project_use_description:'Use described in the file'
+};
+const UPLOAD_SKIP_SUBJECTS=['drainage_provisional_sum','service_duct_provisional_sum','planning_site_address','quotation_basis'];
+function uploadFormatLabel(name){
+  const guess=typeof uploadTypeGuess==='function'?uploadTypeGuess(name):{label:'File',unreadable:false,note:''};
+  if(/\.dwg$/i.test(name||''))return 'CAD file (DWG)';
+  if(/\.pdf$/i.test(name||''))return 'PDF';
+  if(/\.docx?$/i.test(name||''))return 'Word document';
+  if(/\.(png|jpe?g)$/i.test(name||''))return 'Photo or image';
+  return guess.label||'File'
+}
+function uploadReadState(entry){
+  const name=entry&&entry.name||'This file';
+  const status=String(entry&&entry.extractionStatus||'');
+  const note=String(entry&&entry.extractionNote||'').trim();
+  const isDwg=/\.dwg$/i.test(name);
+  const isImage=/\.(png|jpe?g|gif|webp|heic|heif)$/i.test(name);
+  if(isDwg||status==='UNSUPPORTED'&&isDwg){
+    return {canRead:false,text:false,reason:`We couldn't read the text in ${name}. This is a CAD (DWG) file, and automatic reading isn't available yet. Please also send a dimensioned PDF.`}
+  }
+  if(isImage||status==='OCR_REQUIRED'){
+    return {canRead:false,text:false,reason:`We couldn't read the text in ${name}. It looks like an image, and we have not measured anything from it. Please also send a PDF or a dimensioned drawing.`}
+  }
+  if(status==='EXTRACTION_FAILED'){
+    return {canRead:false,text:false,reason:note?`We couldn't read ${name}: ${note}`:`We couldn't read ${name}. The file may be too large or damaged. Please also send a PDF.`}
+  }
+  if(status==='UNSUPPORTED'){
+    return {canRead:false,text:false,reason:note?`We couldn't read ${name}: ${note}`:`We couldn't read ${name} automatically. Please also send a PDF.`}
+  }
+  if(status==='PARTIAL'){
+    return {canRead:true,text:true,partial:true,reason:`We could only read some of the text in ${name}. Please also send a clearer PDF if you have one.`}
+  }
+  if(status==='EXTRACTED'&&entry&&entry.extractedText){
+    return {canRead:true,text:true,reason:''}
+  }
+  if(entry&&entry.extractedText){
+    return {canRead:true,text:true,reason:''}
+  }
+  return {canRead:false,text:false,reason:`We couldn't read the text in ${name}. Please also send a dimensioned PDF.`}
+}
+function uploadPlainType(entry){
+  const confidence=String(entry&&entry.documentTypeConfidence||'');
+  const type=entry&&entry.documentType;
+  if(type&&UPLOAD_DOC_TYPE_LABELS[type]&&(confidence==='medium'||confidence==='high'))return UPLOAD_DOC_TYPE_LABELS[type];
+  return uploadFormatLabel(entry&&entry.name||'')
+}
+function uploadParseMetres(value){
+  const text=String(value||'');
+  const nums=[];
+  const re=/(\d+(?:\.\d+)?)\s*(?:m\b|mm\b)?/gi;
+  let m;
+  while((m=re.exec(text))){
+    let n=parseFloat(m[1]);
+    if(!Number.isFinite(n))continue;
+    if(/mm/i.test(m[0])||(!/m/i.test(m[0])&&n>=100&&n%1===0))n=n/1000;
+    nums.push(n)
+  }
+  return nums
+}
+function uploadValuesMatch(a,b){
+  if(!Number.isFinite(a)||!Number.isFinite(b))return false;
+  const diff=Math.abs(a-b)*1000;
+  const tol=Math.min(Math.abs(a)*10,50);
+  return diff<=tol+1e-6
+}
+function uploadPairMatches(enteredW,enteredL,shown){
+  if(shown.length<2||!Number.isFinite(enteredW)||!Number.isFinite(enteredL))return false;
+  const [a,b]=shown;
+  return (uploadValuesMatch(enteredW,a)&&uploadValuesMatch(enteredL,b))||(uploadValuesMatch(enteredW,b)&&uploadValuesMatch(enteredL,a))
+}
+function uploadFactsForFile(entry){
+  if(!entry||!entry.extractedText||typeof extractFactsFromText!=='function')return [];
+  try{
+    return extractFactsFromText(entry.extractedText,{source_file:entry.name,source_document_type:entry.documentType||null})||[]
+  }catch(err){
+    return []
+  }
+}
+function uploadRevisionOf(entry,read){
+  if(!read.canRead||!entry||!entry.extractedText||typeof detectDocumentRevisionToken!=='function')return null;
+  const found=detectDocumentRevisionToken(entry.extractedText);
+  return found&&found.value?found.value:null
+}
+function uploadStatusOf(entry,read){
+  if(!read.canRead||!entry||!entry.extractedText||typeof detectDocumentStatusToken!=='function')return null;
+  const found=detectDocumentStatusToken(entry.extractedText);
+  return found&&found.value?found.value:null
+}
+function uploadBuildReview(p){
+  const docs=(p&&p.evidence||[]).filter(item=>item&&item.name).slice().sort((a,b)=>(a.at||0)-(b.at||0));
+  const files=docs.map(entry=>{
+    const read=uploadReadState(entry);
+    const facts=read.canRead?uploadFactsForFile(entry).filter(fact=>fact&&fact.extracted_value&&!UPLOAD_SKIP_SUBJECTS.includes(fact.subject)):[];
+    return {entry,name:entry.name,read,facts,type:uploadPlainType(entry),revision:uploadRevisionOf(entry,read),status:uploadStatusOf(entry,read),format:uploadFormatLabel(entry.name)}
+  });
+  const readable=files.filter(file=>file.read.canRead);
+  const facts=p?projectFacts(p):{};
+  const enteredW=Number(facts.width),enteredL=Number(facts.length);
+  const hasW=stage1HasValue(facts.width)&&Number.isFinite(enteredW);
+  const hasL=stage1HasValue(facts.length)&&Number.isFinite(enteredL);
+  const sizeFacts=files.flatMap(file=>file.facts.filter(fact=>fact.subject==='building_footprint_dimensions'||fact.subject==='overall_building_length').map(fact=>({file:file.name,fact})));
+  const eavesFacts=files.flatMap(file=>file.facts.filter(fact=>fact.subject==='eaves_height').map(fact=>({file:file.name,fact})));
+  const rows=[];
+  if(hasW||hasL||sizeFacts.length){
+    const drawingParts=sizeFacts.map(item=>`${item.fact.extracted_value} (${item.file})`);
+    const drawingText=drawingParts.length?drawingParts.join(' / '):'';
+    let status='Not shown',wording;
+    if(!readable.length){
+      status='Not shown';
+      wording="We couldn't read a written size from your files yet, so we haven't checked this."
+    }else if(!sizeFacts.length){
+      status='Not shown';
+      wording='A written width and length were not found in the files we could read. We need this from a dimensioned PDF.'
+    }else{
+      const pairs=sizeFacts.map(item=>({file:item.file,nums:uploadParseMetres(item.fact.extracted_value),raw:item.fact.extracted_value}));
+      const allAgree=pairs.every(item=>{
+        const first=pairs[0];
+        if(item.nums.length>=2&&first.nums.length>=2)return uploadPairMatches(first.nums[0],first.nums[1],item.nums);
+        if(item.nums.length===1&&first.nums.length===1)return uploadValuesMatch(item.nums[0],first.nums[0]);
+        return item.raw===first.raw
+      });
+      const matchesEntered=hasW&&hasL&&pairs.some(item=>item.nums.length>=2?uploadPairMatches(enteredW,enteredL,item.nums):false);
+      if(!allAgree){
+        status='Mismatch';
+        wording='Your drawings disagree with each other. Which is right?'
+      }else if(hasW&&hasL&&!matchesEntered){
+        status='Mismatch';
+        wording='The size on the drawings does not match the size you entered. Which is right?'
+      }else if(matchesEntered){
+        status='Match';
+        wording='Matches your drawings.'
+      }else{
+        status='Not shown';
+        wording='A size is written on the drawings. You have not entered a matching width and length yet.'
+      }
+    }
+    rows.push({item:'Width and length',entered:hasW&&hasL?`${facts.width} m × ${facts.length} m`:'Not entered',drawings:drawingText||'Not found in the files we could read',status,wording})
+  }
+  if(eavesFacts.length){
+    const drawingText=eavesFacts.map(item=>`${item.fact.extracted_value} (${item.file})`).join(' / ');
+    const nums=eavesFacts.map(item=>uploadParseMetres(item.fact.extracted_value)[0]).filter(Number.isFinite);
+    const disagree=nums.length>1&&nums.some(n=>!uploadValuesMatch(n,nums[0]));
+    rows.push({item:'Eaves height',entered:'Not entered',drawings:drawingText,status:disagree?'Mismatch':'Not shown',wording:disagree?'Two different eaves heights are written on the drawings. Which is right?':'Eaves height is written on the drawings. You have not entered this figure separately (your clear height is a different measurement).'})
+  }
+  const needInfo=[];
+  files.forEach(file=>{if(!file.read.canRead||file.read.partial)needInfo.push(file.read.reason)});
+  if(readable.length&&!sizeFacts.length)needInfo.push('A written width and length – not found in the files we could read.');
+  files.forEach(file=>{
+    if(!file.read.canRead)return;
+    if(!file.revision)needInfo.push(`${file.name}: no revision letter was found in the text we could read.`);
+    if(file.status&&['PRELIMINARY','DRAFT','FOR APPROVAL','SUPERSEDED'].includes(file.status))needInfo.push(`${file.name} is marked "${file.status}". Please send the current issued version if you have one.`)
+  });
+  if(!files.length)needInfo.push('You have not uploaded any files yet.');
+  const cards=files.map(file=>{
+    const found=[];
+    file.facts.forEach(fact=>{
+      const label=UPLOAD_FACT_LABELS[fact.subject]||fact.subject.replace(/_/g,' ');
+      found.push(`${label}: ${fact.extracted_value} (${file.name})`)
+    });
+    if(file.revision)found.push(`Revision ${file.revision} (${file.name})`);
+    if(file.status)found.push(`Marked "${file.status}" (${file.name})`);
+    const missing=[];
+    const unclear=[];
+    const questions=[];
+    if(!file.read.canRead){
+      missing.push(file.read.reason);
+      questions.push(`Please send a dimensioned PDF of ${file.name}, or another file we can read.`)
+    }else{
+      if(file.read.partial)unclear.push(file.read.reason);
+      if(!file.facts.some(fact=>fact.subject==='building_footprint_dimensions'||fact.subject==='overall_building_length'))missing.push('A written width and length – not found in the text we could read.');
+      if(!file.revision)unclear.push('No revision letter was found in the text we could read, so we cannot tell if this is the latest version.');
+      if(file.status&&['PRELIMINARY','DRAFT','FOR APPROVAL','SUPERSEDED'].includes(file.status))unclear.push(`This file is marked "${file.status}", so the figures on it may not be confirmed.`);
+      file.facts.forEach(fact=>{
+        if(fact.extraction_note&&/inconsistent/i.test(fact.extraction_note))unclear.push(`${UPLOAD_FACT_LABELS[fact.subject]||fact.subject}: the same file gives more than one value. Which is right?`)
+      })
+    }
+    if(unclear.some(text=>/does not match|disagree/i.test(text)))questions.push('Which drawing is the one you are building from?');
+    if(!file.revision&&file.read.canRead)questions.push(`Is ${file.name} the latest version?`);
+    const unique=list=>[...new Set(list.filter(Boolean))].slice(0,6);
+    return {name:file.name,type:file.type,format:file.format,revision:file.revision,status:file.status,read:file.read,found:unique(found),missing:unique(missing),unclear:unique(unclear),questions:unique(questions).slice(0,5)}
+  });
+  return {files,readableCount:readable.length,rows,needInfo:[...new Set(needInfo.filter(Boolean))],cards,sortedByUpload:true}
+}
+function uploadStatusChip(status){
+  const cls=status==='Match'?'likely':status==='Mismatch'?'needinfo':'needinfo';
+  return `<span class="simple-chip simple-chip--${cls}">${esc(status)}</span>`
+}
+function uploadFileCardMarkup(card,mode){
+  const readLine=card.read.canRead?(card.read.partial?'We could only read some of the text.':'We could read the text in this file.'):card.read.reason;
+  const rev=card.read.canRead?(card.revision?` · Rev ${esc(card.revision)}`:' · No revision letter'):'';
+  const st=card.status?` · Marked "${esc(card.status)}"`:'';
+  const block=(title,items,empty)=>`<div class="simple-qblock"><h4>${esc(title)}</h4>${items.length?`<ul class="simple-list simple-list-tight">${items.map(text=>`<li>${esc(text)}</li>`).join('')}</ul>`:`<p class="meta">${esc(empty)}</p>`}</div>`;
+  const foundEmpty=mode==='stage1'?'Not reviewed in the free check.':(card.read.canRead?'Nothing we can read automatically was found in this file.':'We could not read this file, so we have not listed any figures.');
+  return `<article class="simple-qcard simple-draw-card"><div class="simple-qhead"><h3>${esc(card.type)} · ${esc(card.name)}${rev}${st}</h3></div><p class="meta">${esc(card.format)}. ${esc(readLine)}</p>${mode==='stage1'?`<p class="simple-file-line">Received, not reviewed in the free check.</p>`:''}${block('What we found',mode==='stage1'?[]:card.found,foundEmpty)}${block("What's missing – we need this from you",mode==='stage1'?(card.read.canRead?[]:card.missing):card.missing,mode==='stage1'?'A full list of what is missing is part of Stage 2.':'Nothing further listed from what we could read.')}${mode==='stage1'?'':block("What's unclear",card.unclear,'Nothing further listed from what we could read.')}${mode==='stage1'?'':block('Questions for your meeting with Stuart',card.questions,'No extra questions from this file.')}<p class="meta simple-qnote">${esc(UPLOAD_REVIEW_FOOTER)}</p></article>`
+}
+function uploadFiguresMarkup(review,mode){
+  if(mode==='stage1'){
+    return `<section class="simple-qcard simple-review-panel"><h3>Your figures checked against the drawings</h3><p>Not checked in this free check. A comparison of the sizes you entered with anything we can read on the drawings is part of Stage 2.</p><p class="meta">We only compare figures that are written as text in a file we can read. We cannot read CAD (DWG) files or photos automatically, and we never guess a number.</p></section>`
+  }
+  if(!review.rows.length){
+    return `<section class="simple-qcard simple-review-panel"><h3>Your figures checked against the drawings</h3><p>We couldn't compare your figures with the drawings yet. We can only check sizes when they are written as text in a PDF or Word file we can read. We cannot read CAD (DWG) files or photos automatically, and we never guess a number.</p></section>`
+  }
+  const body=review.rows.map(row=>`<tr><th scope="row">${esc(row.item)}</th><td>${esc(row.entered)}</td><td>${esc(row.drawings)}</td><td>${uploadStatusChip(row.status)}</td><td>${esc(row.wording)}</td></tr>`).join('');
+  return `<section class="simple-qcard simple-review-panel"><h3>Your figures checked against the drawings</h3><p class="meta">Status is only Match, Mismatch or Not shown. This is not a pass or a Building Regulations check.</p><div class="simple-review-table-wrap"><table class="simple-review-table"><thead><tr><th>Item</th><th>You entered</th><th>Drawings show</th><th>Status</th><th></th></tr></thead><tbody>${body}</tbody></table></div></section>`
+}
+function uploadReviewMarkup(p,mode){
+  const review=uploadBuildReview(p);
+  const header=mode==='stage1'
+    ?`<p class="simple-know-status" role="status"><strong>Received, not reviewed in the free check.</strong> ${review.files.length?`We have ${review.files.length} file${review.files.length===1?'':'s'}. We could read text in ${review.readableCount}.`:'You have not uploaded any files yet.'} A plain review of each file is part of Stage 2.</p>${review.sortedByUpload&&review.files.length?`<p class="meta">Files are listed in the order you uploaded them, because we could not read a drawing date.</p>`:''}`
+    :`<p class="simple-know-status" role="status">${review.files.length?`We received ${review.files.length} file${review.files.length===1?'':'s'}. We could read text in ${review.readableCount}. ${review.files.length-review.readableCount?`${review.files.length-review.readableCount} need your help (see below).`:''}`:'You have not uploaded any files yet.'}</p>${review.sortedByUpload&&review.files.length?`<p class="meta">Files are listed in the order you uploaded them, because we could not read a drawing date.</p>`:''}`;
+  const need=`<section class="simple-qcard simple-review-panel"><h3>Need info</h3>${review.needInfo.length?`<ul class="simple-list simple-list-tight">${review.needInfo.map(text=>`<li>${esc(text)}</li>`).join('')}</ul>`:'<p class="meta">Nothing listed yet from the files. That is not an all-clear.</p>'}<p class="meta">Some checks, such as fire exits and boundary distances, cannot be read automatically yet. Stuart will go through those guidance items with you in your Stage 2 meeting. This is not a Building Regulations approval.</p></section>`;
+  const cards=review.cards.length?`<div class="simple-qlist">${review.cards.map(card=>uploadFileCardMarkup(card,mode)).join('')}</div>`:'';
+  return `<div class="simple-upload-review">${header}${uploadFiguresMarkup(review,mode)}${need}${cards}</div>`
+}
+function uploadExampleReviewMarkup(){
+  const chip=status=>`<span class="simple-chip simple-chip--${status==='Match'?'likely':'needinfo'}">${esc(status)}</span>`;
+  const block=(title,items)=>`<div class="simple-qblock"><h4>${esc(title)}</h4><ul class="simple-list simple-list-tight">${items.map(text=>`<li>${esc(text)}</li>`).join('')}</ul></div>`;
+  return `<div class="simple-upload-review simple-upload-example"><p class="simple-example-tag">EXAMPLE ONLY. Made-up content, not a real project or a real file.</p>
+<section class="simple-qcard simple-review-panel"><h3>Your figures checked against the drawings</h3><p class="meta">Status is only Match, Mismatch or Not shown. This is not a pass or a Building Regulations check.</p>
+<div class="simple-review-table-wrap"><table class="simple-review-table"><thead><tr><th>Item</th><th>You entered</th><th>Drawings show</th><th>Status</th><th></th></tr></thead><tbody>
+<tr><th scope="row">Width and length</th><td>20 m × 25 m</td><td>20 m × 24.4 m (steel drawing) / 20 m × 25 m (planning drawing)</td><td>${chip('Mismatch')}</td><td>Your drawings disagree with each other and with you. Which is right?</td></tr>
+<tr><th scope="row">Roof pitch</th><td>10°</td><td>Not found in the files we could read</td><td>${chip('Not shown')}</td><td>Roof pitch isn't written on the drawings we could read – we need it.</td></tr>
+</tbody></table></div></section>
+<section class="simple-qcard simple-review-panel"><h3>Need info</h3><ul class="simple-list simple-list-tight"><li>Which length is right: 24.4 m or 25 m?</li><li>Exit door widths – not found in the files we could read.</li><li>Distance from each wall to the site boundary – not found in the files we could read.</li></ul><p class="meta">Stuart will go through guidance items such as fire exits and boundary distances with you. This is not a Building Regulations approval.</p></section>
+<article class="simple-qcard simple-draw-card"><div class="simple-qhead"><h3>Drawing · steel-general-arrangement.pdf · Rev A · 16 Apr 2026</h3></div><p class="meta">PDF. We could read the text in this file.</p>
+${block('What we found',['Building 20 m wide × 24.4 m long (steel-general-arrangement.pdf)','Roller door: 4.0 m wide; height not written'])}
+${block("What's missing – we need this from you",['Distance from each wall to the site boundary – not shown','Clear widths of any fire exit doors – not shown'])}
+${block("What's unclear",['The planning drawing gives the length as 25 m; this drawing gives 24.4 m. Which is right?','No date was found for a second sheet in the same set.'])}
+${block('Questions for your meeting with Stuart',['Which drawing is the one you are building from?','Is the small door on the front wall a fire exit? How wide is it?'])}
+<p class="meta simple-qnote">${esc(UPLOAD_REVIEW_FOOTER)}</p></article></div>`
+}
+
 function stage1KnowledgeLists(p){
   const facts=projectFacts(p),docs=(p.evidence||[]).filter(item=>item&&item.name);
   const have=[],missing=[],unclear=[];
@@ -2332,10 +2604,11 @@ function stage1KnowledgeLists(p){
 function stage1KnowledgeMarkup(p){
   const k=stage1KnowledgeLists(p);
   const list=(title,items,cls)=>`<div class="simple-know-block ${cls}"><h3>${esc(title)}</h3>${items.length?`<ul class="simple-list simple-list-tight">${items.map(text=>`<li>${esc(text)}</li>`).join('')}</ul>`:'<p class="meta">Nothing listed yet. That is not an all-clear.</p>'}</div>`;
-  const fileItems=k.files.map(file=>`<li><strong>${esc(file.name)}</strong> ${uploadFileDetail(file.name)}<span class="simple-file-line">Received, not reviewed in the free check.</span></li>`).join('');
   const open=k.missing.length+k.unclear.length;
-  return `<p class="simple-know-status" role="status"><strong>${open} thing${open===1?'':'s'} still open.</strong> Until each one is answered it stays as "Need info", never an all-clear.</p>${list("What's missing",k.missing,'simple-know-missing')}${list("What's unclear",k.unclear,'simple-know-unclear')}
-<div class="simple-know-block simple-know-have"><h3>What we have</h3>${k.have.length?`<ul class="simple-list simple-list-tight">${k.have.map(text=>`<li>${esc(text)}</li>`).join('')}</ul>`:'<p class="meta">No answers saved yet.</p>'}${k.files.length?`<h4>Your files</h4><ul class="simple-list simple-list-tight simple-files">${fileItems}</ul><p class="meta">${esc(k.fileNote)}</p>`:''}</div>
+  return `<p class="simple-know-status" role="status"><strong>${open} thing${open===1?'':'s'} still open.</strong> Until each one is answered it stays as "Need info", never an all-clear.</p>
+${uploadReviewMarkup(p,'stage1')}
+${list("What's missing",k.missing,'simple-know-missing')}${list("What's unclear",k.unclear,'simple-know-unclear')}
+<div class="simple-know-block simple-know-have"><h3>What we have</h3>${k.have.length?`<ul class="simple-list simple-list-tight">${k.have.map(text=>`<li>${esc(text)}</li>`).join('')}</ul>`:'<p class="meta">No answers saved yet.</p>'}</div>
 <p class="meta simple-know-foot">${esc(UPLOAD_NOT_REVIEWED_TEXT)} This is not an all-clear: it only shows what we know and don't know so far.</p>`
 }
 
@@ -2346,7 +2619,7 @@ function stage1KnowledgeMarkup(p){
 // never on a client page, the PDF or in a rule the client can see). Nothing on a client page may mention a past job.
 //  Q1 Planning: full applications were the usual route, even for open canopies and tent halls (Jobs A, C, F, H, I, O); one extension
 //     went the certificate route (Job G). Conditions seen: start within 3 years, approved plans, matching materials, outside
-//     lighting details, piling/vibration method statement, biodiversity net gain, no surface water onto the road. A height change
+//     lighting details, piling or vibration works, biodiversity net gain, no surface water onto the road. A height change
 //     after approval needed a new approval (Job C). Never say "permitted development" or "no planning needed".
 //  Q2 Engineer, Q3 base and civils: a structural engineer designed the base on every job with a new base (Jobs C, D, G, L).
 //  Q4 Building Regulations: boundary fire walls, fire strategy requests, accessible layout, energy statement for unheated halls (Jobs B, C, D, H).
@@ -2355,13 +2628,13 @@ function stage1KnowledgeMarkup(p){
 //     (notify HSE: more than 30 working days with more than 20 people at once, or more than 500 person-days).
 //     "Usually the client acts as, or appoints, the principal contractor, and is often also the principal designer" is house experience, NOT law, and is worded as "usually" / "often".
 //     Source: https://www.legislation.gov.uk/uksi/2015/51. The legal references are deliberately not shown on the client page.
-//  Q6 Site risks and access: general patterns only from the v2 research note on method statements for industrial and steel jobs (access and set-down, live yard, induction and permits incl. permit to dig, services that may not match drawings, old hardstanding of unknown strength, crane lift plans, wind, work at height, noise and vibration, fire-wall/boundary clear space, joining an existing building and opening vs door sizes, stock under a roof being replaced, planning conditions such as crane notification, contamination and working hours). Asbestos is a neutral question, not a finding. No job-specific details. Problems only. The building supplier must provide RAMS before going on site; the client or principal contractor should ask for them and check them. Project Check is guidance only and holds no CDM role. v1 template/gap wording is withdrawn.
+//  Q6 Site risks and access: general patterns only from the v2 research note on method statements for industrial and steel jobs (access and set-down, live yard, induction and permits incl. permit to dig, services that may not match drawings, old hardstanding of unknown strength, crane lift plans, wind, work at height, noise and vibration, fire-wall/boundary clear space, joining an existing building and opening vs door sizes, stock under a roof being replaced, planning conditions such as crane notification, contamination and working hours). Asbestos is a neutral question, not a finding. No job-specific details. Problems only. Do not mention RAMS, risk assessments or method statements on client pages. Project Check is guidance only and holds no CDM role. v1 template/gap wording is withdrawn.
 //  Q7 Consultants: house position, not law. Say "Building Control (council or a registered approver)", never "Approved Inspector".
 // Chips: Likely / Possibly / Unlikely / Need info. Missing input is always "Need info", never an all-clear.
 // ---------------------------------------------------------------------------
 const STAGE1_INTRO="Here's what you'll probably face to get your building approved, in the order it usually happens, and who you'll need. Think of it as the first chat across the table: no hard sell, and the answers and a plan come later, with Stuart.";
 const QUESTION_CHIPS={likely:'Likely',possibly:'Possibly',unlikely:'Unlikely',needinfo:'Need info'};
-const PLANNING_CONDITIONS=['Start building within 3 years of approval','Build to the approved plans','Materials and colour to match','Details of any outside lighting','A method statement for piling or vibration','Biodiversity net gain (leaving wildlife better off)','No surface water running onto the road','A new approval if the height changes','Working hours and a plan for lorries and noise while building','Noise limits once the building is in use','Drainage and flood control','Landscaping and protecting trees','Parking, lorry access and turning space','Checks if the ground may be contaminated'];
+const PLANNING_CONDITIONS=['Start building within 3 years of approval','Build to the approved plans','Materials and colour to match','Details of any outside lighting','Details of any piling or vibration works','Biodiversity net gain (leaving wildlife better off)','No surface water running onto the road','A new approval if the height changes','Working hours and a plan for lorries and noise while building','Noise limits once the building is in use','Drainage and flood control','Landscaping and protecting trees','Parking, lorry access and turning space','Checks if the ground may be contaminated'];
 const PLANNING_REFUSAL_REASONS=['How it looks (size and design)','Effect on neighbours (noise, overlooking, loss of light)','Traffic, access and parking','Flood risk and drainage','Green Belt land','Listed buildings or conservation areas nearby','Harm to wildlife and trees'];
 // Topic icons (inline SVG line icons, same stroke style as PRICING_SHIELD_ICON) and one accent colour per topic.
 // Accents are built around the brand green and the dark ink in styles.css. Each one passes AA contrast as text on white.
@@ -2540,13 +2813,12 @@ function stage1ClientQuestions(p){
   else cdmPoints.unshift("Need info: we don't know yet who will run the site.");
   add('likely','CDM (the Construction (Design and Management) Regulations 2015) gives you, the client, legal duties for health and safety on your project, even when others do the work. In our experience the client usually acts as, or appoints, the principal contractor, and is often the principal designer as well. Bigger sites usually run their own permits through their own health and safety team. That is our usual experience, not a legal rule.',
     'These are legal duties, and they apply before work starts.',
-    {bullets:['As the client, you have legal duties under CDM, even when others do the work','In our experience you often act as, or appoint, both the principal designer and the principal contractor','Ask early who will hold each role','Your building supplier must provide RAMS (risk assessments and method statements) before going on site. As the client or principal contractor, you should ask for them and check them','Larger jobs must be notified to the HSE before work starts','Project Check is guidance only and holds no CDM role'],points:cdmPoints});
+    {bullets:['As the client, you have legal duties under CDM, even when others do the work','In our experience you often act as, or appoint, both the principal designer and the principal contractor','Ask early who will hold each role','Larger jobs must be notified to the HSE before work starts','Project Check is guidance only and holds no CDM role'],points:cdmPoints});
   // 6. Site risks and access. General patterns only (problems only). No job-specific details.
-  // The building supplier must provide RAMS before going on site; the client or principal contractor should ask for them and check them.
-  // Project Check is guidance only and holds no CDM role. Never present these as statistics, and never name a past job on a client page.
+  // Do not mention RAMS, risk assessments or method statements on client pages, the report or the PDF. Project Check is guidance only and holds no CDM role. Never present these as statistics, and never name a past job on a client page.
   const siteBlocks=[
     {heading:'Getting in and unloading',items:['Vehicle access: a long lorry or a crane may not be able to reach or turn at the building position.','Deliveries: is there a clear, flat area close by to set down materials and lay them out?','Deliveries can compete with your own traffic and people.']},
-    {heading:'Before work starts',items:['Your building supplier must provide RAMS (risk assessments and method statements) before going on site. As the client or principal contractor, you should ask for them and check them.','Your own site induction and permits are needed before anyone starts, including a permit to dig.','Buried and overhead services, and any overhead obstructions, must be checked. They may not be where the drawings say.','Is the ground or base really concrete, and firm enough? Old hardstanding or a buried base may be of unknown strength.']},
+    {heading:'Before work starts',items:['Your own site induction and permits are needed before anyone starts, including a permit to dig.','Buried and overhead services, and any overhead obstructions, must be checked. They may not be where the drawings say.','Is the ground or base really concrete, and firm enough? Old hardstanding or a buried base may be of unknown strength.']},
     {heading:'While it is being built',items:['Crane lifts need a lift plan, and the crane and its paperwork are often settled late.','Wind can stop work, especially crane lifts and roof sheeting, so a tight programme can slip.','Working at height on access platforms needs firm, level ground and clear routes.','Noise and vibration from tools can affect neighbours and people working nearby.','Planning conditions can cover crane notification, contamination and working hours.','Power and welfare (toilets) for the crew are normally yours to provide.']},
     {heading:'If the site stays in use, or you are joining an existing building',items:['A live yard or your own operations next to the work will limit when and where work can happen.','Joining onto an existing building: the opening size may not match the door size.','Stock or kit stored under a roof being replaced has to be moved or protected.','Clear space is often needed beside fire walls and boundaries.','Is there any asbestos or contamination information, and who holds it?']}
   ];
@@ -2555,8 +2827,8 @@ function stage1ClientQuestions(p){
   if(linked)siteIntro.push('Joining onto an existing building means the opening has to be planned, and it may not match the door size.');
   add('likely','Putting up a steel building is a big operation on your site. These are the things you will probably have to deal with on the day.',
     'If these are not ready, deliveries and the build can be held up.',
-    {bullets:['Vehicle access, deliveries and space to set down materials','A live yard or your operations next to the work, and your induction and permits','Services or overhead obstructions that may not be where the drawings say','Crane lifts, wind, working at height, and ground or old hardstanding of unknown strength','Your building supplier must provide RAMS before going on site – ask for them and check them'],points:siteIntro,blocks:siteBlocks,openMore:true,
-     blockNote:'This is general information about steel building jobs. Project Check is guidance only and holds no CDM role. Your building supplier must provide RAMS before going on site, and you should ask for them and check them.'});
+    {bullets:['Vehicle access, deliveries and space to set down materials','A live yard or your operations next to the work, and your induction and permits','Services or overhead obstructions that may not be where the drawings say','Crane lifts, wind, working at height, and ground or old hardstanding of unknown strength'],points:siteIntro,blocks:siteBlocks,openMore:true,
+     blockNote:'This is general information about steel building jobs. Project Check is guidance only and holds no CDM role.'});
   // 7. Consultants and fees
   add('likely',"The building supplier supplies and erects the building. The independent professionals are normally appointed and paid by you, separately from the building price. Project Check does not appoint or pay them. You'll need professional support.",
     'These fees are extra to the building price.',
@@ -2684,7 +2956,7 @@ wireStage2EvidenceUpload(p)
 function stage2(id){
 if(!requireUser())return;let p=getP(id);if(!p)return;
 let idx=Number(sessionStorage.getItem('s2q_'+id)||0);idx=Math.max(0,Math.min(stage2Questions.length-1,idx));let q=stage2Questions[idx],val=p.stage2[q[0]]||'';
-app.innerHTML=`<div class="container"><div class="pagehead"><div><div class="eyebrow">Stage 2 · Question ${idx+1} of ${stage2Questions.length}</div><h1>${esc(p.name)}</h1><p class="meta">Deeper evidence and risk assessment</p></div><button class="btn secondary" onclick="route('project','${esc(id)}')">Save & exit</button></div>${progressBar(idx,stage2Questions.length)}<div class="stage-layout"><div class="steps" tabindex="0" role="list" aria-label="Stage 2 questions">${stage2Questions.map((x,i)=>`<div class="step ${i===idx?'active':i<idx?'done':''}" role="listitem">${i+1}. ${esc(x[1].replace(/\?.*/,''))}</div>`).join('')}</div><div class="card"><h2>${esc(q[1])}</h2><div class="field">${controlFor(q,val)}</div><div class="banner"><b>Evidence can be added at any time.</b><div class="meta">Upload quotations, drawings, planning information, surveys, specifications and photographs in the project workspace.</div><div id="s2evidenceStatus" style="margin-top:10px">${stage2EvidencePanelHTML(p)}</div></div><div class="actions"><button class="btn secondary" ${idx===0?'disabled':''} onclick="moveStage2('${esc(id)}',${idx-1})">Back</button><button class="btn green" onclick="saveStage2('${esc(id)}',${idx})">${idx===stage2Questions.length-1?'Complete Stage 2':'Save & continue'}</button></div></div></div></div>`;
+app.innerHTML=`<div class="container"><div class="pagehead"><div><div class="eyebrow">Stage 2 · Question ${idx+1} of ${stage2Questions.length}</div><h1>${esc(p.name)}</h1><p class="meta">Deeper evidence and checks</p></div><button class="btn secondary" onclick="route('project','${esc(id)}')">Save & exit</button></div>${progressBar(idx,stage2Questions.length)}<div class="stage-layout"><div class="steps" tabindex="0" role="list" aria-label="Stage 2 questions">${stage2Questions.map((x,i)=>`<div class="step ${i===idx?'active':i<idx?'done':''}" role="listitem">${i+1}. ${esc(x[1].replace(/\?.*/,''))}</div>`).join('')}</div><div class="card"><h2>${esc(q[1])}</h2><div class="field">${controlFor(q,val)}</div><div class="banner"><b>Evidence can be added at any time.</b><div class="meta">Upload quotations, drawings, planning information, surveys, specifications and photographs in the project workspace.</div><div id="s2evidenceStatus" style="margin-top:10px">${stage2EvidencePanelHTML(p)}</div></div><div class="actions"><button class="btn secondary" ${idx===0?'disabled':''} onclick="moveStage2('${esc(id)}',${idx-1})">Back</button><button class="btn green" onclick="saveStage2('${esc(id)}',${idx})">${idx===stage2Questions.length-1?'Complete Stage 2':'Save & continue'}</button></div></div></div></div>`;
 wireStage2EvidenceUpload(p)
 // Same scroll-reset as stage1() (see the comment there) — question/evidence
 // content height varies here too (uploaded-file list length), and this is a
@@ -3086,7 +3358,7 @@ section("What we still don't know");
   block("What's missing",k.missing,'Nothing listed yet. That is not an all-clear.');
   block("What's unclear",k.unclear,'Nothing listed yet. That is not an all-clear.');
   block('What we have',k.have,'No answers saved yet.');
-  if(k.files.length){y+=1;put('Your files',{bold:true,size:9.5,gap:5});k.files.forEach(file=>bullet(`${file.name} (${file.guess.label}) – received, not reviewed in the free check${file.guess.unreadable?'. '+file.guess.note:''}`,{indent:2,size:9,gap:4.8}));put(k.fileNote,{size:9,gap:4.8,color:muted})}
+  if(k.files.length){y+=1;put('Your files – received, not reviewed in the free check',{bold:true,size:9.5,gap:5});put('A check of your figures against the drawings is part of Stage 2. We never guess a number.',{size:8.5,color:muted,gap:4.6});k.files.forEach(file=>{const read=uploadReadState(file.entry||{name:file.name});bullet(`${file.name} (${file.guess.label}) – ${read.canRead?((read.partial?'We could only read some of the text. ':'')+'Received, not reviewed in the free check.'):read.reason}`,{indent:2,size:9,gap:4.8})});put(k.fileNote,{size:9,gap:4.8,color:muted})}
   y+=2;put(`${UPLOAD_NOT_REVIEWED_TEXT} This is not an all-clear: it only shows what we know and don't know so far.`,{size:8.5,italic:true,color:muted,gap:4.6})
 }
 // Summary box: counts, then the next step. The call is first, saving the project second, Stage 2 only as a gentle offer.
@@ -3233,16 +3505,16 @@ function paidStagePage(id){
   document.body.dataset.page='paidStage';
   const features=STAGE2_FEATURES.map((item,index)=>`<article class="simple-step"><span class="simple-step-num" aria-hidden="true">${index+1}</span><h3>${esc(item.title)}</h3><p>${esc(item.text)}</p></article>`).join('');
   const plainList=items=>`<ul class="simple-list simple-list-tight">${items.map(text=>`<li>${esc(text)}</li>`).join('')}</ul>`;
-  const examples=STAGE2_EXAMPLE_REVIEWS.map(item=>`<details class="simple-example simple-example-doc"><summary>${esc(item.type)} <span class="simple-example-mark">Example only</span></summary><dl class="simple-example-list"><div><dt>What's there</dt><dd>${esc(item.present)}</dd></div><div><dt>What's missing</dt><dd>${esc(item.missing)}</dd></div><div><dt>What's unclear</dt><dd>${esc(item.unclear)}</dd></div><div><dt>What to ask next</dt><dd>${esc(item.next)}</dd></div></dl></details>`).join('');
   app.innerHTML=`<div class="container simple-paid simple-stage2">
 <section class="simple-hero simple-stage2-hero" aria-labelledby="stage2Title"><div class="eyebrow">Stage 2</div><h1 id="stage2Title">Stage 2: the answers and a plan</h1><p class="simple-lead">Your free check showed what you'll probably have to deal with. Stage 2 goes through what to do about it, with Stuart alongside you. There's no rush: have a read, and book a chat when you're ready.</p></section>
 <section class="simple-section" aria-labelledby="stage2GetTitle"><h2 id="stage2GetTitle">What you get</h2><div class="simple-steps">${features}</div></section>
 <section class="simple-section" aria-labelledby="stage2PlanTitle"><h2 id="stage2PlanTitle">Your planning history file</h2><p class="simple-lead">So you and your planning consultant can see what the council has approved nearby, and what it asked for.</p>${plainList(STAGE2_PLANNING_FILE)}</section>
 <section class="simple-section" aria-labelledby="stage2RegsTitle"><h2 id="stage2RegsTitle">Building Regulations guidance</h2><p class="simple-lead">Guidance for your building, in plain words.</p>${plainList(STAGE2_REGS_GUIDANCE)}</section>
+${p?`<section class="simple-section" aria-labelledby="stage2ReviewTitle"><h2 id="stage2ReviewTitle">Review of your uploads</h2><p class="simple-lead">Shown in this order: your figures checked against the drawings, the need-info list, then a card for each file. We only show figures written as text in a file we could read. We never guess a number, and this is not a Building Regulations or planning approval.</p>${uploadReviewMarkup(p,'stage2')}</section>`:''}
 <section class="simple-section" aria-labelledby="stage2ExampleTitle"><h2 id="stage2ExampleTitle">What a plain review of your uploads looks like</h2>
-<p class="simple-example-tag">EXAMPLES ONLY. Made-up content, not a real project. Square brackets show where your own details would go.</p>
-<p class="meta">Each time you upload, you see four short lists: what's there, what's missing, what's unclear and what to ask next. Anything missing or unclear stays as "Need info" until it is answered.</p>
-${examples}
+<p class="simple-example-tag">EXAMPLES ONLY. Made-up content, not a real project or a real file.</p>
+<p class="meta">Each review starts with your figures (Match, Mismatch or Not shown), then a need-info list, then a card for each drawing: what we found, what's missing, what's unclear, and questions for your meeting with Stuart.</p>
+${uploadExampleReviewMarkup()}
 <p class="meta">Please send photos as JPEG or PNG and drawings as PDF. iPhone HEIC photos can't be read yet: change your camera to "Most Compatible" first.</p></section>
 <section class="card simple-actions simple-stage2-cta" aria-labelledby="stage2CtaTitle"><h2 id="stage2CtaTitle">Ready to start?</h2>
 <div class="simple-cta-row"><button type="button" class="btn green simple-cta" aria-expanded="false" aria-controls="stage2Notice" onclick="stage2GetClicked(this)">Get Stage 2 <span class="simple-badge">Placeholder: payments not on yet</span></button>${callButton('btn simple-cta simple-cta-alt')}<button type="button" class="btn secondary simple-cta" onclick="${backAction}">${backLabel}</button></div>

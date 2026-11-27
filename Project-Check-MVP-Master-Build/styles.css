@@ -1744,3 +1744,17 @@ body:is([data-page="signin"],[data-page="create"]) .home-footer{max-width:1040px
 .simple-summary-strip{padding:22px 24px}
 .simple-summary-stats{max-width:520px}
 }
+
+/* Upload review: figures table, need-info list, and one card per file. Same card style as the Stage 1 report. Mobile first. */
+.simple-upload-review{display:grid;gap:16px;margin:16px 0}
+.simple-upload-example{padding:12px;border:1px dashed #b42318;border-radius:14px}
+.simple-review-panel{padding:16px 18px}
+.simple-review-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.simple-review-table{width:100%;border-collapse:collapse;font-size:15px;line-height:1.4}
+.simple-review-table th,.simple-review-table td{text-align:left;vertical-align:top;padding:8px 10px;border-bottom:1px solid #d9e0db;overflow-wrap:anywhere}
+.simple-review-table thead th{font-size:13px;letter-spacing:.02em;text-transform:uppercase;color:#475467}
+.simple-draw-card{margin:0}
+.simple-upload-host{margin-top:16px}
+@media(max-width:600px){
+.simple-review-table th:nth-child(5),.simple-review-table td:nth-child(5){display:block;border-bottom:1px solid #d9e0db;padding-left:10px}
+}
