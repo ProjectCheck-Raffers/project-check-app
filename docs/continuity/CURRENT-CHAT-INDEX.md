@@ -480,3 +480,57 @@ Carried forward unchanged from the previous nightly record and not re-checked by
 ### Note
 
 This is an automated GitHub-state record, not a full transcript. It was generated without an AI model and has no access to private chats. It changes only this file.
+
+## Nightly continuity record – 2026-11-28
+
+### Date and stopping point
+
+28 November 2026, recorded by the GitHub Actions workflow `nightly-continuity.yml` (run 46121671543). The current stopping point visible in the repository is as follows.
+
+Live `approved` HEAD when this run read the branch is `19083609728707fe95fe199acb3d66129fae56ec` ("docs(continuity): nightly continuity record – 2026-11-27 [skip ci]", 27 November 2026 08:05 Europe/London). The last non-continuity commit on `approved` within the fetched history is `554253e7f2dbd7bc5556ce7cc08820a18670702d` ("Merge pull request #10 from ProjectCheck-Raffers/review", 26 November 2026 22:27 Europe/London).
+
+Commits on `approved` in the 24 hours before this run:
+
+- `19083609728707fe95fe199acb3d66129fae56ec` ("docs(continuity): nightly continuity record – 2026-11-27 [skip ci]", github-actions[bot])
+
+Pull requests closed or merged in the same 24 hours:
+
+- None.
+
+This run has no access to private chats, so any Project Check work outside GitHub cannot be determined from the repository.
+
+### Live-verified approved HEAD
+
+`19083609728707fe95fe199acb3d66129fae56ec` on `approved` ("docs(continuity): nightly continuity record – 2026-11-27 [skip ci]", 27 November 2026 08:05 Europe/London), read live from GitHub immediately before this entry was written.
+
+### Open PRs
+
+Read live: 1 open PR(s); none touched by this record. Check-run results were not read by this run.
+
+PR #12, "Add report-only security headers and low-noise dependency alerts", head `security-hardening` (`76f5469da6bc3a250666f7d956fa87a80099435f`), base `approved` (`554253e7f2dbd7bc5556ce7cc08820a18670702d`); created 26 November 2026 23:37 Europe/London, last updated 26 November 2026 23:37 Europe/London; open, not draft, unmerged; not touched.
+
+### Unresolved blockers
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+Carried forward unchanged from the previous nightly record and not re-checked by this automated run:
+
+- None recorded in the previous nightly record.
+
+### Note
+
+This is an automated GitHub-state record, not a full transcript. It was generated without an AI model and has no access to private chats. It changes only this file.
